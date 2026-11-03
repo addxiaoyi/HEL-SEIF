@@ -33,6 +33,8 @@ import {
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { renewalCalendar } from "../../electron/services/renewals.mjs";
+import { TIDY_PROMPT, tidyPlan } from "@/lib/work-tidy";
+import { TIDY_LABELS } from "./tidy-labels";
 import { toast } from "sonner";
 import { EditorDialog } from "./ui/editor-dialog";
 import {
@@ -486,6 +488,10 @@ export function AgentView() {
                     fillDraft(question);
                     if (changes) setAllowWorkspaceChanges(true);
                   }}
+                  onTidy={() => {
+                    fillDraft(t(TIDY_PROMPT));
+                    setAllowWorkspaceChanges(true);
+                  }}
                 />
               ) : (
                 <div className="agent-message-list">
@@ -650,7 +656,13 @@ export function AgentView() {
 }
 
 /** 首屏按场景分组的提问，数字取自当前资料，点一下就带好问题。 */
-function Welcome({ onPick }: { onPick: (q: string, changes?: boolean) => void }) {
+function Welcome({
+  onPick,
+  onTidy,
+}: {
+  onPick: (q: string, changes?: boolean) => void;
+  onTidy: () => void;
+}) {
   const data = useAppStore(
     useShallow((s) => ({
       servers: s.servers,
@@ -659,8 +671,13 @@ function Welcome({ onPick }: { onPick: (q: string, changes?: boolean) => void })
       phoneNumbers: s.phoneNumbers,
       aiAssets: s.aiAssets,
       certs: s.certs,
+      mailboxes: s.mailboxes,
     })),
   );
+  const tidy = useMemo(() => {
+    const plan = tidyPlan(data);
+    return plan.total ? plan : null;
+  }, [data]);
   const attention = useAppStore(useShallow(attentionOf)).total;
   const groups = useMemo(() => {
     const pad = (n: number) => String(n).padStart(2, "0");
@@ -733,6 +750,37 @@ function Welcome({ onPick }: { onPick: (q: string, changes?: boolean) => void })
           "分析状态、续费、费用与关联，每个回答都给出下一步；需要修改时先生成建议，由你确认后应用。",
         )}
       </p>
+      {tidy && (
+        <div className="agent-tidy" role="group" aria-label={t("一键整理")}>
+          <div className="agent-tidy-head">
+            <div>
+              <strong>{t("{0} 项待整理", tidy.total)}</strong>
+              <small>
+                {t(
+                  "过期、额度与缺失字段来自本地资料；点一项可以只问这一类，交给 AI 后仍会先生成建议。",
+                )}
+              </small>
+            </div>
+            <button type="button" className="agent-tidy-run" onClick={onTidy}>
+              <Sparkles aria-hidden="true" />
+              {t("交给 AI 整理")}
+            </button>
+          </div>
+          <div className="agent-tidy-chips">
+            {tidy.groups.map((group) => (
+              <button
+                key={group.kind}
+                type="button"
+                className="agent-tidy-chip"
+                onClick={() => onPick(t(TIDY_LABELS[group.kind].ask), true)}
+              >
+                {t(group.title)}
+                <strong>{group.items.length}</strong>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="agent-welcome-groups">
         {groups.map(({ icon: Icon, title, prompts }) => (
           <section key={title} aria-label={t(title)}>

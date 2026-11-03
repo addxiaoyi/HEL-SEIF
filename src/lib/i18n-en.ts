@@ -2071,6 +2071,11 @@ export const EN: Record<string, string> = {
   "未来 {0} 天要续费哪些？合计多少钱？按紧急程度排出处理顺序；缺少费用或到期日的资产也一并指出。":
     "What renews in the next {0} days? What does it cost in total? Order it by urgency, and point out assets missing a cost or due date.",
   "让 AI 规划": "Plan with AI",
+  一键整理: "One-tap tidy-up",
+  "{0} 项待整理": "{0} items to tidy",
+  "过期、额度与缺失字段来自本地资料；点一项可以只问这一类，交给 AI 后仍会先生成建议。":
+    "Expiry, usage and missing fields come from your local records. Pick one category to ask about just those; AI still proposes changes for your review first.",
+  "交给 AI 整理": "Hand to AI",
   "续费完成后，到期日顺延到 {0}": "After renewing, the due date moves to {0}",
   "标记 {0} 已续费": "Mark {0} as renewed",
   已续费: "Renewed",

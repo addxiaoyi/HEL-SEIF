@@ -535,7 +535,82 @@
   }
 }
 
-/* 首屏：按场景分组的提问，数字取自当前资料。 */
+/* 首屏「一键整理」：本地清点出的待补项，点一类只问这一类的那几个字段。 */
+.agent-tidy {
+  margin-top: 20px;
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklab, var(--kind-ai) 6%, var(--color-card));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--kind-ai) 22%, var(--color-line));
+}
+.agent-tidy-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.agent-tidy-head strong {
+  display: block;
+  font-size: var(--text-meta);
+  font-weight: 600;
+}
+.agent-tidy-head small {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-subtle);
+  font-size: var(--text-2xs);
+  line-height: 1.5;
+}
+.agent-tidy-run {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--color-ink);
+  color: var(--color-card);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+.agent-tidy-run:hover {
+  background: color-mix(in oklab, var(--color-ink) 86%, var(--kind-ai));
+}
+.agent-tidy-run svg {
+  width: 14px;
+  height: 14px;
+}
+.agent-tidy-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.agent-tidy-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--color-card);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+  color: var(--color-ink);
+  font-size: var(--text-2xs);
+  transition: margin-top var(--dur-fast) var(--ease-out);
+}
+.agent-tidy-chip:hover {
+  box-shadow: inset 0 0 0 1px var(--color-line-strong);
+}
+.agent-tidy-chip strong {
+  color: color-mix(in oklab, var(--kind-ai) 85%, var(--color-ink));
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
 .agent-welcome-groups {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
