@@ -550,6 +550,27 @@
   justify-content: space-between;
   gap: 10px;
 }
+.agent-tidy-help {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--color-card);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+  color: var(--color-subtle);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.agent-tidy-help:hover {
+  color: var(--color-ink);
+  box-shadow: inset 0 0 0 1px var(--color-line-strong);
+}
+.agent-tidy-help svg {
+  width: 14px;
+  height: 14px;
+}
 .agent-tidy-head strong {
   display: block;
   font-size: var(--text-meta);

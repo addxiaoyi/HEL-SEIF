@@ -17,6 +17,8 @@ export type TidyKind =
 export interface TidyItem {
   id: string;
   kind: TidyKind;
+  assetKind: TidyAssetKind;
+  assetId: string;
   title: string;
   detail: string;
   /** 剩余天数，负数表示已经过期。 */
@@ -24,6 +26,8 @@ export interface TidyItem {
   /** 只整理这一项时可以直接问 AI 的问题。 */
   question: string;
 }
+
+export type TidyAssetKind = "server" | "domain" | "service" | "ai" | "cert" | "mail" | "phone";
 
 export interface TidyGroup {
   kind: TidyKind;
@@ -202,6 +206,8 @@ export function tidyPlan(snapshot: Partial<Snapshot>, now = new Date()): TidyPla
       items.push({
         id: `${entry.kind}:${entry.id}:${kind}`,
         kind,
+        assetKind: entry.kind,
+        assetId: entry.id,
         title: entry.name,
         detail,
         ...(days === undefined ? {} : { days }),
@@ -282,6 +288,67 @@ function capacityHigh(entry: Entry): boolean {
 function aiChargesSoon(entry: Entry, left: number | undefined): boolean {
   const monthly = typeof entry.monthlyUsd === "number" ? entry.monthlyUsd : 0;
   return left !== undefined && left >= 0 && left <= CREDIT_SOON_DAYS && monthly > 0;
+}
+
+/** 只整理这一项时的问题，带着具体资产名。 */
+export function itemQuestion(item: TidyItem): string {
+  return `请为${KIND_NAME[item.assetKind]}「${item.title}」生成修改建议：${detailAsk(item.kind)}`;
+}
+
+function detailAsk(kind: TidyKind): string {
+  return ASK[kind];
+}
+
+/** 清点结果给 AI 工具的紧凑形态：按类分组、只列必要字段，并附上可跳转的资产。 */
+export function tidyReport(snapshot: Partial<Snapshot>, now = new Date()) {
+  return buildTidyReport(tidyPlan(snapshot, now), now);
+}
+
+/** 清点结果 → 给 AI 工具与界面的紧凑结构；plan 与 report 的条目顺序一致。 */
+export function buildTidyReport(plan: TidyPlan, now: Date) {
+  return {
+    today: [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, "0"),
+      String(now.getDate()).padStart(2, "0"),
+    ].join("-"),
+    total: plan.total,
+    items: plan.items.map((item) => ({
+      assetKind: item.assetKind,
+      assetId: item.assetId,
+      name: item.title,
+      issue: item.kind,
+      ...(item.days === undefined ? {} : { daysLeft: item.days }),
+      detail: item.detail,
+    })),
+    groups: plan.groups.map((group) => ({
+      issue: group.kind,
+      title: group.title,
+      count: group.items.length,
+    })),
+  };
+}
+
+const ASK: Record<TidyKind, string> = {
+  expired: "先确认是否还能续费，再更新到期日。",
+  expiring: "给出续费优先级和要准备的事项。",
+  offline: "列出可能原因和排查顺序，写进备注。",
+  "expiring-credit": "核对是否还需要，给出清理、扩容或取消建议。",
+  "missing-date": "补上到期日和续费方式。",
+  "missing-billing": "补上金额、币种和周期。",
+  untagged: "建议 1-3 个标签，按项目或用途命名，并说明理由。",
+};
+
+/** 复制到剪贴板的纯文本清单：按优先级分组，每条一行重要信息。 */
+export function tidyList(plan: TidyPlan): string {
+  const lines = [`Helself 一键整理 · ${plan.total} 项待整理`];
+  for (const group of plan.groups) {
+    lines.push("", `${group.title}（${group.items.length}）`);
+    for (const item of group.items) {
+      lines.push(`- ${KIND_NAME[item.assetKind]}「${item.title}」：${item.detail}`);
+    }
+  }
+  return lines.join("\n");
 }
 
 /** 快速清点整份清单的问题。单项问题用 item.question，它带着具体资产名。 */

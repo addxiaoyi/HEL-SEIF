@@ -5,6 +5,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { AGENT_TOOLS, AgentService, DEFAULT_CONFIG, normalizeBaseUrl } from "./agent-service.mjs";
+import { tidyReport } from "../../src/lib/work-tidy.ts";
 import { LocalIndex, assetDocuments, hash, knowledgeChunks } from "./rag.mjs";
 import { demoSnapshot, mergeDemo } from "./demo.mjs";
 import { notificationCandidates } from "./notifications.mjs";
@@ -101,6 +102,18 @@ test("RAG 索引中文与英文，剔除密钥和备注，包含真实关联", (
   assert.ok(
     index.byId.get("asset:server:demo-server-0").text.includes("asset:server:demo-server-2"),
   );
+  assert.ok(AGENT_TOOLS.some((entry) => entry.function.name === "tidy_status"));
+  const empty = tidyReport({ servers: [], domains: [], certs: [], mailboxes: [], aiAssets: [] });
+  assert.equal(empty.total, 0);
+  assert.deepEqual(empty.items, []);
+  const demoOnly = tidyReport({
+    servers: [demoSnapshot().servers[1]],
+    domains: [],
+    certs: [],
+    mailboxes: [],
+    aiAssets: [],
+  });
+  assert.equal(demoOnly.total, 0);
   assert.equal(knowledgeChunks([{ id: "x", name: "x", text: "a".repeat(1700) }]).length, 3);
 });
 test("模型地址规范化并限制本地向量服务", () => {
@@ -1397,9 +1410,21 @@ test("续费工具返回到期与按周期推算的续费、合计与支出，�
                   arguments: JSON.stringify({
                     steps: [
                       { label: "打开续费日历", kind: "open", view: "renewals" },
-                      { label: "看看这台主机", kind: "open", asset: { kind: "server", id: "demo-server-1" } },
-                      { label: "补齐缺失费用", kind: "ask", question: "哪些资产还没填写费用？帮我补上。" },
-                      { label: "打开不存在的资产", kind: "open", asset: { kind: "server", id: "nope" } },
+                      {
+                        label: "看看这台主机",
+                        kind: "open",
+                        asset: { kind: "server", id: "demo-server-1" },
+                      },
+                      {
+                        label: "补齐缺失费用",
+                        kind: "ask",
+                        question: "哪些资产还没填写费用？帮我补上。",
+                      },
+                      {
+                        label: "打开不存在的资产",
+                        kind: "open",
+                        asset: { kind: "server", id: "nope" },
+                      },
                       { label: "未知页面", kind: "open", view: "terminal" },
                     ],
                   }),
@@ -1412,7 +1437,11 @@ test("续费工具返回到期与按周期推算的续费、合计与支出，�
       ]);
     }
   });
-  const result = await f.service.run({ id: "request-renewals", question: "接下来要续费什么", history: [] });
+  const result = await f.service.run({
+    id: "request-renewals",
+    question: "接下来要续费什么",
+    history: [],
+  });
   // 最终回答与「下一步」在同一轮给出时直接结束，不再请求模型第三次。
   assert.equal(f.requests.length, 2);
   assert.equal(result.steps, 2);
@@ -1449,4 +1478,34 @@ test("续费工具拒绝越界天数与额外参数", async (t) => {
   });
   const result = await f.service.run({ id: "request-bad", question: "续费", history: [] });
   assert.deepEqual(result.nextSteps, []);
+});
+test("一键整理工具返回按优先级排好的只读清点，并附可引用的依据", async (t) => {
+  const f = await fixture(t, (_req, res, body, requests) => {
+    if (requests.length === 1)
+      sse(res, [
+        {
+          delta: {
+            tool_calls: [
+              {
+                index: 0,
+                id: "call-tidy",
+                function: { name: "tidy_status", arguments: "{}" },
+              },
+            ],
+          },
+          finish_reason: "tool_calls",
+        },
+      ]);
+    else {
+      const tidy = JSON.parse(body.messages.at(-1).content);
+      assert.equal(typeof tidy.total, "number");
+      assert.ok(Array.isArray(tidy.items));
+      assert.ok(Array.isArray(tidy.groups));
+      assert.match(tidy.today, /^\d{4}-\d{2}-\d{2}$/);
+      sse(res, [{ delta: { content: "清单已排好 [S1]。" }, finish_reason: "stop" }]);
+    }
+  });
+  const result = await f.service.run({ id: "request-tidy", question: "帮我整理", history: [] });
+  assert.equal(f.requests.length, 2);
+  assert.ok(result.sourceItems.some((item) => item.title === "一键整理清单"));
 });

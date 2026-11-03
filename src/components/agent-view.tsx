@@ -33,7 +33,7 @@ import {
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { renewalCalendar } from "../../electron/services/renewals.mjs";
-import { TIDY_PROMPT, tidyPlan } from "@/lib/work-tidy";
+import { TIDY_PROMPT, tidyList, tidyPlan } from "@/lib/work-tidy";
 import { TIDY_LABELS } from "./tidy-labels";
 import { toast } from "sonner";
 import { EditorDialog } from "./ui/editor-dialog";
@@ -87,6 +87,7 @@ const toolLabel = (name: string) =>
       propose_asset_update: "建议修改资产",
       propose_document_create: "建议新建文档",
       list_renewals: "续费与费用",
+      tidy_status: "一键整理清单",
       suggest_next_steps: "下一步建议",
     }[name] ?? name,
   );
@@ -764,6 +765,21 @@ function Welcome({
             <button type="button" className="agent-tidy-run" onClick={onTidy}>
               <Sparkles aria-hidden="true" />
               {t("交给 AI 整理")}
+            </button>
+            <button
+              type="button"
+              className="agent-tidy-help"
+              aria-label={t("复制清单")}
+              title={t("复制清单")}
+              onClick={() =>
+                void copyText(tidyList(tidy)).then(
+                  () => toast.success(t("清单已复制，可以粘贴到其他对话或笔记。")),
+                  (reason: unknown) =>
+                    toast.error(reason instanceof Error ? reason.message : String(reason)),
+                )
+              }
+            >
+              <Copy aria-hidden="true" />
             </button>
           </div>
           <div className="agent-tidy-chips">

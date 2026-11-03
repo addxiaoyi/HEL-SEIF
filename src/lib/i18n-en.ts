@@ -3074,4 +3074,7 @@ export const EN: Record<string, string> = {
     "Check the server's host key first (ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub), then reset the fingerprint only if it matches.",
   "凭据用主密码派生的密钥加密后单独存放，不写入资产文件；网页版在浏览器里解密后随请求发送，服务器不保存。":
     "Credentials are encrypted with a key derived from the master password and stored separately, never in the asset file. On the web build they are decrypted in the browser and sent per request; the server does not keep them.",
+  复制清单: "Copy list",
+  "清单已复制，可以粘贴到其他对话或笔记。":
+    "List copied. Paste it into another conversation or your notes.",
 };

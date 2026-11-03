@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Snapshot } from "./types.ts";
-import { tidyPlan } from "./work-tidy.ts";
+import { buildTidyReport, tidyList, tidyPlan, tidyReport } from "./work-tidy.ts";
 
 const NOW = new Date("2026-03-01T08:00:00Z");
 const iso = (days: number) =>
@@ -183,4 +183,66 @@ test("同类型按剩余天数排队；整份清单的问题计入总条数，�
     ["expiring", "offline", "missing-billing", "untagged"],
   );
   assert.match(plan.items[0].question, /d3\.test/);
+});
+
+test("整理页签的 report：按类计数，明细带资产引用，问题按优先级排序", () => {
+  const report = tidyReport(
+    {
+      ...EMPTY,
+      domains: [
+        { ...baseDomain, id: "gone", name: "gone.test", expiresAt: iso(-4) },
+        { ...baseDomain, id: "soon", name: "soon.test", expiresAt: iso(9) },
+      ],
+      servers: [
+        {
+          ...host,
+          id: "off",
+          name: "off",
+          status: "offline",
+          expiresAt: iso(300),
+          billing: rented,
+        },
+      ],
+      mailboxes: [mail("full", 840, 1000)],
+    },
+    NOW,
+  );
+  assert.equal(report.total, 5);
+  assert.deepEqual(
+    report.groups.map((group) => [group.issue, group.count]),
+    [
+      ["expired", 1],
+      ["expiring", 1],
+      ["offline", 1],
+      ["expiring-credit", 1],
+      ["missing-billing", 1],
+    ],
+  );
+  const first = report.items[0];
+  assert.deepEqual(first, {
+    assetKind: "domain",
+    assetId: "gone",
+    name: "gone.test",
+    issue: "expired",
+    daysLeft: -4,
+    detail: "4 天前到期",
+  });
+  const soon = buildTidyReport(
+    tidyPlan({ ...EMPTY, domains: [{ ...baseDomain, expiresAt: iso(200) }] }, NOW),
+    NOW,
+  );
+  assert.match(soon.today, /^\d{4}-\d{2}-\d{2}$/);
+  assert.deepEqual(soon.groups, []);
+});
+
+test("复制清单：按组列出，每条带类型、名称与情况", () => {
+  const plan = tidyPlan(
+    { ...EMPTY, domains: [{ ...baseDomain, id: "gone", name: "gone.test", expiresAt: iso(-4) }] },
+    NOW,
+  );
+  const text = tidyList(plan);
+  assert.match(text, /1 项待整理/);
+  assert.match(text, /已经过期（1）/);
+  assert.match(text, /- 域名「gone\.test」：4 天前到期/);
+  assert.equal(tidyList(tidyPlan(EMPTY, NOW)).split("\n").length, 1);
 });
