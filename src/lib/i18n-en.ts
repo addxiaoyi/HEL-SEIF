@@ -3120,4 +3120,19 @@ export const EN: Record<string, string> = {
     "For example:\nAliyun 47.100.1.2 root password xxxx expires 2026-05-01 ¥99/month\nexample.com registrar Aliyun expires 2026-08-12 ¥55/year",
   "这是我粘贴整理后的结果。请对照已保存的资料，逐项告诉我哪些需要更新、哪些是新的，并给出可审阅的修改建议；资料里判断不了的先问我。\n\n{0}":
     "This is my tidied paste. Compare it with the saved assets, tell me item by item what needs updating and what is new, and propose reviewable changes; ask me about anything the data cannot settle.\n\n{0}",
+  读取剪贴板: "Read clipboard",
+  "这个环境不能读取剪贴板，请手动粘贴。":
+    "This environment cannot read the clipboard; paste manually.",
+  "剪贴板是空的。": "The clipboard is empty.",
+  "浏览器没有允许读取剪贴板，请手动粘贴。":
+    "The browser did not allow clipboard access; paste manually.",
+  "{0} / 20000 字符": "{0} / 20000 characters",
+  "支持一次粘贴 20000 字符以内，每行一条更准。":
+    "Up to 20000 characters at a time; one record per line works best.",
+  "一次最多整理 20000 字符，请分段粘贴。":
+    "Tidy at most 20000 characters at a time; paste it in parts.",
+  "已脱敏 {0} 处": "{0} secrets redacted",
+  打开已有资料: "Open saved asset",
+  去号码页添加: "Add on the phone page",
+  去录入: "Create asset",
 };

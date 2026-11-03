@@ -11,7 +11,7 @@ import {
   intakePrompt,
   parseIntakeResponse,
   parseMessyText as parseIntakeText,
-  redactText,
+  redactBundle,
   unredactCorrections,
 } from "../../src/lib/messy-intake.ts";
 
@@ -599,7 +599,7 @@ export class AgentService {
     const config = await this.config();
     const snapshot = this.getSnapshot() ?? {};
     const bundle = parseIntakeText(request.text, snapshot);
-    const base = { bundle, mode: config.intakeMode, model: "", error: "" };
+    const base = { bundle, mode: config.intakeMode, model: "", error: "", redacted: 0 };
     if (request.useModel === false) return base;
     const model = config.intakeMode === "local" ? config.intakeModel : config.model;
     if (!model)
@@ -622,13 +622,13 @@ export class AgentService {
             })
           : await this.client(config);
       const redact = config.intakeMode === "cloud" && config.intakeRedact;
-      const redacted = redact ? redactText(request.text) : null;
-      const safeBundle = redacted ? parseIntakeText(redacted.text, snapshot) : bundle;
+      // 按条目结构脱敏：条目数量和顺序不变，模型回答的 index 才能对回原结果。
+      const redacted = redact ? redactBundle(bundle) : null;
       const response = await client.chat.completions.create({
         model,
         messages: [
           { role: "system", content: "你是资料整理助手，只输出 JSON。" },
-          { role: "user", content: intakePrompt(safeBundle) },
+          { role: "user", content: intakePrompt(redacted ? redacted.bundle : bundle) },
         ],
         max_tokens: 2048,
       });
@@ -639,6 +639,7 @@ export class AgentService {
       return {
         ...base,
         model: response.model ?? model,
+        redacted: redacted?.count ?? 0,
         bundle: corrections.length ? applyCorrections(bundle, corrections) : bundle,
       };
     } catch (error) {

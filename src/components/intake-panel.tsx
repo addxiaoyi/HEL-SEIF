@@ -1,16 +1,19 @@
 import { hostBridge } from "@/lib/web-bridge";
 import { useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { ClipboardPaste, Copy, Loader2, Sparkles, Trash2, Wand2 } from "lucide-react";
+import { ArrowUpRight, ClipboardPaste, Copy, Loader2, Sparkles, Trash2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   INTAKE_KIND_NAMES,
   intakeList,
+  intakePreset,
   parseMessyText,
   type IntakeBundle,
   type IntakeEntry,
 } from "@/lib/messy-intake";
+import { parsePaste } from "@/lib/parse-paste";
 import { useAppStore } from "@/lib/store";
+import type { AssetKind } from "@/lib/types";
 import { copyText } from "@/lib/utils";
 import { t } from "@/lib/i18n";
 import { Button } from "./ui/button";
@@ -36,6 +39,7 @@ export function IntakePanel({
     mode: string;
     model: string;
     error: string;
+    redacted: number;
   } | null>(null);
   const [error, setError] = useState("");
   const snapshot = useAppStore(
@@ -60,6 +64,10 @@ export function IntakePanel({
       setError(t("先粘贴一段资料再整理。"));
       return;
     }
+    if (text.length > 20000) {
+      setError(t("一次最多整理 20000 字符，请分段粘贴。"));
+      return;
+    }
     // 没有主进程桥时（网页预览）仍然可以按本地规则整理，只是用不了模型。
     if (!api) {
       setResult({
@@ -67,6 +75,7 @@ export function IntakePanel({
         mode: "local",
         model: "",
         error: useModel ? t("粘贴整理需要桌面版或已开启的网页版服务。") : "",
+        redacted: 0,
       });
       setError(useModel ? t("粘贴整理需要桌面版或已开启的网页版服务。") : "");
       return;
@@ -95,6 +104,41 @@ export function IntakePanel({
     onClose();
   }
 
+  async function readClipboard() {
+    if (!navigator.clipboard?.readText) {
+      setError(t("这个环境不能读取剪贴板，请手动粘贴。"));
+      return;
+    }
+    try {
+      const value = await navigator.clipboard.readText();
+      if (!value.trim()) {
+        setError(t("剪贴板是空的。"));
+        return;
+      }
+      setText(value);
+      setError("");
+    } catch {
+      setError(t("浏览器没有允许读取剪贴板，请手动粘贴。"));
+    }
+  }
+
+  function openEntry(entry: IntakeEntry) {
+    const state = useAppStore.getState();
+    onClose();
+    if (entry.saved) {
+      if (entry.saved.kind === "phone") state.openPhones({ id: entry.saved.id });
+      else state.openComposer(entry.saved.kind as AssetKind, entry.saved.id);
+      return;
+    }
+    if (entry.kind === "phone") {
+      state.openPhones({ create: true, draft: intakePreset(entry) });
+      return;
+    }
+    // 表单自己的智能粘贴能认出 API Key、SSH 命令等细节，优先用它的结果。
+    const match = parsePaste(entry.line, entry.kind)[0];
+    state.openComposer(entry.kind, null, { ...intakePreset(entry), ...(match?.fields ?? {}) });
+  }
+
   return (
     <div className="intake-panel">
       <p className="intake-hint">
@@ -111,6 +155,11 @@ export function IntakePanel({
         )}
         onChange={(event) => setText(event.target.value)}
       />
+      <p className="intake-count">
+        {text.trim().length > 0
+          ? t("{0} / 20000 字符", text.length)
+          : t("支持一次粘贴 20000 字符以内，每行一条更准。")}
+      </p>
       <div className="intake-actions">
         <Button size="sm" disabled={busy} onClick={() => void run(true)}>
           {busy ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
@@ -120,15 +169,24 @@ export function IntakePanel({
           <Wand2 className="size-4" />
           {t("只按本地规则整理")}
         </Button>
+        <Button size="sm" variant="ghost" disabled={busy} onClick={() => void readClipboard()}>
+          <ClipboardPaste className="size-4" />
+          {t("读取剪贴板")}
+        </Button>
         <span className="intake-mode">
           {result
-            ? result.model
-              ? t(
-                  "{0} · {1}",
-                  result.mode === "local" ? t("本机模型") : t("云端模型"),
-                  result.model,
-                )
-              : t("本地规则")
+            ? [
+                result.model
+                  ? t(
+                      "{0} · {1}",
+                      result.mode === "local" ? t("本机模型") : t("云端模型"),
+                      result.model,
+                    )
+                  : t("本地规则"),
+                result.redacted > 0 ? t("已脱敏 {0} 处", result.redacted) : "",
+              ]
+                .filter(Boolean)
+                .join(" · ")
             : t("先整理再决定要不要写入")}
         </span>
       </div>
@@ -156,7 +214,7 @@ export function IntakePanel({
           </div>
           <ol className="intake-list">
             {result.bundle.entries.map((entry) => (
-              <EntryCard key={entry.id} entry={entry} />
+              <EntryCard key={entry.id} entry={entry} onOpen={() => openEntry(entry)} />
             ))}
           </ol>
           <div className="intake-actions">
@@ -202,7 +260,7 @@ export function IntakePanel({
   );
 }
 
-function EntryCard({ entry }: { entry: IntakeEntry }) {
+function EntryCard({ entry, onOpen }: { entry: IntakeEntry; onOpen: () => void }) {
   return (
     <li className="intake-entry">
       <div className="intake-entry-head">
@@ -246,6 +304,16 @@ function EntryCard({ entry }: { entry: IntakeEntry }) {
           ))}
         </ul>
       )}
+      <div className="intake-entry-actions">
+        <Button size="sm" variant="outline" onClick={onOpen}>
+          <ArrowUpRight className="size-4" />
+          {entry.saved
+            ? t("打开已有资料")
+            : entry.kind === "phone"
+              ? t("去号码页添加")
+              : t("去录入")}
+        </Button>
+      </div>
     </li>
   );
 }

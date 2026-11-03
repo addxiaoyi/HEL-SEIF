@@ -90,6 +90,8 @@ export interface AgentBridge {
     mode: "local" | "cloud";
     model: string;
     error: string;
+    /** 发给云端模型前替换掉的凭据处数；本机模式为 0。 */
+    redacted: number;
   }>;
   knowledge(): Promise<KnowledgeStatus>;
   rebuild(): Promise<KnowledgeStatus>;

@@ -84,12 +84,15 @@ export interface AppState extends Snapshot {
   phoneFilter: "all" | "attention" | "expired" | "active" | "unknown";
   phoneFocusId: string | null;
   phoneCreateRequested: boolean;
+  /** 新建号码时预填的值，来自「粘贴整理」等入口；打开其他页面后即可丢弃。 */
+  phoneDraft: Record<string, string> | null;
   setPhoneFilter: (filter: AppState["phoneFilter"]) => void;
   openPhones: (options?: {
     id?: string;
     query?: string;
     attention?: boolean;
     create?: boolean;
+    draft?: Record<string, string>;
   }) => void;
   upsertPhoneNumber: (record: PhoneNumber) => void;
   removePhoneNumber: (id: string) => void;
@@ -186,6 +189,7 @@ const emptyUi = {
   phoneFilter: "all" as const,
   phoneFocusId: null as string | null,
   phoneCreateRequested: false,
+  phoneDraft: null as Record<string, string> | null,
   tagFilter: [] as string[],
   groupByTag: false,
   expanded: null,
@@ -291,6 +295,7 @@ export const useAppStore = create<AppState>()(
           phoneFocusId: options.id ?? null,
           phoneFilter: options.attention ? "attention" : "all",
           phoneCreateRequested: options.create ?? false,
+          phoneDraft: options.draft ?? null,
           filter: "all",
           expanded: null,
           mobileNav: false,

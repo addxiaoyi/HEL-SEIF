@@ -3,11 +3,15 @@ import { test } from "node:test";
 import {
   applyCorrections,
   groupLines,
+  intakePreset,
   intakePrompt,
   parseIntakeResponse,
   parseMessyText,
   readDate,
+  readMoney,
+  redactBundle,
   redactText,
+  unredactCorrections,
   unredactText,
 } from "./messy-intake.ts";
 
@@ -134,4 +138,78 @@ test("整理指令包含条目与 JSON 输出要求", () => {
   assert.ok(prompt.includes("example.com"));
   assert.ok(prompt.includes('"entries"'));
   assert.ok(prompt.includes("YYYY-MM-DD"));
+});
+
+test("费用识别币种：美元不再显示成人民币", () => {
+  assert.deepEqual(readMoney("ChatGPT Plus 每月 $20"), {
+    amount: 20,
+    currency: "USD",
+    cycle: "month",
+  });
+  assert.deepEqual(readMoney("¥99/月"), { amount: 99, currency: "CNY", cycle: "month" });
+  const bundle = parseMessyText("ChatGPT Plus 订阅 每月 $20 续费 2026-03-20", {}, NOW);
+  assert.ok(bundle.entries[0].known.some((item) => item.value === "$20 · 每月"));
+  assert.ok(bundle.entries[0].inferred.some((item) => item.value === "$240"));
+});
+
+test("按条目脱敏不改结构，私钥换占位符后 index 仍然对得上", () => {
+  const raw = [
+    "example.com 到期 2026-08-12",
+    "-----BEGIN OPENSSH PRIVATE KEY-----",
+    "b3BlbnNzaC1rZXktdjEAAAAA",
+    "-----END OPENSSH PRIVATE KEY-----",
+    "47.100.1.2 root 密码 Abc123!",
+  ].join("\n");
+  const bundle = parseMessyText(raw, {}, NOW);
+  assert.equal(bundle.entries.length, 3);
+  const redacted = redactBundle(bundle);
+  assert.equal(redacted.bundle.entries.length, bundle.entries.length);
+  assert.deepEqual(
+    redacted.bundle.entries.map((entry) => entry.kind),
+    bundle.entries.map((entry) => entry.kind),
+  );
+  assert.ok(redacted.count >= 2);
+  assert.ok(redacted.bundle.entries[1].line.includes("{{S1}}"));
+  assert.ok(!redacted.bundle.entries[1].line.includes("b3BlbnNzaC1rZXktdjEAAAAA"));
+  assert.ok(!redacted.bundle.entries[2].line.includes("Abc123!"));
+  const prompt = intakePrompt(redacted.bundle);
+  assert.equal((prompt.match(/^\d+\. /gm) ?? []).length, 3);
+  const restored = unredactCorrections(
+    [{ index: 2, fields: { host: "{{S2}}" } }],
+    redacted.secrets,
+  );
+  assert.equal(restored[0].fields?.host, "Abc123!");
+});
+
+test("去录入预填：币种、周期、域名与 AI 月费各就各位", () => {
+  const [server] = parseMessyText(
+    "阿里云 服务器 47.100.1.2 root 密码 Abc123! 到期2026-05-01 ¥99/月",
+    {},
+    NOW,
+  ).entries;
+  assert.deepEqual(intakePreset(server), {
+    billingAmount: "99",
+    billingCurrency: "CNY",
+    billingCycle: "month",
+    expiresAt: "2026-05-01",
+    name: "47.100.1.2",
+    host: "47.100.1.2",
+  });
+
+  const [domain] = parseMessyText(
+    "example.com 注册商 阿里云 到期 2026-08-12 ¥55/年",
+    {},
+    NOW,
+  ).entries;
+  assert.equal(intakePreset(domain).registrar, "阿里云");
+  assert.equal(intakePreset(domain).billingCycle, "year");
+
+  const [ai] = parseMessyText("ChatGPT Plus 订阅 每月 $20 续费 2026-03-20", {}, NOW).entries;
+  assert.equal(intakePreset(ai).monthlyUsd, "20");
+  assert.equal(intakePreset(ai).billingAmount, undefined);
+  assert.equal(intakePreset(ai).renewsAt, "2026-03-20");
+
+  const [phone] = parseMessyText("13800138000 移动 卡 到期 2026-09-01", {}, NOW).entries;
+  assert.equal(intakePreset(phone).number, "13800138000");
+  assert.equal(intakePreset(phone).provider, "移动");
 });

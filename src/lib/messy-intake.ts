@@ -112,8 +112,8 @@ const SECRET_PATTERNS: Array<{ key: string; re: RegExp }> = [
 
 const LINE_BREAK = String.fromCharCode(10);
 
-/** 云端模型只收脱敏文本：凭据换成占位符，同一片段占位符保持一致。 */
-export function redactText(raw: string): Redaction {
+/** 一次脱敏过程共用同一张占位符表，同一片段在整份结果里始终是同一个编号。 */
+function createRedactor() {
   const secrets = new Map<string, string>();
   const byValue = new Map<string, string>();
   const substitute = (key: string, value: string): string => {
@@ -126,30 +126,64 @@ export function redactText(raw: string): Redaction {
     return at;
   };
 
-  // 私钥和证书是跨行的，先在整段文本上换掉。
-  let text = String(raw ?? "").replace(
-    /-----BEGIN [A-Z0-9 ]*(?:PRIVATE KEY|CERTIFICATE)-----[\s\S]+?-----END [A-Z0-9 ]*(?:PRIVATE KEY|CERTIFICATE)-----/g,
-    (whole) => substitute("key", whole),
-  );
+  const redact = (raw: string): string => {
+    // 私钥和证书是跨行的，先在整段文本上换掉。
+    const text = String(raw ?? "").replace(
+      /-----BEGIN [A-Z0-9 ]*(?:PRIVATE KEY|CERTIFICATE)-----[\s\S]+?-----END [A-Z0-9 ]*(?:PRIVATE KEY|CERTIFICATE)-----/g,
+      (whole) => substitute("key", whole),
+    );
 
-  // 其余凭据按行处理，避免一条正则跨行吃掉上下文。
-  text = text
-    .split(LINE_BREAK)
-    .map((source) => {
-      let line = source;
-      for (const { key, re } of SECRET_PATTERNS) {
-        if (key === "key") continue;
-        line = line.replace(re, (whole, group) => {
-          const value = typeof group === "string" ? group : whole;
-          if (!value.trim()) return whole;
-          const at = substitute(key, value);
-          return typeof group === "string" ? whole.replace(group, at) : at;
-        });
-      }
-      return line;
-    })
-    .join(LINE_BREAK);
-  return { text, secrets, count: secrets.size };
+    // 其余凭据按行处理，避免一条正则跨行吃掉上下文。
+    return text
+      .split(LINE_BREAK)
+      .map((source) => {
+        let line = source;
+        for (const { key, re } of SECRET_PATTERNS) {
+          if (key === "key") continue;
+          line = line.replace(re, (whole, group) => {
+            const value = typeof group === "string" ? group : whole;
+            if (!value.trim()) return whole;
+            const at = substitute(key, value);
+            return typeof group === "string" ? whole.replace(group, at) : at;
+          });
+        }
+        return line;
+      })
+      .join(LINE_BREAK);
+  };
+
+  return { redact, secrets };
+}
+
+/** 云端模型只收脱敏文本：凭据换成占位符，同一片段占位符保持一致。 */
+export function redactText(raw: string): Redaction {
+  const redactor = createRedactor();
+  const text = redactor.redact(raw);
+  return { text, secrets: redactor.secrets, count: redactor.secrets.size };
+}
+
+/**
+ * 按条目结构脱敏：只替换条目里的原文和字段值，条目的数量、顺序与 index 完全不变。
+ * 交给模型的 prompt 直接取自这份结果，避免「先脱敏、再重新切条」造成错位。
+ */
+export function redactBundle(bundle: IntakeBundle): {
+  bundle: IntakeBundle;
+  secrets: Map<string, string>;
+  count: number;
+} {
+  const redactor = createRedactor();
+  const entries = bundle.entries.map((entry) => ({
+    ...entry,
+    line: redactor.redact(entry.line),
+    title: redactor.redact(entry.title),
+    known: entry.known.map((item) => ({ ...item, value: redactor.redact(item.value) })),
+    inferred: entry.inferred.map((item) => ({ ...item, value: redactor.redact(item.value) })),
+  }));
+  return {
+    bundle: { ...bundle, raw: redactor.redact(bundle.raw), entries },
+    secrets: redactor.secrets,
+    count: redactor.secrets.size,
+  };
 }
 
 /** 把模型回答里的占位符换回原值；只给用户看，不写进发给模型的历史。 */
@@ -197,7 +231,7 @@ const URL_TEXT = /\bhttps?:\/\/[^\s"'<>]+/i;
 const PHONE = /(?:\+?86[-\s]?)?1[3-9]\d{9}\b/;
 const SSH_LINE = /^\s*ssh\s+(?:-\S+\s+)*(?:[\w.-]+@)?([\w.-]+)(?:\s+-p\s*(\d+))?/i;
 
-const MONEY = /(?:[¥￥$]\s*(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*(?:元|块|美元|usd|cny|rmb))/i;
+const MONEY = /(?:([¥￥$])\s*(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*(元|块|美元|usd|cny|rmb))/i;
 const CYCLE = /(?:每|\/)\s*(月|年|季|天)|(month|year|annual|monthly|yearly)/i;
 
 /** 一行里是否出现了「这是谁」的线索：认出身份的行才会另起一条记录。 */
@@ -212,12 +246,15 @@ export function hasIdentity(line: string): boolean {
   );
 }
 
-/** 从一行里取金额与周期；没有周期时按「未填写周期」返回 amount。 */
-export function readMoney(line: string): { amount: number; cycle?: string } | undefined {
+/** 从一行里取金额、币种与周期；没有周期时按「未填写周期」返回 amount。 */
+export function readMoney(
+  line: string,
+): { amount: number; currency: "CNY" | "USD"; cycle?: string } | undefined {
   const match = MONEY.exec(line);
   if (!match) return undefined;
-  const amount = Number(match[1] ?? match[2]);
+  const amount = Number(match[2] ?? match[3]);
   if (!Number.isFinite(amount) || amount < 0) return undefined;
+  const currency = match[1] === "$" || /美元|usd/i.test(match[4] ?? "") ? "USD" : "CNY";
   const cycleMatch = CYCLE.exec(line);
   const word = cycleMatch?.[1] ?? cycleMatch?.[2] ?? "";
   const cycle =
@@ -226,7 +263,12 @@ export function readMoney(line: string): { amount: number; cycle?: string } | un
       : word === "年" || word === "year" || word === "yearly" || word === "annual"
         ? "year"
         : undefined;
-  return cycle ? { amount, cycle } : { amount };
+  return cycle ? { amount, currency, cycle } : { amount, currency };
+}
+
+/** 金额按币种显示：人民币用 ¥，美元用 $。 */
+function moneyText(amount: number, currency: "CNY" | "USD"): string {
+  return (currency === "USD" ? "$" : "¥") + Math.round(amount * 100) / 100;
 }
 
 /** 一行是否像是新的一条记录：有身份线索，或带类型关键词同时提到钱/日期。 */
@@ -420,7 +462,7 @@ export function knownFields(kind: IntakeAssetKind, text: string, now: Date): Int
   if (money) {
     const period =
       money.cycle === "month" ? "每月" : money.cycle === "year" ? "每年" : "周期未注明";
-    out.push(field("billing", "费用", `¥${money.amount} · ${period}`));
+    out.push(field("billing", "费用", `${moneyText(money.amount, money.currency)} · ${period}`));
   }
   return out;
 }
@@ -481,13 +523,9 @@ function inferredOf(
   }
   const money = readMoney(text);
   if (money?.cycle === "month")
-    out.push(field("yearly", "年支出", `¥${Math.round(money.amount * 12 * 100) / 100}`));
+    out.push(field("yearly", "年支出", moneyText(money.amount * 12, money.currency)));
   if (money?.cycle === "year")
-    out.push(field("monthly", "月均", `¥${Math.round((money.amount / 12) * 100) / 100}`));
-  if (kind === "ai" && !money && /\$/.test(text)) {
-    const usd = /\$\s*(\d+(?:\.\d+)?)/.exec(text)?.[1];
-    if (usd) out.push(field("yearlyUsd", "年支出", `$${Math.round(Number(usd) * 12 * 100) / 100}`));
-  }
+    out.push(field("monthly", "月均", moneyText(money.amount / 12, money.currency)));
   return out;
 }
 
@@ -714,7 +752,7 @@ export function intakePrompt(bundle: IntakeBundle): string {
   return [
     "下面是从用户粘贴的杂乱资料里切出的记录，已按行拆分。请逐条核对类型和字段。",
     "只输出 JSON，不要解释：",
-    '{"entries":[{"index":1,"kind":"server","title":"名称","fields":{"expiresAt":"YYYY-MM-DD","billing":{"amount":99,"currency":"CNY","cycle":"month"}}}]}',
+    '{"entries":[{"index":0,"kind":"server","title":"名称","fields":{"expiresAt":"YYYY-MM-DD","billing":{"amount":99,"currency":"CNY","cycle":"month"}}}]}',
     "规则：index 从 0 开始，必须来自下面的列表；kind 只能是 server/domain/service/cert/mail/ai/phone/secret；",
     "只能补用户原文里已经写明、或能由原文直接算出的字段，不要猜测；原文没写的不要填；",
     "日期统一 YYYY-MM-DD；费用必须同时有 amount、currency（CNY 或 USD）和 cycle（month/year/once）。",
@@ -757,4 +795,87 @@ export function intakeList(bundle: IntakeBundle): string {
     if (entry.questions.length) lines.push(`  待确认：${entry.questions.join(" ")}`);
   }
   return lines.join("\n");
+}
+
+/**
+ * 「去录入」的预填值：把整理结果映射成各资产表单使用的键。
+ *
+ * 只带原文里已经写明的字段；密码、私钥等凭据不在这里展开，
+ * 需要的话由录入表单自己的智能粘贴再读一遍原文。金额按识别到的币种与周期填写。
+ */
+export function intakePreset(entry: IntakeEntry): Record<string, string> {
+  const value = (name: string) =>
+    entry.known.find((item) => item.field === name)?.value.trim() ?? "";
+  const money = readMoney(entry.line);
+  const preset: Record<string, string> = {};
+  if (money) {
+    preset.billingAmount = String(money.amount);
+    preset.billingCurrency = money.currency;
+    preset.billingCycle = money.cycle ?? "once";
+  }
+  const expiresAt = value("expiresAt");
+  if (expiresAt && entry.kind !== "ai") preset.expiresAt = expiresAt;
+
+  switch (entry.kind) {
+    case "server": {
+      preset.name = value("host") || entry.title;
+      if (value("host")) preset.host = value("host");
+      if (value("port")) preset.port = value("port");
+      if (value("username")) preset.username = value("username");
+      break;
+    }
+    case "domain": {
+      if (value("name")) preset.name = value("name");
+      if (value("registrar")) preset.registrar = value("registrar");
+      break;
+    }
+    case "service": {
+      preset.name = entry.title;
+      if (value("url")) preset.url = value("url");
+      break;
+    }
+    case "cert": {
+      if (value("cn")) preset.cn = value("cn");
+      if (value("issuer")) preset.issuer = value("issuer");
+      break;
+    }
+    case "mail": {
+      const address = value("address");
+      if (address) {
+        preset.address = address;
+        preset.domain = address.split("@")[1] ?? "";
+      }
+      break;
+    }
+    case "ai": {
+      preset.name = entry.title;
+      if (value("provider")) preset.provider = value("provider");
+      if (value("plan")) preset.plan = value("plan");
+      if (expiresAt) preset.renewsAt = expiresAt;
+      delete preset.billingAmount;
+      delete preset.billingCurrency;
+      delete preset.billingCycle;
+      // AI 表单按美元月费记录；人民币金额不换算，留空让用户自己确认。
+      preset.monthlyUsd =
+        money?.currency === "USD" && money.cycle === "month"
+          ? String(money.amount)
+          : money?.currency === "USD" && money.cycle === "year"
+            ? String(Math.round((money.amount / 12) * 100) / 100)
+            : "";
+      break;
+    }
+    case "phone": {
+      if (value("number")) preset.number = value("number");
+      if (value("provider")) preset.provider = value("provider");
+      break;
+    }
+    case "secret": {
+      preset.kind = "account";
+      if (entry.title) preset.name = entry.title;
+      if (value("url")) preset._url = value("url");
+      if (value("username")) preset._username = value("username");
+      break;
+    }
+  }
+  return preset;
 }

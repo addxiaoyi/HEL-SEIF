@@ -407,15 +407,44 @@ export function PhoneWorkspace() {
 function PhoneEditor({ record, onClose }: { record?: PhoneNumber; onClose: () => void }) {
   const accounts = useAppStore((s) => s.aiAssets);
   const save = useAppStore((s) => s.upsertPhoneNumber);
-  const [form, setForm] = useState(() => ({
-    number: record?.number ?? "",
-    label: record?.label ?? "",
-    provider: record?.provider ?? "",
-    expiresAt: record?.expiresAt ?? "",
-    notes: record?.notes ?? "",
-    subscriptionIds: record?.subscriptionIds ?? [],
-    ...billingFormValues(record?.billing),
-  }));
+  const draft = useAppStore((s) => s.phoneDraft);
+  const [form, setForm] = useState(() => {
+    const base = {
+      number: record?.number ?? "",
+      label: record?.label ?? "",
+      provider: record?.provider ?? "",
+      expiresAt: record?.expiresAt ?? "",
+      notes: record?.notes ?? "",
+      subscriptionIds: record?.subscriptionIds ?? [],
+      ...billingFormValues(record?.billing),
+    };
+    if (record || !draft) return base;
+    return {
+      ...base,
+      number: draft.number ?? base.number,
+      label: draft.label ?? base.label,
+      provider: draft.provider ?? base.provider,
+      expiresAt: draft.expiresAt ?? base.expiresAt,
+      billingAmount: draft.billingAmount ?? base.billingAmount,
+      billingCurrency:
+        draft.billingCurrency === "USD"
+          ? ("USD" as const)
+          : draft.billingCurrency === "CNY"
+            ? ("CNY" as const)
+            : base.billingCurrency,
+      billingCycle:
+        draft.billingCycle === "month"
+          ? ("month" as const)
+          : draft.billingCycle === "once"
+            ? ("once" as const)
+            : draft.billingCycle === "year"
+              ? ("year" as const)
+              : base.billingCycle,
+    };
+  });
+  useEffect(() => {
+    if (draft) useAppStore.setState({ phoneDraft: null });
+  }, [draft]);
   const [error, setError] = useState("");
   const [accountQuery, setAccountQuery] = useState("");
   const matchingAccounts = useMemo(() => {

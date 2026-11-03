@@ -1559,6 +1559,51 @@ test("粘贴整理先本地拆条目，本机模型只补齐字段", async (t) =
   assert.ok(result.bundle.entries[0].known.some((item) => item.field === "billing"));
 });
 
+test("云端粘贴整理只发脱敏文本，修正仍对得上原条目", async (t) => {
+  const f = await fixture(t, (_req, res, body) => {
+    const prompt = body?.messages?.at(-1)?.content ?? "";
+    assert.match(prompt, /example\.com/);
+    assert.match(prompt, /\{\{S1\}\}/);
+    assert.doesNotMatch(prompt, /b3BlbnNzaC1rZXktdjEAAAAA/);
+    assert.doesNotMatch(prompt, /Abc123!/);
+    assert.equal((prompt.match(/^\d+\. /gm) ?? []).length, 3);
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(
+      JSON.stringify({
+        model: "cloud-intake",
+        choices: [
+          {
+            message: {
+              role: "assistant",
+              content: JSON.stringify({
+                entries: [
+                  { index: 1, title: "部署私钥" },
+                  { index: 2, fields: { username: "root" } },
+                ],
+              }),
+            },
+          },
+        ],
+      }),
+    );
+  });
+  const current = await f.service.config();
+  await f.service.saveConfig({ ...current, intakeMode: "cloud", intakeRedact: true });
+  const result = await f.service.parseIntake({
+    text: [
+      "example.com 到期 2026-08-12",
+      "-----BEGIN OPENSSH PRIVATE KEY-----",
+      "b3BlbnNzaC1rZXktdjEAAAAA",
+      "-----END OPENSSH PRIVATE KEY-----",
+      "47.100.1.2 root 密码 Abc123!",
+    ].join("\n"),
+  });
+  assert.equal(result.bundle.entries.length, 3);
+  assert.equal(result.bundle.entries[1].title, "部署私钥");
+  assert.ok(result.bundle.entries[2].known.some((item) => item.value === "root"));
+  assert.ok(result.redacted >= 2);
+});
+
 test("粘贴整理可以只用本地规则，不请求模型", async (t) => {
   const f = await fixture(t, () => {
     throw new Error("不应该请求模型");
