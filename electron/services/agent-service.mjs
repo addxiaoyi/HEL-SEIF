@@ -6,6 +6,14 @@ import { LocalIndex, hash, hybridSearch } from "./rag.mjs";
 import { WorkspaceKnowledge, validWorkspaceArgs } from "./workspace-knowledge.mjs";
 import { dueTotals, renewalCalendar, spendSummary } from "./renewals.mjs";
 import { tidyReport } from "../../src/lib/work-tidy.ts";
+import {
+  applyCorrections,
+  intakePrompt,
+  parseIntakeResponse,
+  parseMessyText as parseIntakeText,
+  redactText,
+  unredactCorrections,
+} from "../../src/lib/messy-intake.ts";
 
 export const DEFAULT_CONFIG = {
   baseUrl: "https://znck.zle.ee/v1",
@@ -16,7 +24,31 @@ export const DEFAULT_CONFIG = {
   embeddingEnabled: false,
   embeddingBaseUrl: "http://127.0.0.1:11434/v1",
   embeddingModel: "",
+  // 「粘贴整理」用的模型：本机 Ollama / LM Studio，或复用上方云端配置。
+  intakeMode: "local",
+  intakeBaseUrl: "http://127.0.0.1:11434/v1",
+  intakeModel: "",
+  intakeRedact: true,
 };
+/** 私有网段或整段回环：局域网里的 Ollama、LM Studio 也算本地模型。 */
+function privateAddress(octets) {
+  if (octets.length !== 4) return false;
+  const [a, b] = octets;
+  return (
+    a === 10 ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) ||
+    (a === 169 && b === 254) ||
+    a === 127
+  );
+}
+/** 主机名是否属于本机或局域网。 */
+export function isLocalHost(hostname) {
+  const host = hostname.replace(/^\[|\]$/g, "").toLowerCase();
+  if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local")) return true;
+  const octets = host.split(".").map(Number);
+  return octets.every((x) => Number.isInteger(x) && x >= 0 && x <= 255) && privateAddress(octets);
+}
 export function normalizeBaseUrl(value, localOnly = false) {
   let url;
   try {
@@ -24,10 +56,10 @@ export function normalizeBaseUrl(value, localOnly = false) {
   } catch {
     throw new Error("模型地址不是有效 URL。");
   }
-  const local = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+  const local = isLocalHost(url.hostname);
   if (!["http:", "https:"].includes(url.protocol) || (url.protocol === "http:" && !local))
     throw new Error("远程模型地址必须使用 HTTPS；本机服务可使用 HTTP。");
-  if (localOnly && !local) throw new Error("本地 Embedding 只能连接 localhost、127.0.0.1 或 ::1。");
+  if (localOnly && !local) throw new Error("本地 Embedding 只能连接本机或局域网地址。");
   if (url.username || url.password || url.search || url.hash)
     throw new Error("模型地址不能包含凭据、查询参数或片段。");
   if (url.pathname === "/") url.pathname = "/v1";
@@ -53,6 +85,13 @@ function validateConfig(input) {
     embeddingModel: String(config.embeddingModel ?? "")
       .trim()
       .slice(0, 200),
+    // 整理粘贴资料时可以单独选本机模型：数据不出这台电脑，也不需要 API Key。
+    intakeMode: config.intakeMode === "cloud" ? "cloud" : "local",
+    intakeBaseUrl: normalizeBaseUrl(config.intakeBaseUrl, true),
+    intakeModel: String(config.intakeModel ?? "")
+      .trim()
+      .slice(0, 200),
+    intakeRedact: config.intakeRedact !== false,
   };
 }
 const tool = (name, description, properties = {}, required = []) => ({
@@ -542,6 +581,71 @@ export class AgentService {
       throw publicError(error);
     }
   }
+
+  /**
+   * 「粘贴整理」：本机先拆成条目，再让选定的模型逐条补充字段。
+   *
+   * 本机模型（Ollama / LM Studio）直接读原文；云端模型默认只读脱敏文本，
+   * 模型回答里的占位符在本机换回原值。模型只能修正已有条目，不能新增或删除。
+   */
+  async parseIntake(request) {
+    if (
+      typeof request?.text !== "string" ||
+      !request.text.trim() ||
+      request.text.length > 20000 ||
+      request.text.includes("\0")
+    )
+      throw new Error("粘贴内容需要是 1 到 20000 字符的文本。");
+    const config = await this.config();
+    const snapshot = this.getSnapshot() ?? {};
+    const bundle = parseIntakeText(request.text, snapshot);
+    const base = { bundle, mode: config.intakeMode, model: "", error: "" };
+    if (request.useModel === false) return base;
+    const model = config.intakeMode === "local" ? config.intakeModel : config.model;
+    if (!model)
+      return {
+        ...base,
+        error:
+          config.intakeMode === "local"
+            ? "还没有填写本机模型的模型名，已经只按本地规则整理。"
+            : "还没有配置云端模型，已经只按本地规则整理。",
+      };
+    try {
+      const client =
+        config.intakeMode === "local"
+          ? new OpenAI({
+              baseURL: config.intakeBaseUrl,
+              apiKey: "local-no-key",
+              timeout: 60000,
+              maxRetries: 0,
+              fetch: (url, init) => this.fetchImpl(url, { ...init, redirect: "error" }),
+            })
+          : await this.client(config);
+      const redact = config.intakeMode === "cloud" && config.intakeRedact;
+      const redacted = redact ? redactText(request.text) : null;
+      const safeBundle = redacted ? parseIntakeText(redacted.text, snapshot) : bundle;
+      const response = await client.chat.completions.create({
+        model,
+        messages: [
+          { role: "system", content: "你是资料整理助手，只输出 JSON。" },
+          { role: "user", content: intakePrompt(safeBundle) },
+        ],
+        max_tokens: 2048,
+      });
+      const text = response.choices?.[0]?.message?.content ?? "";
+      let corrections = parseIntakeResponse(text);
+      if (redacted && corrections.length)
+        corrections = unredactCorrections(corrections, redacted.secrets);
+      return {
+        ...base,
+        model: response.model ?? model,
+        bundle: corrections.length ? applyCorrections(bundle, corrections) : bundle,
+      };
+    } catch (error) {
+      return { ...base, error: publicError(error).message };
+    }
+  }
+
   async readKnowledge() {
     let signature = "missing";
     try {

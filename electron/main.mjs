@@ -1230,6 +1230,7 @@ function registerIpc() {
   handle("agent:save-config", (config) => agent.saveConfig(config));
   handle("agent:models", () => agent.models());
   handle("agent:test", () => agent.test());
+  handle("agent:parse-intake", (request) => agent.parseIntake(request));
   handle("agent:run", (request) => agent.run(request));
   handle("agent:cancel", (id) => agent.cancel(id));
   handle("agent:knowledge", () => agent.knowledge());

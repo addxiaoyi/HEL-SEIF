@@ -12,6 +12,13 @@ export interface ModelConfig {
   embeddingEnabled: boolean;
   embeddingBaseUrl: string;
   embeddingModel: string;
+  /** 整理粘贴资料时用本机模型还是云端模型。 */
+  intakeMode: "local" | "cloud";
+  /** 本机模型地址，只允许本机或局域网。 */
+  intakeBaseUrl: string;
+  intakeModel: string;
+  /** 云端整理默认只收脱敏文本。 */
+  intakeRedact: boolean;
 }
 export interface Source {
   id: string;
@@ -78,6 +85,12 @@ export interface AgentBridge {
   ): Promise<ModelConfig>;
   models(): Promise<string[]>;
   test(): Promise<{ model: string; latencyMs: number; text: string }>;
+  parseIntake(request: { text: string; useModel?: boolean }): Promise<{
+    bundle: import("./messy-intake").IntakeBundle;
+    mode: "local" | "cloud";
+    model: string;
+    error: string;
+  }>;
   knowledge(): Promise<KnowledgeStatus>;
   rebuild(): Promise<KnowledgeStatus>;
   importDocument(): Promise<KnowledgeStatus | null>;

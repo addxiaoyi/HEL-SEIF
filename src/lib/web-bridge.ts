@@ -218,6 +218,7 @@ export const webBridge: HostBridge = {
     saveConfig: invoker("agent:save-config"),
     models: invoker("agent:models"),
     test: invoker("agent:test"),
+    parseIntake: invoker("agent:parse-intake"),
     run: invoker("agent:run"),
     cancel: invoker("agent:cancel"),
     knowledge: invoker("agent:knowledge"),

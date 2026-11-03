@@ -765,3 +765,53 @@
     animation: none;
   }
 }
+
+/* 首屏「粘贴整理」入口：和上面的整理卡片同宽，但更轻。 */
+.agent-intake-entry {
+  margin-top: 12px;
+}
+
+.agent-intake-open {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  color: var(--text-muted);
+  text-align: left;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.agent-intake-open:hover {
+  border-color: var(--line-strong, var(--line));
+  color: var(--text);
+}
+
+.agent-intake-open svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.agent-intake-open span {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.agent-intake-open strong {
+  font-size: var(--text-meta);
+  font-weight: 600;
+}
+
+.agent-intake-open small {
+  color: var(--text-subtle);
+  font-size: var(--text-2xs);
+  line-height: 1.5;
+}

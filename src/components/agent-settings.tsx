@@ -259,6 +259,62 @@ export function AgentSettings({
         </fieldset>
       </section>
       <section className="border-t border-line pt-4">
+        <h4 className="font-semibold">{t("粘贴整理使用的模型")}</h4>
+        <p className="my-2 text-meta text-muted">
+          {t(
+            "把杂乱资料粘贴给 AI 时，先用本地规则拆成条目，再让这里的模型补齐字段。本机模型数据不出这台电脑；云端模型默认只收脱敏文本。",
+          )}
+        </p>
+        <fieldset disabled={busy} className="space-y-3">
+          <Field label={t("模型来源")}>
+            <Select
+              aria-label={t("模型来源")}
+              value={config.intakeMode}
+              onValueChange={(value) =>
+                patch({ intakeMode: value === "cloud" ? "cloud" : "local" })
+              }
+              options={[
+                { value: "local", label: t("本机模型（Ollama / LM Studio）") },
+                { value: "cloud", label: t("云端模型（使用上方配置）") },
+              ]}
+            />
+          </Field>
+          {config.intakeMode === "local" ? (
+            <>
+              <Field label={t("本机模型地址")}>
+                <Input
+                  aria-label={t("本机模型地址")}
+                  value={config.intakeBaseUrl}
+                  onChange={(e) => patch({ intakeBaseUrl: e.target.value })}
+                />
+              </Field>
+              <Field label={t("本机模型名")}>
+                <Input
+                  aria-label={t("本机模型名")}
+                  value={config.intakeModel}
+                  placeholder="qwen2.5:7b"
+                  onChange={(e) => patch({ intakeModel: e.target.value })}
+                />
+              </Field>
+              <p className="text-2xs text-subtle">
+                {t(
+                  "Ollama 默认地址是 http://127.0.0.1:11434/v1，LM Studio 是 http://127.0.0.1:1234/v1；局域网地址也可以。",
+                )}
+              </p>
+            </>
+          ) : (
+            <label className="flex items-center gap-2 text-meta">
+              <input
+                type="checkbox"
+                checked={config.intakeRedact}
+                onChange={(e) => patch({ intakeRedact: e.target.checked })}
+              />
+              {t("只发送脱敏文本（密码、私钥、验证码换成占位符）")}
+            </label>
+          )}
+        </fieldset>
+      </section>
+      <section className="border-t border-line pt-4">
         <h4 className="font-semibold">{t("本地知识库")}</h4>
         <p className="my-2 text-meta text-muted">
           {t(

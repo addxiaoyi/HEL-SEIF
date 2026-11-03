@@ -3077,4 +3077,47 @@ export const EN: Record<string, string> = {
   复制清单: "Copy list",
   "清单已复制，可以粘贴到其他对话或笔记。":
     "List copied. Paste it into another conversation or your notes.",
+  "AI 整理": "Tidy with AI",
+  只按本地规则整理: "Local rules only",
+  本机模型: "Local model",
+  云端模型: "Cloud model",
+  本地规则: "Local rules",
+  先整理再决定要不要写入: "Tidy first, write later",
+  "{0} 条记录": "{0} records",
+  "缺{0}": "Missing {0}",
+  "让 AI 接着处理": "Continue with AI",
+  "整理结果已复制。": "Tidy result copied.",
+  复制结果: "Copy result",
+  清空结果: "Clear result",
+  资料里已有: "Already saved",
+  含凭据: "Has credentials",
+  "还缺：{0}": "Still missing: {0}",
+  粘贴的杂乱资料: "Pasted notes",
+  粘贴整理: "Tidy pasted notes",
+  "先粘贴一段资料再整理。": "Paste some notes first.",
+  "粘贴整理需要桌面版或已开启的网页版服务。":
+    "Tidying pasted notes needs the desktop app or a running web service.",
+  粘贴整理使用的模型: "Model for tidy-up",
+  模型来源: "Model source",
+  "本机模型（Ollama / LM Studio）": "Local model (Ollama / LM Studio)",
+  "云端模型（使用上方配置）": "Cloud model (uses the settings above)",
+  本机模型地址: "Local model URL",
+  本机模型名: "Local model name",
+  "只发送脱敏文本（密码、私钥、验证码换成占位符）":
+    "Send redacted text only (passwords, keys and codes become placeholders)",
+  粘贴一段杂乱资料: "Paste messy notes",
+  "已粘贴 {0} 个字符，点上面的按钮开始整理。":
+    "{0} characters pasted. Use a button above to tidy them.",
+  "把杂乱资料粘贴给 AI 时，先用本地规则拆成条目，再让这里的模型补齐字段。本机模型数据不出这台电脑；云端模型默认只收脱敏文本。":
+    "When you paste messy notes, local rules split them into records first, then this model fills in fields. A local model keeps the data on this machine; cloud models receive redacted text by default.",
+  "把账单、聊天记录、表格里抄出来的资料整段粘进来，每行一条也行。本地先拆成条目，再加上模型补充的字段；不会自动写入任何资料。":
+    "Paste a whole block of notes copied from bills, chats or spreadsheets, one record per line is fine. Local rules split them into records, the model adds fields, and nothing is written automatically.",
+  "账单、聊天记录、表格都行；先本机拆成条目，再让模型补齐字段，不会自动写入。":
+    "Bills, chats or spreadsheets; local rules split records first, then a model fills in fields. Nothing is written automatically.",
+  "Ollama 默认地址是 http://127.0.0.1:11434/v1，LM Studio 是 http://127.0.0.1:1234/v1；局域网地址也可以。":
+    "Ollama defaults to http://127.0.0.1:11434/v1, LM Studio to http://127.0.0.1:1234/v1; LAN addresses work too.",
+  "例如：\n阿里云 47.100.1.2 root 密码 xxxx 到期 2026-05-01 ¥99/月\nexample.com 注册商 阿里云 到期 2026-08-12 ¥55/年":
+    "For example:\nAliyun 47.100.1.2 root password xxxx expires 2026-05-01 ¥99/month\nexample.com registrar Aliyun expires 2026-08-12 ¥55/year",
+  "这是我粘贴整理后的结果。请对照已保存的资料，逐项告诉我哪些需要更新、哪些是新的，并给出可审阅的修改建议；资料里判断不了的先问我。\n\n{0}":
+    "This is my tidied paste. Compare it with the saved assets, tell me item by item what needs updating and what is new, and propose reviewable changes; ask me about anything the data cannot settle.\n\n{0}",
 };

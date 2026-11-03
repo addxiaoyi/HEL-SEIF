@@ -204,6 +204,7 @@ contextBridge.exposeInMainWorld("sinan", {
     saveConfig: (config) => unwrap(ipcRenderer.invoke("agent:save-config", config)),
     models: () => unwrap(ipcRenderer.invoke("agent:models")),
     test: () => unwrap(ipcRenderer.invoke("agent:test")),
+    parseIntake: (request) => unwrap(ipcRenderer.invoke("agent:parse-intake", request)),
     run: (request) => unwrap(ipcRenderer.invoke("agent:run", request)),
     cancel: (id) => unwrap(ipcRenderer.invoke("agent:cancel", id)),
     knowledge: () => unwrap(ipcRenderer.invoke("agent:knowledge")),

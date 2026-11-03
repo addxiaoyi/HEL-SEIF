@@ -1509,3 +1509,71 @@ test("一键整理工具返回按优先级排好的只读清点，并附可引�
   assert.equal(f.requests.length, 2);
   assert.ok(result.sourceItems.some((item) => item.title === "一键整理清单"));
 });
+test("粘贴整理先本地拆条目，本机模型只补齐字段", async (t) => {
+  const f = await fixture(t, (_req, res, body) => {
+    const prompt = body?.messages?.at(-1)?.content ?? "";
+    assert.match(prompt, /阿里云/);
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(
+      JSON.stringify({
+        model: "local-intake",
+        choices: [
+          {
+            message: {
+              role: "assistant",
+              content: JSON.stringify({
+                entries: [
+                  {
+                    index: 0,
+                    title: "阿里云主机",
+                    fields: {
+                      expiresAt: "2026-05-01",
+                      billing: { amount: 99, currency: "CNY", cycle: "month" },
+                    },
+                  },
+                  { index: 99, title: "不存在的条目" },
+                ],
+              }),
+            },
+          },
+        ],
+      }),
+    );
+  });
+  const current = await f.service.config();
+  await f.service.saveConfig({
+    ...current,
+    intakeMode: "local",
+    intakeBaseUrl: current.baseUrl,
+    intakeModel: "local-intake",
+  });
+  const result = await f.service.parseIntake({
+    text: "阿里云 47.100.1.2 root 密码 Abc123!",
+  });
+  assert.equal(f.requests.length, 1);
+  assert.equal(result.bundle.entries.length, 1);
+  assert.equal(result.mode, "local");
+  assert.equal(result.error, "");
+  assert.equal(result.bundle.entries[0].title, "阿里云主机");
+  assert.ok(result.bundle.entries[0].known.some((item) => item.field === "expiresAt"));
+  assert.ok(result.bundle.entries[0].known.some((item) => item.field === "billing"));
+});
+
+test("粘贴整理可以只用本地规则，不请求模型", async (t) => {
+  const f = await fixture(t, () => {
+    throw new Error("不应该请求模型");
+  });
+  const result = await f.service.parseIntake({
+    text: "example.com 到期 2026-08-12 ¥55/年",
+    useModel: false,
+  });
+  assert.equal(f.requests.length, 0);
+  assert.equal(result.bundle.entries[0].kind, "domain");
+  assert.ok(result.bundle.entries[0].known.some((item) => item.field === "expiresAt"));
+});
+
+test("粘贴整理拒绝空内容与超长内容", async (t) => {
+  const f = await fixture(t, () => {});
+  await assert.rejects(() => f.service.parseIntake({ text: "   " }), /1 到 20000/);
+  await assert.rejects(() => f.service.parseIntake({ text: "x".repeat(20001) }), /1 到 20000/);
+});

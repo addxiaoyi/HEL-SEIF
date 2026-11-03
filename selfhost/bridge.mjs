@@ -558,6 +558,7 @@ export function createWebBridge({
     "agent:save-config": (config) => agent.saveConfig(config),
     "agent:models": () => agent.models(),
     "agent:test": () => agent.test(),
+    "agent:parse-intake": (request) => agent.parseIntake(request),
     "agent:run": (request) => agent.run(request),
     "agent:cancel": (id) => agent.cancel(id),
     "agent:knowledge": () => agent.knowledge(),

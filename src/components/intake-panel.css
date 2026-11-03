@@ -1,0 +1,176 @@
+/* 「粘贴整理」面板：与助手页的卡片同一套变量，不引入新的视觉语言。 */
+.intake-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.intake-hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-meta);
+  line-height: 1.6;
+}
+
+.intake-input {
+  min-height: 168px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--text-meta);
+  line-height: 1.6;
+}
+
+.intake-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.intake-mode {
+  margin-left: auto;
+  color: var(--text-subtle);
+  font-size: var(--text-2xs);
+}
+
+.intake-error {
+  margin: 0;
+  border-radius: var(--radius-md);
+  background: var(--surface-2, transparent);
+  padding: 8px 10px;
+  color: var(--text-crit);
+  font-size: var(--text-meta);
+}
+
+.intake-result {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.intake-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-meta);
+}
+
+.intake-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 8px;
+  color: var(--text-muted);
+}
+
+.intake-chip b {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.intake-chip-gap {
+  border-style: dashed;
+  color: var(--text-warn, var(--text-muted));
+}
+
+.intake-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.intake-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+}
+
+.intake-entry-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-meta);
+}
+
+.intake-kind {
+  border-radius: 4px;
+  background: var(--surface-2, var(--line));
+  padding: 1px 6px;
+  color: var(--text-muted);
+  font-size: var(--text-2xs);
+}
+
+.intake-saved,
+.intake-secret {
+  border-radius: 4px;
+  padding: 1px 6px;
+  background: var(--line);
+  color: var(--text-subtle);
+  font-size: var(--text-2xs);
+}
+
+.intake-reason {
+  margin: 0;
+  color: var(--text-subtle);
+  font-size: var(--text-2xs);
+}
+
+.intake-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 4px 12px;
+  margin: 0;
+  font-size: var(--text-meta);
+}
+
+.intake-fields div {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.intake-fields dt {
+  color: var(--text-subtle);
+  white-space: nowrap;
+}
+
+.intake-fields dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.intake-fields-inferred dd {
+  color: var(--text-muted);
+}
+
+.intake-missing {
+  margin: 0;
+  color: var(--text-warn, var(--text-muted));
+  font-size: var(--text-2xs);
+}
+
+.intake-questions {
+  margin: 0;
+  padding-left: 16px;
+  color: var(--text-muted);
+  font-size: var(--text-2xs);
+  line-height: 1.6;
+}
+
+.intake-ready {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--text-subtle);
+  font-size: var(--text-2xs);
+}

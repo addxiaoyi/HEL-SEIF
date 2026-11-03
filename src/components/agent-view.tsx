@@ -29,6 +29,7 @@ import {
   MessageCircleQuestion,
   NotebookPen,
   Sparkles,
+  ClipboardPaste,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useShallow } from "zustand/react/shallow";
@@ -47,6 +48,7 @@ import { usePresence } from "@/lib/motion";
 import { useDocuments } from "@/lib/documents";
 import "./agent-workspace.css";
 import { LogoMark } from "./logo";
+import { IntakePanel } from "./intake-panel";
 import { Button } from "./ui/button";
 import { TimeAgo } from "./ui/time-ago";
 import { type Block, type SecretField } from "@/lib/agent";
@@ -101,6 +103,7 @@ export function AgentView() {
   const start = useConversations((s) => s.start);
   const [draft, setDraft] = useState("");
   const [configOpen, setConfigOpen] = useState(false);
+  const [intakeOpen, setIntakeOpen] = useState(false);
   const [model, setModel] = useState("");
   const [allowMailboxChecks, setAllowMailboxChecks] = useState(false);
   const [allowDocumentContent, setAllowDocumentContent] = useState(false);
@@ -493,6 +496,7 @@ export function AgentView() {
                     fillDraft(t(TIDY_PROMPT));
                     setAllowWorkspaceChanges(true);
                   }}
+                  onIntake={() => setIntakeOpen(true)}
                 />
               ) : (
                 <div className="agent-message-list">
@@ -647,6 +651,17 @@ export function AgentView() {
       <aside className="agent-context-desktop" aria-label={t("对话上下文")}>
         {context}
       </aside>
+      {intakeOpen && (
+        <EditorDialog title={t("粘贴整理")} onClose={() => setIntakeOpen(false)}>
+          <IntakePanel
+            onClose={() => setIntakeOpen(false)}
+            onAsk={(question) => {
+              fillDraft(question);
+              setAllowWorkspaceChanges(true);
+            }}
+          />
+        </EditorDialog>
+      )}
       {contextOpen && (
         <EditorDialog title={t("对话上下文")} onClose={() => setContextOpen(false)}>
           {context}
@@ -660,9 +675,11 @@ export function AgentView() {
 function Welcome({
   onPick,
   onTidy,
+  onIntake,
 }: {
   onPick: (q: string, changes?: boolean) => void;
   onTidy: () => void;
+  onIntake: () => void;
 }) {
   const data = useAppStore(
     useShallow((s) => ({
@@ -797,6 +814,18 @@ function Welcome({
           </div>
         </div>
       )}
+      <div className="agent-intake-entry">
+        <button type="button" className="agent-intake-open" onClick={onIntake}>
+          <ClipboardPaste aria-hidden="true" />
+          <span>
+            <strong>{t("粘贴一段杂乱资料")}</strong>
+            <small>
+              {t("账单、聊天记录、表格都行；先本机拆成条目，再让模型补齐字段，不会自动写入。")}
+            </small>
+          </span>
+          <ArrowUpRight aria-hidden="true" />
+        </button>
+      </div>
       <div className="agent-welcome-groups">
         {groups.map(({ icon: Icon, title, prompts }) => (
           <section key={title} aria-label={t(title)}>
