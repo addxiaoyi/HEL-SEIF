@@ -8,10 +8,10 @@ import { windowsAppId, migrateLegacyWindowsShortcut } from "./windows-identity.m
 import * as identity from "./windows-identity.mjs";
 test("Windows 开发版与正式版使用不同应用身份", () => {
   assert.notEqual(windowsAppId(false), windowsAppId(true));
-  assert.equal(windowsAppId(true), "dev.songwo.zhiyu");
-  assert.notEqual(windowsAppId(true), "dev.songwo.nanpad", "不再复用旧任务栏分组缓存");
+  assert.equal(windowsAppId(true), "dev.helself.app");
+  assert.notEqual(windowsAppId(true), "dev.helself.nanpad", "不再复用旧任务栏分组缓存");
 });
-test("只备份抢占知屿身份的 Electron 快捷方式，重复运行无副作用", async () => {
+test("只备份抢占Helself身份的 Electron 快捷方式，重复运行无副作用", async () => {
   const directory = await mkdtemp(join(tmpdir(), "nanpad-identity-"));
   const file = join(directory, "Electron.lnk");
   const options = {
@@ -19,7 +19,7 @@ test("只备份抢占知屿身份的 Electron 快捷方式，重复运行无副�
     backupDirectory: join(directory, "backups"),
     readShortcut: () => ({
       target: "C:\\runtime\\electron.exe",
-      appUserModelId: "dev.songwo.nanpad",
+      appUserModelId: "dev.helself.nanpad",
     }),
   };
   try {
@@ -34,7 +34,7 @@ test("只备份抢占知屿身份的 Electron 快捷方式，重复运行无副�
 });
 
 async function appFixture(t, { packaged = true, customPaths = false } = {}) {
-  const root = await mkdtemp(join(tmpdir(), "zhiyu-identity-"));
+  const root = await mkdtemp(join(tmpdir(), "helself-identity-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   const paths = customPaths
     ? { userData: join(root, "custom-profile"), sessionData: join(root, "custom-session") }
@@ -59,10 +59,10 @@ async function appFixture(t, { packaged = true, customPaths = false } = {}) {
   };
 }
 
-test("显示名更改为知屿后仍使用原 Nanpad 数据与会话目录", async (t) => {
+test("显示名更改为Helself后仍使用原 Nanpad 数据与会话目录", async (t) => {
   const { app, root } = await appFixture(t);
   identity.initializeAppIdentity(app, { platform: "win32" });
-  assert.equal(app.getName(), "知屿 Zhiyu");
+  assert.equal(app.getName(), "Helself");
   assert.equal(app.getPath("userData"), join(root, "Nanpad"));
   assert.equal(app.getPath("sessionData"), join(root, "Nanpad"));
 });
@@ -80,7 +80,7 @@ test("开发测试的数据和会话都留在隔离目录，避免更名时写�
   const { app, root } = await appFixture(t, { packaged: false });
   const isolated = join(root, "isolated-profile");
   identity.initializeAppIdentity(app, { testDataDirectory: isolated, platform: "win32" });
-  assert.equal(app.getName(), "知屿 Zhiyu");
+  assert.equal(app.getName(), "Helself");
   assert.equal(app.getPath("userData"), isolated);
   assert.equal(app.getPath("sessionData"), isolated);
   await assert.rejects(stat(join(root, "Nanpad")), { code: "ENOENT" });
@@ -121,12 +121,12 @@ test("其他应用、独立开发身份与正式版快捷方式保持原样", as
 });
 
 test("便携标记只在 Windows 正式程序旁生效，显式用户目录优先", () => {
-  const execPath = String.raw`D:\Tools\Zhiyu\Zhiyu.exe`;
-  const marker = String.raw`D:\Tools\Zhiyu\portable.txt`;
+  const execPath = String.raw`D:\Tools\Helself\Helself.exe`;
+  const marker = String.raw`D:\Tools\Helself\portable.txt`;
   const exists = (path) => path === marker;
   const base = { packaged: true, platform: "win32", execPath, argv: [execPath], exists };
   assert.equal(identity.PORTABLE_MARKER, "portable.txt");
-  assert.equal(identity.portableDataDirectory(base), String.raw`D:\Tools\Zhiyu\data`);
+  assert.equal(identity.portableDataDirectory(base), String.raw`D:\Tools\Helself\data`);
   assert.equal(identity.portableDataDirectory({ ...base, exists: () => false }), null);
   assert.equal(identity.portableDataDirectory({ ...base, packaged: false }), null);
   assert.equal(identity.portableDataDirectory({ ...base, platform: "darwin" }), null);
@@ -138,7 +138,7 @@ test("便携标记只在 Windows 正式程序旁生效，显式用户目录优�
 
 test("便携模式的资料与会话都写入程序旁目录", async (t) => {
   const { app, root } = await appFixture(t);
-  const portable = join(root, "Zhiyu", "data");
+  const portable = join(root, "Helself", "data");
   const result = identity.initializeAppIdentity(app, {
     portableDirectory: portable,
     platform: "win32",

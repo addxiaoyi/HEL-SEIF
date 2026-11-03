@@ -8,7 +8,7 @@ import { t } from "@/lib/i18n";
 import { useVault } from "@/lib/vault-state";
 import { Button } from "./ui/button";
 
-const RELEASES_URL = "https://github.com/Songwo/zhiyu/releases/latest";
+const RELEASES_URL = "https://github.com/addxiaoyi/HEL-SEIF/releases/latest";
 
 export function ExtensionSettings() {
   const bridge = desktop()?.extension;
@@ -30,7 +30,7 @@ export function ExtensionSettings() {
   // 与本机同版本的直链；拿不到版本或链接失败时回退到发布页。
   async function downloadExtension() {
     const url = version
-      ? `https://github.com/Songwo/zhiyu/releases/download/v${version}/Zhiyu-${version}-browser-extension.zip`
+      ? `https://github.com/addxiaoyi/HEL-SEIF/releases/download/v${version}/Helself-${version}-browser-extension.zip`
       : RELEASES_URL;
     try {
       await desktop()?.openExternal(url);
@@ -131,12 +131,12 @@ export function ExtensionSettings() {
       </div>
       <p className="text-meta leading-relaxed text-muted">
         {t(
-          "配对并解锁后，登录页会建议本站账号，选择后填写，不自动提交登录。提交新账号时可确认保存；支持的在线文档会提示保存到知屿，点击后才读取当前可见正文。自动提示可在插件中关闭。",
+          "配对并解锁后，登录页会建议本站账号，选择后填写，不自动提交登录。提交新账号时可确认保存；支持的在线文档会提示保存到Helself，点击后才读取当前可见正文。自动提示可在插件中关闭。",
         )}
       </p>
       <p className="text-meta leading-relaxed text-muted">
         {t(
-          "已有 Chrome / Edge 密码可在「密钥库 → 浏览器密码」中通过 CSV 批量迁移。插件不会读取浏览器的原生密码库；知屿锁定后停止读取和填写账号。",
+          "已有 Chrome / Edge 密码可在「密钥库 → 浏览器密码」中通过 CSV 批量迁移。插件不会读取浏览器的原生密码库；Helself锁定后停止读取和填写账号。",
         )}
       </p>
       {!bridge ? (

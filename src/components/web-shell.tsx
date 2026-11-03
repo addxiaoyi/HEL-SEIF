@@ -92,8 +92,8 @@ export function WebTopBar() {
           >
             <LogoMark className="size-7 shrink-0" />
             <span className="web-brand-name">
-              {t("知屿")}
-              <span>Zhiyu</span>
+              {t("Helself")}
+              <span>{t("个人知识与资产空间")}</span>
             </span>
           </button>
 
@@ -251,7 +251,7 @@ function MoreMenu({ active }: { active: boolean }) {
 }
 
 function AccountMenu() {
-  const name = useProfile((s) => s.profile?.name) || t("知屿用户");
+  const name = useProfile((s) => s.profile?.name) || t("Helself用户");
   const avatarDataUrl = useProfile((s) => s.profile?.avatarDataUrl);
   const avatar = useMemo(() => safeImageDataUrl(avatarDataUrl), [avatarDataUrl]);
   const unlocked = useVault((s) => s.unlocked);
@@ -287,7 +287,7 @@ function AccountMenu() {
           {item(t("键盘快捷键"), () => window.dispatchEvent(new Event(SHORTCUTS_EVENT)))}
           <Menu.Separator className="web-account-sep" />
           {item(t("导出 JSON 快照"), () => {
-            downloadJson("zhiyu-assets.json", snapshotOf(store.getState()));
+            downloadJson("helself-assets.json", snapshotOf(store.getState()));
             store.getState().log(t("已导出资产快照"));
           })}
           {item(t("导入 JSON 快照"), () => {
@@ -345,8 +345,8 @@ function WebMenuSheet({ open, onClose }: { open: boolean; onClose: () => void })
         <span className="web-brand">
           <LogoMark className="size-7 shrink-0" />
           <span className="web-brand-name">
-            {t("知屿")}
-            <span>Zhiyu</span>
+            {t("Helself")}
+            <span>{t("个人知识与资产空间")}</span>
           </span>
         </span>
         <button

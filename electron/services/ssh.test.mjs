@@ -62,8 +62,11 @@ test(
     const manager = new SshManager(() => {});
     let b = null;
     try {
+      assert.equal(await manager.hostKeyFor(target), null);
       // First use pins the fingerprint, and the immediate reconnect verifies it.
       assert.match((await manager.test(target, CREDENTIAL)).message, /tester/);
+      const pinned = await manager.hostKeyFor(target);
+      assert.match(pinned, /^SHA256:/);
       assert.match((await manager.test(target, CREDENTIAL)).message, /tester/);
 
       // Same address, different host key: a man in the middle or a reinstalled
@@ -76,7 +79,11 @@ test(
 
       // After a deliberate reset the new key is pinned in turn.
       await manager.resetHostKey(target);
+      assert.equal(await manager.hostKeyFor(target), null);
       assert.match((await manager.test(target, CREDENTIAL)).message, /tester/);
+      const repinned = await manager.hostKeyFor(target);
+      assert.match(repinned, /^SHA256:/);
+      assert.notEqual(repinned, pinned);
     } finally {
       await a.stop().catch(() => {});
       if (b) await b.stop().catch(() => {});

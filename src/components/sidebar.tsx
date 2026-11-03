@@ -260,7 +260,7 @@ export function Sidebar({
         <div className="sidebar-brand drag-strip">
           <LogoMark className="sidebar-brand-mark size-7 shrink-0" />
           <span className="sidebar-item-label sidebar-brand-name">
-            {t("知屿")} <span>Zhiyu</span>
+            {t("Helself")} <span>{t("个人知识与资产空间")}</span>
           </span>
         </div>
 
@@ -454,7 +454,7 @@ function ProfileMenu({ compact = false }: { compact?: boolean }) {
   const importSnapshot = useAppStore((s) => s.importSnapshot);
   const vaultUnlocked = useVault((s) => s.unlocked);
   const lockVault = useVault((s) => s.lock);
-  const name = useProfile((s) => s.profile?.name) || "知屿用户";
+  const name = useProfile((s) => s.profile?.name) || "Helself用户";
   const avatarDataUrl = useProfile((s) => s.profile?.avatarDataUrl);
   const avatar = useMemo(() => safeImageDataUrl(avatarDataUrl), [avatarDataUrl]);
   const [open, setOpen] = useState(false);
@@ -561,7 +561,7 @@ function ProfileMenu({ compact = false }: { compact?: boolean }) {
           {item(t("个人资料"), () => useAppStore.getState().openSettingsPage("profile"))}
           {item(t("导出 JSON 快照"), () => {
             const s = useAppStore.getState();
-            downloadJson("zhiyu-assets.json", snapshotOf(s));
+            downloadJson("helself-assets.json", snapshotOf(s));
             log(t("已导出资产快照"));
           })}
           {item(t("导入 JSON 快照"), () => {

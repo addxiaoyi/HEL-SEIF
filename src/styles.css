@@ -162,7 +162,8 @@
   opacity: 0.4;
 }
 .terminal-tool:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--color-link) 70%, transparent);
+  /* 80% 混合：即使落在纸白底上，焦点环对白底也有 4.9:1，浅色主题不再靠位置侥幸达标。 */
+  outline: 2px solid color-mix(in srgb, var(--color-link) 80%, transparent);
   outline-offset: 1px;
 }
 .terminal-tool-text {
@@ -591,7 +592,17 @@
   --color-ok: #1e9e68;
   --color-warn: #e09f1f;
   --color-crit: #e5484d;
-  --color-link: #3f6fd8;
+
+  /* 品牌色：Ink/Paper 是底色，Lime 只作填充与点缀，Pine/Mint 分别承担浅色与
+     深色主题的链接与主按钮，Clay 是少量暖色点缀。 */
+  --color-brand-ink: #111315;
+  --color-brand-paper: #f6f3ea;
+  --color-brand-lime: #c8f169;
+  --color-brand-pine: #1d5b4a;
+  --color-brand-mint: #7fe0bf;
+  --color-brand-clay: #f2764f;
+
+  --color-link: #0e5a50;
   --color-glass: rgba(20, 20, 18, 0.72);
   --color-glass-border: rgba(255, 255, 255, 0.14);
   --color-term: #d7dbdf;
@@ -615,7 +626,7 @@
   --text-body: 0.9375rem;
   --text-body--line-height: 1.55;
 
-  --tracking-wordmark: 0.14em;
+  --tracking-wordmark: 0.01em;
 
   /* Named widths for the three-column shell. */
   --container-rail: 340px;
@@ -655,6 +666,10 @@
   --color-ok: #3dd68c;
   --color-warn: #f2b84b;
   --color-crit: #ff6369;
+
+  /* Mint 在深色底上才够亮；Pine 在这里会沉进画布。 */
+  --color-link: #7fe0bf;
+
   --color-glass: rgba(10, 10, 9, 0.8);
   --color-glass-border: rgba(255, 255, 255, 0.1);
 
@@ -6415,7 +6430,7 @@ p {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #8db0f5, #3b6fe0);
+  background: linear-gradient(90deg, #c8f169, #7fe0bf);
   transition: width var(--dur-slow) var(--ease-out-soft);
 }
 .quick-start-steps {

@@ -162,6 +162,11 @@ export const webBridge: HostBridge = {
       webInvoke("ssh:open", target, size, await sshCredential(target.id)),
     probe: async (target) => webInvoke("ssh:probe", target, await sshCredential(target.id)),
     test: (target, credential) => webInvoke("ssh:test", target, credential),
+    testStored: async (target) => {
+      const credential = await sshCredential(target.id);
+      return webInvoke("ssh:test", target, credential);
+    },
+    hostKey: (target) => webInvoke("ssh:host-key", target),
     resetHostKey: (target) => webInvoke("ssh:reset-host-key", target),
     close: (sessionId) => webInvoke("ssh:close", sessionId),
     write: queueWrite,

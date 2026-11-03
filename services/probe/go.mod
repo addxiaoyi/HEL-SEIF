@@ -1,4 +1,4 @@
-module github.com/Songwo/zhiyu/services/probe
+module github.com/addxiaoyi/HEL-SEIF/services/probe
 
 go 1.27.2
 

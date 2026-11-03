@@ -569,7 +569,7 @@ test("磁盘上的密钥库暂时缺失或被目录占位时沿用内存副本�
 });
 
 async function legacySetup(t, records = { keep: { value: "original" } }) {
-  const directory = await mkdtemp(join(tmpdir(), "zhiyu-vault-restore-"));
+  const directory = await mkdtemp(join(tmpdir(), "helself-vault-restore-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const file = join(directory, "vault.enc");
   await writeFile(file, writeLegacyVault(OLD_MASTER, records));
@@ -710,7 +710,7 @@ test(
 );
 
 test("版本与 KDF 严格匹配，非法 v2 不能退回 legacy，运算量不能越过当前预算", async (t) => {
-  const directory = await mkdtemp(join(tmpdir(), "zhiyu-vault-kdf-"));
+  const directory = await mkdtemp(join(tmpdir(), "helself-vault-kdf-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const file = join(directory, "vault.enc");
   const legacy = JSON.parse(writeLegacyVault("123456", { keep: { value: "legacy" } }));

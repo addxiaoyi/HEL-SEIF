@@ -6,7 +6,7 @@ import { _electron as electron } from "playwright";
 import { completeOnboarding } from "./onboarding-helper.mjs";
 
 // 回归：storage:clear 曾把 scope 当第二个参数读取，两个清理按钮都报「未知的清理范围」。
-const directory = await mkdtemp(join(tmpdir(), "zhiyu-storage-clear-"));
+const directory = await mkdtemp(join(tmpdir(), "helself-storage-clear-"));
 const env = { ...process.env, NANPAD_TEST_DATA_DIR: directory };
 delete env.ELECTRON_RUN_AS_NODE;
 delete env.SINAN_DEV_URL;

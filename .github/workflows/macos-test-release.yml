@@ -89,11 +89,11 @@ jobs:
               raise RuntimeError("源码版本与输入版本不一致")
 
           metadata = api(f"actions/runs/{run_id}/artifacts?per_page=100")["artifacts"]
-          work = pathlib.Path(tempfile.mkdtemp(prefix="zhiyu-mac-test-"))
+          work = pathlib.Path(tempfile.mkdtemp(prefix="helself-mac-test-"))
           reports = []
           files = []
           for arch, expected_cpu in [("arm64", 0x0100000C), ("x64", 0x01000007)]:
-              name = f"Zhiyu-mac-{arch}-unsigned"
+              name = f"Helself-mac-{arch}-unsigned"
               candidates = [item for item in metadata if item["name"] == name]
               if len(candidates) != 1:
                   raise RuntimeError(f"构建必须包含唯一的 {arch} 附件")
@@ -112,7 +112,7 @@ jobs:
                   raise RuntimeError("Actions 原始附件的大小或 SHA-256 不匹配")
 
               archive_name = name + ".zip"
-              target = work / f"Zhiyu-{version}-mac-{arch}-unsigned.zip"
+              target = work / f"Helself-{version}-mac-{arch}-unsigned.zip"
               with zipfile.ZipFile(wrapper) as outer:
                   if outer.namelist() != [archive_name]:
                       raise RuntimeError("附件归档中出现非预期文件")
@@ -126,14 +126,14 @@ jobs:
                       raise RuntimeError("程序归档包含无效路径")
                   if sum(entry.file_size for entry in app_zip.infolist()) > 2 * 1024 * 1024 * 1024:
                       raise RuntimeError("程序解压大小超出预期")
-                  app = "Zhiyu.app/Contents/"
+                  app = "Helself.app/Contents/"
                   info_entry = app_zip.getinfo(app + "Info.plist")
                   if info_entry.file_size > 1024 * 1024:
                       raise RuntimeError("应用资料文件异常")
                   info = plistlib.loads(app_zip.read(info_entry))
-                  if info["CFBundleShortVersionString"] != version or info["CFBundleExecutable"] != "Zhiyu":
+                  if info["CFBundleShortVersionString"] != version or info["CFBundleExecutable"] != "Helself":
                       raise RuntimeError("程序名称或版本不匹配")
-                  executable = app_zip.getinfo(app + "MacOS/Zhiyu")
+                  executable = app_zip.getinfo(app + "MacOS/Helself")
                   if not (executable.external_attr >> 16) & 0o111:
                       raise RuntimeError("程序缺少可执行权限")
                   with app_zip.open(executable) as binary:
@@ -160,7 +160,7 @@ jobs:
           expected_files = {path.name: {"sha256": digest(path), "bytes": path.stat().st_size} for path in files}
 
           notes = work / "release-notes.md"
-          notes.write_text(f"""# 知屿 Zhiyu {version} · macOS 公开测试版
+          notes.write_text(f"""# Helself {version} · macOS 公开测试版
 
           感谢社区帮助测试！现在将 Apple Silicon 和 Intel 两种架构的程序放到 Release，方便直接下载。
 
@@ -170,10 +170,10 @@ jobs:
 
           | 设备 | 下载文件 |
           | --- | --- |
-          | Apple Silicon（M 系列芯片） | `Zhiyu-{version}-mac-arm64-unsigned.zip` |
-          | Intel 芯片 Mac | `Zhiyu-{version}-mac-x64-unsigned.zip` |
+          | Apple Silicon（M 系列芯片） | `Helself-{version}-mac-arm64-unsigned.zip` |
+          | Intel 芯片 Mac | `Helself-{version}-mac-x64-unsigned.zip` |
 
-          下载适合芯片的 ZIP，解压后将 `Zhiyu.app` 放到「应用程序」。校验值见 `SHA256SUMS.txt`，构建来源和验证信息见 `BUILD-VERIFICATION.json`。
+          下载适合芯片的 ZIP，解压后将 `Helself.app` 放到「应用程序」。校验值见 `SHA256SUMS.txt`，构建来源和验证信息见 `BUILD-VERIFICATION.json`。
 
           ## 已验证的内容
 
@@ -193,7 +193,7 @@ jobs:
 
           - 源码提交：[`{source_sha}`](https://github.com/{repo}/commit/{source_sha})
           - 构建记录：[macOS 双架构构建 #{run_id}](https://github.com/{repo}/actions/runs/{run_id})
-          - 完整功能与更新日志：[知屿 {version}](https://github.com/{repo}/releases/tag/v{version})
+          - 完整功能与更新日志：[Helself {version}](https://github.com/{repo}/releases/tag/v{version})
           """.replace("\n          ", "\n"), encoding="utf-8")
 
           # 同标签只能补完草稿或复验同一份已发布附件，不能覆盖不同来源的程序。
@@ -232,7 +232,7 @@ jobs:
           else:
               if not existing:
                   subprocess.run(["gh", "release", "create", tag, "--repo", repo, "--target", source_sha,
-                                  "--draft", "--prerelease", "--title", f"知屿 Zhiyu {version} · macOS 公开测试版",
+                                  "--draft", "--prerelease", "--title", f"Helself {version} · macOS 公开测试版",
                                   "--notes-file", str(notes)], check=True)
               else:
                   subprocess.run(["gh", "release", "edit", tag, "--repo", repo, "--notes-file", str(notes)], check=True)

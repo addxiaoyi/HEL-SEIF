@@ -6,9 +6,9 @@ import { request } from "node:http";
 import { _electron as electron } from "playwright";
 import { completeOnboarding } from "./onboarding-helper.mjs";
 
-const directory = await mkdtemp(join(tmpdir(), "zhiyu-passwords-desktop-"));
+const directory = await mkdtemp(join(tmpdir(), "helself-passwords-desktop-"));
 const input = join(directory, "synthetic-input.csv");
-const outputDirectory = await mkdtemp(join(tmpdir(), "zhiyu-passwords-export-"));
+const outputDirectory = await mkdtemp(join(tmpdir(), "helself-passwords-export-"));
 const output = join(outputDirectory, "synthetic-export.csv");
 const secret = "synthetic-password-unique-2026";
 await writeFile(

@@ -54,7 +54,7 @@ test("来源白名单：IP、网段、private 关键字、IPv4 映射地址；�
 
 test("来源白名单写错时直接报错，不会悄悄变成不限制", () => {
   for (const bad of ["abc", "1.2.3.4/33", "1.2.3.4/x", "::1/129", "1.2.3", "10.0.0.0/8, oops"])
-    assert.throws(() => parseAllowedNets(bad), /ZHIYU_ALLOWED_NETS/, bad);
+    assert.throws(() => parseAllowedNets(bad), /HELSELF_ALLOWED_NETS/, bad);
   assert.equal(normalizeIp("[::ffff:1.2.3.4]"), "1.2.3.4");
   assert.equal(normalizeIp("fe80::1%eth0"), "fe80::1");
 });
@@ -178,8 +178,8 @@ const quiet = { log() {}, error() {} };
 const account = { username: "song", password: "home-and-office-2026" };
 
 async function rig(t, options = {}) {
-  const root = options.root ?? (await mkdtemp(join(tmpdir(), "zhiyu-sec-")));
-  const staticDir = await mkdtemp(join(tmpdir(), "zhiyu-sec-static-"));
+  const root = options.root ?? (await mkdtemp(join(tmpdir(), "helself-sec-")));
+  const staticDir = await mkdtemp(join(tmpdir(), "helself-sec-static-"));
   await writeFile(join(staticDir, "index.html"), "<!doctype html>");
   const calls = [];
   const web = await createWebServer({
@@ -211,7 +211,7 @@ async function rig(t, options = {}) {
         method,
         headers: {
           ...(cookie ? { cookie } : {}),
-          ...(method === "GET" ? {} : { "content-type": "application/json", "x-zhiyu": "1" }),
+          ...(method === "GET" ? {} : { "content-type": "application/json", "x-helself": "1" }),
           ...headers,
         },
         body: raw ?? (body === undefined ? undefined : JSON.stringify(body)),
@@ -247,7 +247,7 @@ test("来源白名单：不在名单里的连接被直接断开，什么都不�
 });
 
 test("服务器启动时来源白名单写错会直接失败", async (t) => {
-  await assert.rejects(rig(t, { server: { allowedNets: "10.0.0.0/99" } }), /ZHIYU_ALLOWED_NETS/);
+  await assert.rejects(rig(t, { server: { allowedNets: "10.0.0.0/99" } }), /HELSELF_ALLOWED_NETS/);
 });
 
 test("未登录的人只能看到登录页：状态接口不暴露版本和用户名，数据接口一律 401，其他路径一律跳去登录", async (t) => {

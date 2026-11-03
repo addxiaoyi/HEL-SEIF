@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
 import { lstat } from "node:fs/promises";
 
-const PAGE = "https://github.com/Songwo/zhiyu/releases/latest";
+const PAGE = "https://github.com/addxiaoyi/HEL-SEIF/releases/latest";
 const MANUAL_UPDATE = "便携版请在发布页下载新的便携压缩包，解压覆盖程序文件，保留 data 文件夹。";
 
 /** 安装前再次核对已下载文件，拒绝被替换或截断的安装包。 */

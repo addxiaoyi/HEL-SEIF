@@ -53,7 +53,7 @@ function validate() {
   $("#path-error").hidden = valid;
   $("#path-error").textContent = valid
     ? ""
-    : "请输入包含文件夹的 Windows 绝对路径，例如 D:\\Apps\\Zhiyu。";
+    : "请输入包含文件夹的 Windows 绝对路径，例如 D:\\Apps\\Helself。";
   $("#directory").setAttribute("aria-invalid", String(!valid));
   $("#start").disabled = !valid;
   return valid;
@@ -90,7 +90,7 @@ function run() {
   $("#pause").hidden = false;
   $("#retry").hidden = true;
   $("#install-error").hidden = true;
-  $("#install-heading").textContent = "正在准备你的知屿";
+  $("#install-heading").textContent = "正在准备你的Helself";
   $("#install-subtitle").textContent = "把需要的东西放好，很快就能见面。";
   clearInterval(timer);
   timer = setInterval(() => {
@@ -136,8 +136,8 @@ $("#path-dialog").addEventListener("close", () => {
 $("#scenario").addEventListener("change", () => {
   const noDrive = $("#scenario").value === "no-drive";
   $("#directory").value = noDrive
-    ? "C:\\Users\\示例用户\\AppData\\Local\\Programs\\Zhiyu"
-    : "D:\\Apps\\Zhiyu";
+    ? "C:\\Users\\示例用户\\AppData\\Local\\Programs\\Helself"
+    : "D:\\Apps\\Helself";
   $("#path-hint").textContent = noDrive
     ? "模拟未检测到 D 盘：改用当前用户的本地程序目录。"
     : "优先使用 D 盘，程序资料与安装目录分别保存。";

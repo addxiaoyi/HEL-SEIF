@@ -7,7 +7,7 @@ import { chromium } from "playwright";
 import { ExtensionBridge } from "../electron/services/extension-bridge.mjs";
 
 const { version } = JSON.parse(await readFile("package.json", "utf8"));
-const directory = await mkdtemp(join(tmpdir(), "zhiyu-browser-companion-"));
+const directory = await mkdtemp(join(tmpdir(), "helself-browser-companion-"));
 const extension = join(directory, "extension");
 const login =
   '<!doctype html><html><head><meta charset="utf-8"><title>合成登录网站</title><style>body{padding:60px;font:16px system-ui}form{display:grid;gap:12px;max-width:340px}input,button{padding:12px}</style></head><body><h1>欢迎回来</h1><form onsubmit="event.preventDefault();window.loginCount=(window.loginCount||0)+1"><input autocomplete="username" aria-label="网站账号"><input type="password" autocomplete="current-password" aria-label="网站密码"><button type="submit">登录</button></form></body></html>';
@@ -100,7 +100,7 @@ try {
   const fixtureBase = `http://127.0.0.1:${fixture.address().port}`;
   const state = await bridge.start();
   assert.equal(state.running, true, state.error);
-  await cp(resolve(`release/v${version}/zhiyu-browser-extension`), extension, { recursive: true });
+  await cp(resolve(`release/v${version}/helself-browser-extension`), extension, { recursive: true });
   await writeFile(
     join(extension, "bridge-config.mjs"),
     `export const BRIDGE = "http://127.0.0.1:${state.port}";\n`,
@@ -143,7 +143,7 @@ try {
   await popup.goto(`chrome-extension://${id}/popup.html`);
   await popup.getByLabel("桌面配对码").fill(bridge.beginPairing().code);
   await popup.getByRole("button", { name: "连接", exact: true }).click();
-  await popup.getByText("已连接本机知屿", { exact: true }).waitFor();
+  await popup.getByText("已连接本机Helself", { exact: true }).waitFor();
   try {
     await popup.locator(".saved-account").first().waitFor({ timeout: 10000 });
   } catch (error) {
@@ -151,7 +151,7 @@ try {
       reason: await popup.evaluate(async () => {
         const [tab] = await globalThis.chrome.tabs.query({});
         const result = await globalThis.chrome.runtime.sendMessage({
-          type: "zhiyu-list",
+          type: "helself-list",
           tabId: tab.id,
         });
         return { reason: result.reason, ok: result.ok };
@@ -165,14 +165,14 @@ try {
   assert.equal(await popup.locator(".saved-account").count(), 2);
   assert.equal(fills.length, 0, "展示候选不能读取密码");
   await website.reload();
-  await website.locator("[data-zhiyu-companion]").waitFor();
+  await website.locator("[data-helself-companion]").waitFor();
   assert.equal(
-    await website.evaluate(() => document.querySelector("[data-zhiyu-companion]").shadowRoot),
+    await website.evaluate(() => document.querySelector("[data-helself-companion]").shadowRoot),
     null,
   );
   assert.equal(await website.getByLabel("网站密码").inputValue(), "");
   await mkdir("screenshots", { recursive: true });
-  await website.screenshot({ path: "screenshots/zhiyu-v130-browser-accounts.png" });
+  await website.screenshot({ path: "screenshots/helself-v130-browser-accounts.png" });
   await shadowClick(website, "fill-account", 1);
   await waitFor(
     async () => (await website.getByLabel("网站密码").inputValue()) === "personal-secret",
@@ -190,7 +190,7 @@ try {
   await website.getByLabel("网站账号").fill("new@example.test");
   await website.getByLabel("网站密码").fill("new-secret");
   await website.getByRole("button", { name: "登录", exact: true }).click();
-  await website.locator("[data-zhiyu-companion]").waitFor();
+  await website.locator("[data-helself-companion]").waitFor();
   assert.equal(records.size, 2, "自动采集尚未写入密钥库");
   await shadowClick(website, "save-account");
   await waitFor(() => records.size === 3, "确认一次后保存账号");
@@ -202,19 +202,19 @@ try {
   assert.equal(await popup.getByLabel("密码", { exact: true }).getAttribute("type"), "text");
   await popup.getByRole("button", { name: "隐藏密码", exact: true }).click();
   await popup.getByLabel("密码", { exact: true }).fill("newer-secret");
-  await popup.getByRole("button", { name: "加密保存到知屿", exact: true }).click();
+  await popup.getByRole("button", { name: "加密保存到Helself", exact: true }).click();
   await popup.getByRole("status").filter({ hasText: "已加密保存" }).waitFor();
   assert.equal(records.size, 4, "同一账号新密码保存为独立版本");
   assert.equal(await popup.getByLabel("密码", { exact: true }).inputValue(), "");
   await popup.setViewportSize({ width: 380, height: 700 });
-  await popup.screenshot({ path: "screenshots/zhiyu-v130-extension-popup.png", fullPage: true });
+  await popup.screenshot({ path: "screenshots/helself-v130-extension-popup.png", fullPage: true });
   await popup.emulateMedia({ colorScheme: "dark" });
   await popup.waitForFunction(
     () =>
       getComputedStyle(document.querySelector(".saved-account")).backgroundColor ===
-      "rgb(34, 43, 39)",
+      "rgb(26, 28, 30)",
   );
-  await popup.screenshot({ path: "screenshots/zhiyu-v130-extension-dark.png", fullPage: true });
+  await popup.screenshot({ path: "screenshots/helself-v130-extension-dark.png", fullPage: true });
   assert.ok(await popup.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   assert.ok(
     await popup
@@ -298,7 +298,7 @@ try {
   assert.ok(!documents[0].text.includes("隐藏的内部值"));
   documents.length = 0;
 
-  await context.route("https://docs.qq.com/doc/zhiyu-fixture*", (route) =>
+  await context.route("https://docs.qq.com/doc/helself-fixture*", (route) =>
     route.fulfill({
       contentType: "text/html; charset=utf-8",
       body: '<!doctype html><title>合成项目说明</title><h1>合成项目说明</h1><article><p>需要保存的可见项目正文。</p><p hidden>隐藏片段绝不能进入文档</p><form><input value="private-form"><p>表单区域不能导入</p></form><script>window.documentFixture=true</script><p>另一个可见段落。</p></article>',
@@ -306,20 +306,20 @@ try {
   );
   const doc = await context.newPage();
   doc.on("pageerror", (error) => pageErrors.push(error.message));
-  await doc.goto("https://docs.qq.com/doc/zhiyu-fixture?token=private#private");
-  await doc.locator("[data-zhiyu-companion]").waitFor();
+  await doc.goto("https://docs.qq.com/doc/helself-fixture?token=private#private");
+  await doc.locator("[data-helself-companion]").waitFor();
   assert.equal(documents.length, 0);
   // Playwright 的禁用动画样式无法进入 closed shadow，等 200ms 入场动画自然结束后截图。
   await doc.waitForTimeout(250);
   await doc.screenshot({
-    path: "screenshots/zhiyu-v130-document-prompt.png",
+    path: "screenshots/helself-v130-document-prompt.png",
     animations: "disabled",
   });
   await shadowClick(doc, "save-document");
   await waitFor(() => documents.length === 1, "确认后保存可见文档");
   assert.match(documents[0].text, /可见项目正文/);
   assert.ok(!/隐藏片段|表单区域|private-form|window.documentFixture/.test(documents[0].text));
-  assert.equal(documents[0].url, "https://docs.qq.com/doc/zhiyu-fixture?token=private");
+  assert.equal(documents[0].url, "https://docs.qq.com/doc/helself-fixture?token=private");
 
   bridge.revoke();
   await popup.getByRole("button", { name: "重新读取当前页", exact: true }).click();

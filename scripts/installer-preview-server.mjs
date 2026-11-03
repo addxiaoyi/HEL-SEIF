@@ -12,8 +12,8 @@ const files = new Map([
   ["/preview.mjs", ["public/installer-preview/preview.mjs", "text/javascript"]],
   ["/installer-preview/style.css", ["public/installer-preview/style.css", "text/css"]],
   ["/installer-preview/preview.mjs", ["public/installer-preview/preview.mjs", "text/javascript"]],
-  ["/brand/zhiyu.svg", ["public/brand/zhiyu.svg", "image/svg+xml"]],
-  ["/favicon.ico", ["public/brand/zhiyu.svg", "image/svg+xml"]],
+  ["/brand/helself.svg", ["public/brand/helself.svg", "image/svg+xml"]],
+  ["/favicon.ico", ["public/brand/helself.svg", "image/svg+xml"]],
   ["/LICENSE", ["LICENSE", "text/plain; charset=utf-8"]],
 ]);
 
@@ -39,7 +39,7 @@ export async function exportPreview(destination) {
     readFile(resolve(root, "public/installer-preview/index.html"), "utf8"),
     readFile(resolve(root, "public/installer-preview/style.css"), "utf8"),
     readFile(resolve(root, "public/installer-preview/preview.mjs"), "utf8"),
-    readFile(resolve(root, "public/brand/zhiyu.svg")),
+    readFile(resolve(root, "public/brand/helself.svg")),
   ]);
   const standalone = html
     .replace(/<link rel="stylesheet" href="\.\/style.css"\s*\/>/, () => `<style>${css}</style>`)
@@ -47,14 +47,14 @@ export async function exportPreview(destination) {
       /<script type="module" src="\.\/preview.mjs"><\/script>/,
       () => `<script type="module">${script}</script>`,
     )
-    .replaceAll("/brand/zhiyu.svg", `data:image/svg+xml;base64,${logo.toString("base64")}`)
-    .replace('href="/LICENSE"', 'href="https://github.com/Songwo/zhiyu/blob/main/LICENSE"');
+    .replaceAll("/brand/helself.svg", `data:image/svg+xml;base64,${logo.toString("base64")}`)
+    .replace('href="/LICENSE"', 'href="https://github.com/addxiaoyi/HEL-SEIF/blob/main/LICENSE"');
   await mkdir(dirname(destination), { recursive: true });
   await writeFile(destination, standalone);
 }
 
 if (process.argv[2] === "--export") {
-  await exportPreview(resolve(root, "screenshots/installer-preview/知屿安装体验.html"));
+  await exportPreview(resolve(root, "screenshots/installer-preview/Helself安装体验.html"));
 } else if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   createPreviewServer().listen(8080, "0.0.0.0", () => {
     console.log("Installer design preview: http://127.0.0.1:8080/installer-preview/");

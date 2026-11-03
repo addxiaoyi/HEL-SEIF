@@ -1,13 +1,13 @@
 [Unit]
-Description=Zhiyu Probe Agent
+Description=Helself Probe Agent
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-User=zhiyu-probe
-Group=zhiyu-probe
-ExecStart=/usr/local/bin/zhiyu-probe agent --config /etc/zhiyu-probe/agent.json
+User=helself-probe
+Group=helself-probe
+ExecStart=/usr/local/bin/helself-probe agent --config /etc/helself-probe/agent.json
 UMask=0077
 Restart=on-failure
 RestartSec=5

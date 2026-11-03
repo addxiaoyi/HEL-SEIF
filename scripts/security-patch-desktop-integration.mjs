@@ -6,7 +6,7 @@ import { _electron as electron } from "playwright";
 import { completeOnboarding } from "./onboarding-helper.mjs";
 
 // 只使用合成配置与隔离资料目录，不修改用户的密钥库或系统剪贴板内容。
-const directory = await mkdtemp(join(tmpdir(), "zhiyu-security-patch-"));
+const directory = await mkdtemp(join(tmpdir(), "helself-security-patch-"));
 const packaged = process.argv[2];
 const env = { ...process.env, NANPAD_TEST_DATA_DIR: directory };
 if (packaged) delete env.NANPAD_TEST_DATA_DIR;

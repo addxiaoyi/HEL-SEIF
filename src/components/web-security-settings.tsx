@@ -120,7 +120,7 @@ export function WebSecuritySettings() {
                 data.allowlist.join("、"),
               )
             : t(
-                "未设置：任何地址都能打开登录页。可以在服务器上设置环境变量 ZHIYU_ALLOWED_NETS，只允许自己的 IP、家里或公司网段、VPN（填 private 表示全部内网）。",
+                "未设置：任何地址都能打开登录页。可以在服务器上设置环境变量 HELSELF_ALLOWED_NETS，只允许自己的 IP、家里或公司网段、VPN（填 private 表示全部内网）。",
               )}
         </p>
       </Card>

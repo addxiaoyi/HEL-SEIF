@@ -20,7 +20,7 @@ function deferred() {
   return { promise, resolve };
 }
 async function setup(t, fetchImpl = async () => new Response(nodeBody, { headers })) {
-  const dir = await mkdtemp(join(tmpdir(), "zhiyu-subscription-"));
+  const dir = await mkdtemp(join(tmpdir(), "helself-subscription-"));
   t.after(() => rm(dir, { recursive: true, force: true }));
   const secrets = new Map();
   const vault = {

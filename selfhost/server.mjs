@@ -1,13 +1,13 @@
 /**
- * 知屿网页版（自托管）。
+ * Helself网页版（自托管）。
  *
  * 一个不依赖框架的 Node 服务：登录保护整站，资料文件与桌面版的资料目录完全相同
  * （assets.json、documents/、vault.enc），所以桌面版的加密备份可以直接恢复到这里，
  * 这里做的备份也能在桌面版恢复。密钥库在浏览器里用主密码加解密，服务器只保存密文。
  *
  * 目录：
- *   <ZHIYU_DATA>/workspace  资料（与桌面版资料目录一致，备份与恢复的范围）
- *   <ZHIYU_DATA>/server     网页登录账号与会话、服务器密钥（不进入备份，恢复时不受影响）
+ *   <HELSELF_DATA>/workspace  资料（与桌面版资料目录一致，备份与恢复的范围）
+ *   <HELSELF_DATA>/server     网页登录账号与会话、服务器密钥（不进入备份，恢复时不受影响）
  *
  * 桌面版主进程里能在服务器上做的事（SSH、主机探测、Cloudflare、AI 助手……）见 bridge.mjs，
  * 服务所在主机自己的 CPU / 内存 / 磁盘 / 网络见 host-stats.mjs。
@@ -57,7 +57,7 @@ const SESSION_DAYS = 30;
 // 超过这么久没有任何操作的登录自动失效，丢在别处的浏览器不会一直有效。
 const SESSION_IDLE_DAYS = 7;
 const PUBLIC_BODY_LIMIT = 8 * 1024;
-const COOKIE = "zhiyu_session";
+const COOKIE = "helself_session";
 const JSON_LIMIT = 64 * 1024 * 1024;
 const RESTORE_LIMIT = BACKUP_LIMITS.bytes + 1024 * 1024;
 const MIME = {
@@ -145,18 +145,18 @@ function assertVaultDoc(doc) {
 }
 
 export async function createWebServer({
-  root = resolve(process.env.ZHIYU_DATA ?? "./zhiyu-data"),
+  root = resolve(process.env.HELSELF_DATA ?? "./helself-data"),
   staticDir = resolve(HERE, "../dist-web"),
-  secureCookie = process.env.ZHIYU_SECURE_COOKIE === "1",
-  trustProxy = process.env.ZHIYU_TRUST_PROXY === "1",
-  setupToken = process.env.ZHIYU_SETUP_TOKEN,
+  secureCookie = process.env.HELSELF_SECURE_COOKIE === "1",
+  trustProxy = process.env.HELSELF_TRUST_PROXY === "1",
+  setupToken = process.env.HELSELF_SETUP_TOKEN,
   log = console,
   fetchImpl = fetch,
   schedulePush = true,
   sampleHost = schedulePush,
   hostStats,
   syncLimits,
-  allowedNets = process.env.ZHIYU_ALLOWED_NETS,
+  allowedNets = process.env.HELSELF_ALLOWED_NETS,
 } = {}) {
   // 来源白名单写错时直接报错退出：不能因为手误把服务开放给所有人。
   const allowed = parseAllowedNets(allowedNets);
@@ -250,7 +250,7 @@ export async function createWebServer({
       randomBytes(12).toString("hex");
     await writeAtomic(files.token, setupToken);
     log.log(
-      `[知屿] 首次使用：打开网页，用设置口令 ${setupToken} 创建账号（也保存在 ${files.token}）`,
+      `[Helself] 首次使用：打开网页，用设置口令 ${setupToken} 创建账号（也保存在 ${files.token}）`,
     );
   }
 
@@ -351,7 +351,7 @@ export async function createWebServer({
       if (count >= 3 && Date.now() - lastFailureAlert > 3_600_000) {
         lastFailureAlert = Date.now();
         void push.notify(
-          `有人在 ${ip} 反复尝试登录你的知屿网页版，已失败 ${count} 次。如果不是你，请检查访问来源限制和登录密码。`,
+          `有人在 ${ip} 反复尝试登录你的Helself网页版，已失败 ${count} 次。如果不是你，请检查访问来源限制和登录密码。`,
         );
       }
     };
@@ -558,7 +558,7 @@ export async function createWebServer({
       record("login", req, second.recovery ? { recovery: true } : {});
       if (!knownIp)
         void push.notify(
-          `你的知屿网页版有一次来自新地址 ${clientIp(req)} 的登录${second.recovery ? "（使用了恢复码）" : ""}。如果不是你，请在「设置 → 个人资料 → 账号安全」里退出所有设备并修改密码。`,
+          `你的Helself网页版有一次来自新地址 ${clientIp(req)} 的登录${second.recovery ? "（使用了恢复码）" : ""}。如果不是你，请在「设置 → 个人资料 → 账号安全」里退出所有设备并修改密码。`,
         );
       send(res, 200, { username: account.username });
     },
@@ -833,7 +833,7 @@ export async function createWebServer({
       );
       res.writeHead(200, {
         "Content-Type": "application/octet-stream",
-        "Content-Disposition": `attachment; filename="zhiyu-web-${backupStamp()}.zhiyu-backup"`,
+        "Content-Disposition": `attachment; filename="helself-web-${backupStamp()}.helself-backup"`,
         "Cache-Control": "no-store",
       });
       res.end(data);
@@ -841,7 +841,7 @@ export async function createWebServer({
 
     "POST /api/web/restore": async (req, res) => {
       const password = Buffer.from(
-        String(req.headers["x-zhiyu-backup-password"] ?? ""),
+        String(req.headers["x-helself-backup-password"] ?? ""),
         "base64",
       ).toString("utf8");
       const data = await body(req, RESTORE_LIMIT);
@@ -913,12 +913,12 @@ export async function createWebServer({
     // 不让搜索引擎收录，也不让登录页出现在公开索引里。
     res.setHeader("X-Robots-Tag", "noindex, nofollow");
     if (secureRequest(req)) res.setHeader("Strict-Transport-Security", "max-age=31536000");
-    const url = new URL(req.url ?? "/", "http://zhiyu.local");
+    const url = new URL(req.url ?? "/", "http://helself.local");
     const path = url.pathname;
     if (path.startsWith("/api/")) {
       // 改动类请求必须带自定义头，并且来源与站点一致：跨站页面无法伪造。
       if (req.method !== "GET") {
-        if (req.headers["x-zhiyu"] !== "1") throw new HttpError(403, "请求被拒绝");
+        if (req.headers["x-helself"] !== "1") throw new HttpError(403, "请求被拒绝");
         const origin = req.headers.origin;
         if (origin && new URL(origin).host !== req.headers.host)
           throw new HttpError(403, "请求来源不一致");
@@ -997,15 +997,15 @@ export async function createWebServer({
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const port = Number(process.env.ZHIYU_PORT ?? 8848);
-  const host = process.env.ZHIYU_HOST ?? "0.0.0.0";
+  const port = Number(process.env.HELSELF_PORT ?? 8848);
+  const host = process.env.HELSELF_HOST ?? "0.0.0.0";
   const { server, root, security } = await createWebServer();
   server.listen(port, host, () => {
-    console.log(`[知屿] 网页版 ${VERSION} 已启动：http://${host}:${port}  资料目录 ${root}`);
+    console.log(`[Helself] 网页版 ${VERSION} 已启动：http://${host}:${port}  资料目录 ${root}`);
     const exposed = !/^(127\.|localhost|::1)/.test(host);
     if (exposed && !security.secureCookie && !security.allowlist.length)
       console.log(
-        "[知屿] 安全提示：现在是明文 HTTP，并且任何来源都能访问登录页。放到公网前请用 HTTPS（docker-compose.https.yml），或用 ZHIYU_ALLOWED_NETS 只允许自己的 IP / VPN；并在「设置 → 个人资料 → 账号安全」里开启两步验证。详见 docs/WEB.md「安全加固」。",
+        "[Helself] 安全提示：现在是明文 HTTP，并且任何来源都能访问登录页。放到公网前请用 HTTPS（docker-compose.https.yml），或用 HELSELF_ALLOWED_NETS 只允许自己的 IP / VPN；并在「设置 → 个人资料 → 账号安全」里开启两步验证。详见 docs/WEB.md「安全加固」。",
       );
   });
 }

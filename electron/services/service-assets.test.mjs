@@ -114,7 +114,7 @@ test("Agent 检索服务元数据但不发送 URL 查询凭据或自由备注", 
 });
 
 test("服务可绑定文档，Agent 确认提案后才能写入服务关联", async (t) => {
-  const directory = await mkdtemp(join(tmpdir(), "zhiyu-service-test-"));
+  const directory = await mkdtemp(join(tmpdir(), "helself-service-test-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const documents = new DocumentsStore(directory);
   let state = snapshot();

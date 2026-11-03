@@ -7,7 +7,7 @@ import { DocumentsStore } from "./documents.mjs";
 import { saveBrowserDocument, browserDocument } from "./browser-documents.mjs";
 
 test("网页快照保留纯文本和来源，移除追踪/认证参数，同源重复不覆盖编辑", async (t) => {
-  const directory = await mkdtemp(join(tmpdir(), "zhiyu-web-doc-"));
+  const directory = await mkdtemp(join(tmpdir(), "helself-web-doc-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const store = new DocumentsStore(directory);
   const input = {
@@ -49,7 +49,7 @@ test("公众号标识保留以区分文章，不保存网页结构或无限正�
 });
 
 test("写入队列开始前授权失效，不产生文档文件", async (t) => {
-  const directory = await mkdtemp(join(tmpdir(), "zhiyu-web-doc-lock-"));
+  const directory = await mkdtemp(join(tmpdir(), "helself-web-doc-lock-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const store = new DocumentsStore(directory);
   await assert.rejects(

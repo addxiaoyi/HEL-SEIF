@@ -146,7 +146,7 @@ export function IntegrationsSettings() {
         </>
       ) : (
         <div className="integration-empty">
-          {busy ? t("正在加载…") : t("添加 Cloudflare API Token 或知屿监控服务端，开始管理资源。")}
+          {busy ? t("正在加载…") : t("添加 Cloudflare API Token 或Helself监控服务端，开始管理资源。")}
         </div>
       )}
       {editing && (
@@ -233,7 +233,7 @@ function ConnectionEditor({
             }
             options={[
               { value: "cloudflare", label: "Cloudflare" },
-              { value: "probe", label: t("知屿独立探针") },
+              { value: "probe", label: t("Helself独立探针") },
             ]}
           />
         </Field>

@@ -34,7 +34,7 @@ test("明文泄露检查不会误判密文中的 bob，但仍拒绝明文字段�
 });
 
 async function setup(t, options = {}) {
-  const directory = await mkdtemp(join(tmpdir(), "zhiyu-browser-passwords-"));
+  const directory = await mkdtemp(join(tmpdir(), "helself-browser-passwords-"));
   t.after(() => rm(directory, { force: true, recursive: true }));
   const file = join(directory, "vault.enc");
   const vault = new Vault(file);

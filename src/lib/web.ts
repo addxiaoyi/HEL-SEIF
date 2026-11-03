@@ -1,9 +1,9 @@
 /** 自托管网页版：页面由 selfhost/server.mjs 提供，资料通过同源接口读写。 */
-export const isWeb = () => import.meta.env.VITE_ZHIYU_WEB === "1";
+export const isWeb = () => import.meta.env.VITE_HELSELF_WEB === "1";
 
 export class WebConflictError extends Error {}
 
-/** 同源 JSON 接口。改动类请求带上 x-zhiyu 头；登录过期时回到登录页。 */
+/** 同源 JSON 接口。改动类请求带上 x-helself 头；登录过期时回到登录页。 */
 export async function webApi<T>(
   path: string,
   { method = "GET", body }: { method?: string; body?: unknown } = {},
@@ -11,7 +11,7 @@ export async function webApi<T>(
   const res = await fetch(`/api/web/${path}`, {
     method,
     credentials: "same-origin",
-    headers: method === "GET" ? {} : { "content-type": "application/json", "x-zhiyu": "1" },
+    headers: method === "GET" ? {} : { "content-type": "application/json", "x-helself": "1" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (res.status === 401) {
@@ -34,13 +34,13 @@ export async function webDownloadBackup(password: string) {
   const res = await fetch("/api/web/backup", {
     method: "POST",
     credentials: "same-origin",
-    headers: { "content-type": "application/json", "x-zhiyu": "1" },
+    headers: { "content-type": "application/json", "x-helself": "1" },
     body: JSON.stringify({ password }),
   });
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "备份失败");
   const name =
     /filename="([^"]+)"/.exec(res.headers.get("content-disposition") ?? "")?.[1] ??
-    "zhiyu.zhiyu-backup";
+    "helself.helself-backup";
   const url = URL.createObjectURL(await res.blob());
   const a = document.createElement("a");
   a.href = url;
@@ -59,8 +59,8 @@ export async function webRestoreBackup(file: File, password: string) {
     credentials: "same-origin",
     headers: {
       "content-type": "application/octet-stream",
-      "x-zhiyu": "1",
-      "x-zhiyu-backup-password": btoa(binary),
+      "x-helself": "1",
+      "x-helself-backup-password": btoa(binary),
     },
     body: file,
   });

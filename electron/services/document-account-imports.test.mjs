@@ -16,7 +16,7 @@ const candidate = {
   note: "",
 };
 async function setup(t) {
-  const dir = await mkdtemp(join(tmpdir(), "zhiyu-doc-accounts-"));
+  const dir = await mkdtemp(join(tmpdir(), "helself-doc-accounts-"));
   const vault = new Vault(join(dir, "vault.enc"));
   await vault.create("synthetic-master-password");
   const documents = new DocumentsStore(join(dir, "docs"));

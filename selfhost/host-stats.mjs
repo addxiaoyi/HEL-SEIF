@@ -24,7 +24,7 @@ const read = (file) => readFile(file, "utf8").catch(() => null);
 
 /** 优先使用挂载进来的宿主机 /proc，否则用自己的。 */
 export function resolveProcRoot(env = process.env) {
-  if (env.ZHIYU_HOST_PROC) return { root: env.ZHIYU_HOST_PROC, host: true };
+  if (env.HELSELF_HOST_PROC) return { root: env.HELSELF_HOST_PROC, host: true };
   if (existsSync("/host/proc/stat")) return { root: "/host/proc", host: true };
   return { root: "/proc", host: false };
 }

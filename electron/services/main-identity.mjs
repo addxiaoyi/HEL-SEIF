@@ -7,7 +7,7 @@ import { IdentityAccounts } from "./identity-accounts.mjs";
 import { validateImageDataUrl } from "./image-data.mjs";
 
 const ISSUER = "https://connect.linux.do";
-const CALLBACK = "/oauth/zhiyu/callback";
+const CALLBACK = "/oauth/helself/callback";
 const TTL = 300_000;
 const MAX_BYTES = 1024 * 1024;
 const nonce = () => randomBytes(32).toString("base64url");
@@ -468,7 +468,7 @@ export class MainIdentityService {
             states.length !== 1 ||
             [...url.searchParams.keys()].some((key) => !["code", "state", "error"].includes(key))
           )
-            return reply(400, "登录回调无效，请返回知屿重新登录。");
+            return reply(400, "登录回调无效，请返回Helself重新登录。");
           const expected = Buffer.from(session.state),
             actual = Buffer.from(states[0]);
           if (
@@ -479,7 +479,7 @@ export class MainIdentityService {
             return reply(400, "登录回调无效或已经使用。");
           if (errors.length) {
             if (errors.length !== 1 || codes.length || !errors[0] || errors[0].length > 200)
-              return reply(400, "登录回调无效，请返回知屿重新登录。");
+              return reply(400, "登录回调无效，请返回Helself重新登录。");
             session.status = "error";
             session.error =
               errors[0] === "access_denied"
@@ -489,13 +489,13 @@ export class MainIdentityService {
             session.verifier = "";
             session.state = "";
             clearTimeout(session.timer);
-            reply(200, "登录未完成，请返回知屿查看提示并重试。此页面可以关闭。");
+            reply(200, "登录未完成，请返回Helself查看提示并重试。此页面可以关闭。");
             server.close();
             session.server = null;
             return;
           }
           if (codes.length !== 1 || !/^[A-Za-z0-9_-]{1,2048}$/.test(codes[0]))
-            return reply(400, "登录回调无效，请返回知屿重新登录。");
+            return reply(400, "登录回调无效，请返回Helself重新登录。");
           session.exchanging = true;
           const result = envelopeFrom(
             await this.#request(`${this.#origin}/v1/login/exchange`, {
@@ -505,7 +505,7 @@ export class MainIdentityService {
           valid();
           session.envelope = result;
           session.status = "ready";
-          reply(200, "身份验证成功，请返回知屿确认绑定。此页面可以关闭。");
+          reply(200, "身份验证成功，请返回Helself确认绑定。此页面可以关闭。");
           // 保留预览过期计时，只关闭一次性回调监听。
           server.close();
           session.server = null;
@@ -517,7 +517,7 @@ export class MainIdentityService {
             session.error = safeError(error).message;
             session.envelope = null;
           }
-          reply(400, "登录未完成，请返回知屿查看提示并重试。");
+          reply(400, "登录未完成，请返回Helself查看提示并重试。");
           clearTimeout(session.timer);
           session.verifier = "";
           session.state = "";

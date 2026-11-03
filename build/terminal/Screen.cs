@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Zhiyu.Terminal {
+namespace Helself.Terminal {
     // 环形缓冲避免高频输出时逐行移动整个历史数组。
     public sealed class ScrollbackBuffer {
         Cell[][] data;

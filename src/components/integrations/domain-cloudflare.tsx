@@ -293,7 +293,7 @@ function CloudflareConnectDialog({
           <p className="text-meta font-medium">{t("先在 Cloudflare 创建一个 API Token")}</p>
           <ol>
             <li>{t("区域 · 区域 · 读取：必需，用来列出账户下的全部域名。")}</li>
-            <li>{t("区域 · DNS · 编辑：需要在知屿里修改 DNS 时授予；只看可只给读取。")}</li>
+            <li>{t("区域 · DNS · 编辑：需要在Helself里修改 DNS 时授予；只看可只给读取。")}</li>
             <li>
               {t(
                 "账户 · 域名注册（Registrar）· 读取：可选，用来读取在 Cloudflare 注册的域名到期日。",

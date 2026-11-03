@@ -285,7 +285,7 @@ try {
   await onboarding
     .getByRole("textbox", { name: "确认主密码", exact: true })
     .fill("integration-master-2026");
-  await onboarding.getByRole("button", { name: "进入知屿", exact: true }).click();
+  await onboarding.getByRole("button", { name: "进入Helself", exact: true }).click();
   await onboarding.waitFor({ state: "detached" });
   assert.equal(await page.evaluate(() => window.__saves[0].name), "社区昵称");
   checks.push("登录先预览并选择同步；确认同步更新草稿，绑定身份不会跳过本地主密码设置");
@@ -374,7 +374,7 @@ try {
   await onboarding
     .getByRole("textbox", { name: "确认主密码", exact: true })
     .fill("local-only-master-2026");
-  await onboarding.getByRole("button", { name: "进入知屿", exact: true }).click();
+  await onboarding.getByRole("button", { name: "进入Helself", exact: true }).click();
   await onboarding.waitFor({ state: "detached" });
   checks.push("退出登录保留身份资料；未配置登录服务明确提示且仍能完成纯本机首次设置");
 

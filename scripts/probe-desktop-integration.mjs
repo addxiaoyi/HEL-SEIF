@@ -11,9 +11,9 @@ import { _electron as electron } from "playwright";
 import { completeOnboarding } from "./onboarding-helper.mjs";
 
 // 本测试只使用隔离数据与临时生成的凭据；不读取用户连接、主机或文档。
-const directory = await mkdtemp(join(tmpdir(), "zhiyu-probe-e2e-"));
+const directory = await mkdtemp(join(tmpdir(), "helself-probe-e2e-"));
 const packaged = process.argv[2];
-const binary = resolve(process.env.ZHIYU_PROBE_BINARY ?? "release/qa-probe/zhiyu-probe.exe");
+const binary = resolve(process.env.HELSELF_PROBE_BINARY ?? "release/qa-probe/helself-probe.exe");
 const token = randomBytes(32).toString("base64url");
 const tokenFile = join(directory, "admin-token");
 await writeFile(tokenFile, token, { mode: 0o600 });

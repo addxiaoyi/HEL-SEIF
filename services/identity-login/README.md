@@ -1,6 +1,6 @@
-# 知屿主身份登录服务
+# Helself主身份登录服务
 
-这个独立服务用于知屿的首次登录和个人资料绑定。普通用户使用各自的 Linux.do 账号授权，无需申请 Connect 应用。应用开发者的 Client Secret 只配置在服务器，不进入桌面安装包。
+这个独立服务用于Helself的首次登录和个人资料绑定。普通用户使用各自的 Linux.do 账号授权，无需申请 Connect 应用。应用开发者的 Client Secret 只配置在服务器，不进入桌面安装包。
 
 运行环境为 Node.js 20.18.1 或更高版本。在本目录执行 `npm ci --omit=dev --ignore-scripts` 安装锁定的服务端依赖；这些依赖不进入桌面安装包。入口为 `main.mjs`，固定监听 `127.0.0.1`，默认端口 `49284`，通过现有 Cloudflare Tunnel 对外提供 HTTPS。
 
@@ -12,7 +12,7 @@ Linux.do Connect 中登记的回调地址：
 https://auth.allinsong.top/oauth/linuxdo/callback
 ```
 
-配置从 `ZHIYU_IDENTITY_CONFIG` 指定的 JSON 文件读取，也支持同名环境变量覆盖。生产配置建议放在 `/etc/zhiyu-identity/config.json`，归属 `root:zhiyu-identity`，权限 `0640`。不在代码目录、Git、命令历史或聊天中存放实际密钥。
+配置从 `HELSELF_IDENTITY_CONFIG` 指定的 JSON 文件读取，也支持同名环境变量覆盖。生产配置建议放在 `/etc/helself-identity/config.json`，归属 `root:helself-identity`，权限 `0640`。不在代码目录、Git、命令历史或聊天中存放实际密钥。
 
 | 配置键                   | 含义                                                                                                    |
 | ------------------------ | ------------------------------------------------------------------------------------------------------- |
@@ -26,7 +26,7 @@ https://auth.allinsong.top/oauth/linuxdo/callback
 
 缺少应用凭据或会话密钥时，健康检查仍响应 `{"ok":true,"configured":false}`，登录请求返回 `503` 和明确的未配置提示。无效密钥会阻止启动，不会生成临时密钥掩盖配置问题。
 
-目录布局采用 `/opt/zhiyu-identity/releases/<版本>/` 存放本目录的服务源码、`package.json`、`package-lock.json` 及安装后的依赖，`/opt/zhiyu-identity/current` 指向当前版本。仓库中的 systemd 示例与这个布局一致。切换版本后重启服务；处理中授权会失效，用户可重新发起。服务只处理登录身份，不访问知屿的文档、资产或密钥库。
+目录布局采用 `/opt/helself-identity/releases/<版本>/` 存放本目录的服务源码、`package.json`、`package-lock.json` 及安装后的依赖，`/opt/helself-identity/current` 指向当前版本。仓库中的 systemd 示例与这个布局一致。切换版本后重启服务；处理中授权会失效，用户可重新发起。服务只处理登录身份，不访问Helself的文档、资产或密钥库。
 
 服务器无法直连官方接口时，可配置 `OUTBOUND_PROXY_URL` 为受控的本机 HTTP 代理，例如 `http://127.0.0.1:17892`。服务使用独立的 Undici ProxyAgent，仅代理 Linux.do 官方令牌和用户资料接口，保持端到端 TLS 证书校验，不修改系统或其他程序的代理。该代理自身应仅监听本机。Cloudflare Tunnel 提供入站访问，不代替服务出站代理；DoH 仅解决域名解析，不能保证上游 HTTPS 连通。
 

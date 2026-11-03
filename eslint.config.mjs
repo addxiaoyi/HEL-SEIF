@@ -12,7 +12,7 @@ export default tseslint.config(
       "dist/**",
       "dist-desktop/**",
       "dist-web/**",
-      "zhiyu-data/**",
+      "helself-data/**",
       "release/**",
       ".output/**",
       ".vercel/**",

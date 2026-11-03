@@ -52,9 +52,9 @@ const markdown = (id, title, text, extra = {}) => ({
 
 /** 起一个真实的网页版服务器（可在同一目录上重启）和一个带内存适配器的桌面客户端。 */
 async function rig(t, { vault = false, syncLimits } = {}) {
-  const root = await mkdtemp(join(tmpdir(), "zhiyu-sync-web-"));
-  const desktop = await mkdtemp(join(tmpdir(), "zhiyu-sync-desktop-"));
-  const staticDir = await mkdtemp(join(tmpdir(), "zhiyu-sync-static-"));
+  const root = await mkdtemp(join(tmpdir(), "helself-sync-web-"));
+  const desktop = await mkdtemp(join(tmpdir(), "helself-sync-desktop-"));
+  const staticDir = await mkdtemp(join(tmpdir(), "helself-sync-static-"));
   await writeFile(join(staticDir, "index.html"), "<!doctype html>");
   let web;
   let base;
@@ -83,7 +83,7 @@ async function rig(t, { vault = false, syncLimits } = {}) {
       method,
       headers: {
         ...(cookie ? { cookie } : {}),
-        ...(method === "GET" ? {} : { "content-type": "application/json", "x-zhiyu": "1" }),
+        ...(method === "GET" ? {} : { "content-type": "application/json", "x-helself": "1" }),
       },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
@@ -452,7 +452,7 @@ async function rawSession(r) {
   const post = async (path, body) => {
     const res = await fetch(state.server.url + path, {
       method: "POST",
-      headers: { "content-type": "application/json", "x-zhiyu": "1" },
+      headers: { "content-type": "application/json", "x-helself": "1" },
       body: JSON.stringify(body),
     });
     return { status: res.status, body: await res.json() };
@@ -573,7 +573,7 @@ test("不断发起密钥交换来猜配对码：超过次数上限后配对码�
   const post = async (path, body) => {
     const res = await fetch(r.base() + path, {
       method: "POST",
-      headers: { "content-type": "application/json", "x-zhiyu": "1" },
+      headers: { "content-type": "application/json", "x-helself": "1" },
       body: JSON.stringify(body),
     });
     return { status: res.status, body: await res.json() };

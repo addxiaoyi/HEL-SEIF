@@ -1,20 +1,18 @@
 [Unit]
-Description=Zhiyu Linux.do identity login
+Description=Helself Probe Server
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-User=zhiyu-identity
-Group=zhiyu-identity
-WorkingDirectory=/opt/zhiyu-identity/current
-Environment=NODE_ENV=production
-Environment=ZHIYU_IDENTITY_CONFIG=/etc/zhiyu-identity/config.json
-ExecStart=/usr/bin/node /opt/zhiyu-identity/current/main.mjs
+User=helself-probe
+Group=helself-probe
+ExecStart=/usr/local/bin/helself-probe server --listen 0.0.0.0:8008 --data /var/lib/helself-probe/probe.db --admin-token-file /etc/helself-probe/admin-token --tls-cert /etc/helself-probe/tls.crt --tls-key /etc/helself-probe/tls.key
+StateDirectory=helself-probe
+StateDirectoryMode=0700
+UMask=0077
 Restart=on-failure
 RestartSec=5
-TimeoutStopSec=15
-UMask=0077
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
@@ -25,10 +23,8 @@ ProtectControlGroups=true
 RestrictSUIDSGID=true
 RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
 CapabilityBoundingSet=
-AmbientCapabilities=
-LockPersonality=true
-MemoryMax=256M
-TasksMax=64
+MemoryMax=512M
+TasksMax=128
 
 [Install]
 WantedBy=multi-user.target

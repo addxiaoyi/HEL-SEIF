@@ -702,7 +702,7 @@ export function createSyncHost({
   };
   /** 返回 true 表示这个请求属于同步接口且已处理。 */
   async function handle(req, res) {
-    const url = new URL(req.url ?? "/", "http://zhiyu.local");
+    const url = new URL(req.url ?? "/", "http://helself.local");
     const route = routes[`${req.method} ${url.pathname}`];
     if (!route) return false;
     const send = (status, payload) => {

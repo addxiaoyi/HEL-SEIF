@@ -8,8 +8,8 @@ export const SECURITY_EN: Record<string, string> = {
   访问来源限制: "Allowed addresses",
   "已开启：只有 {0} 能打开这个网站，其他来源的连接会被直接断开。":
     "On: only {0} can open this site; connections from anywhere else are dropped.",
-  "未设置：任何地址都能打开登录页。可以在服务器上设置环境变量 ZHIYU_ALLOWED_NETS，只允许自己的 IP、家里或公司网段、VPN（填 private 表示全部内网）。":
-    "Not set: anyone can reach the sign-in page. Set ZHIYU_ALLOWED_NETS on the server to allow only your own IP, home or office network, or VPN (use private for all internal ranges).",
+  "未设置：任何地址都能打开登录页。可以在服务器上设置环境变量 HELSELF_ALLOWED_NETS，只允许自己的 IP、家里或公司网段、VPN（填 private 表示全部内网）。":
+    "Not set: anyone can reach the sign-in page. Set HELSELF_ALLOWED_NETS on the server to allow only your own IP, home or office network, or VPN (use private for all internal ranges).",
   登录中的设备: "Signed-in devices",
   退出其他所有设备: "Sign out all other devices",
   未知浏览器: "Unknown browser",

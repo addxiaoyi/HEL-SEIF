@@ -23,7 +23,7 @@ import { isWeb, webApi } from "@/lib/web";
 import { Button } from "./ui/button";
 import { Field, Input } from "./ui/input";
 
-const ANIMATION_URL = "https://songwo.github.io/zhiyu/sync.html";
+const ANIMATION_URL = "https://addxiaoyi.github.io/HEL-SEIF/sync.html";
 
 /** 打开产品主页上的协议动画：一步一步看配对、认证和同步是怎么保护数据的。 */
 function AnimationLink() {
@@ -351,7 +351,7 @@ function PairForm({
           aria-label={t("网页版地址")}
           required
           type="url"
-          placeholder="https://zhiyu.example.com"
+          placeholder="https://helself.example.com"
           value={url}
           onChange={(event) => setUrl(event.target.value)}
         />

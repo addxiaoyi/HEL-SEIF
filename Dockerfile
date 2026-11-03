@@ -1,5 +1,5 @@
-# 知屿网页版（自托管）
-#   正式版镜像：ghcr.io/songwo/zhiyu-web（docker compose up -d）
+# Helself网页版（自托管）
+#   正式版镜像：ghcr.io/addxiaoyi/helself-web（docker compose up -d）
 #   从源码构建：docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 # 资料保存在挂载的 /data 卷里；首次启动看日志里的「设置口令」创建账号。
 
@@ -18,9 +18,9 @@ RUN npm run web:build && npm prune --omit=dev --ignore-scripts
 FROM node:22-bookworm-slim
 WORKDIR /app
 ENV NODE_ENV=production \
-    ZHIYU_DATA=/data \
-    ZHIYU_PORT=8848 \
-    ZHIYU_HOST=0.0.0.0
+    HELSELF_DATA=/data \
+    HELSELF_PORT=8848 \
+    HELSELF_HOST=0.0.0.0
 COPY --from=build /app/package.json ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist-web ./dist-web

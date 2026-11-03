@@ -184,7 +184,7 @@ export class MailPushService {
       }
       await this.#send(
         record,
-        "知屿 Zhiyu 邮件推送测试：连接正常。此消息不包含邮箱或邮件内容。",
+        "Helself 邮件推送测试：连接正常。此消息不包含邮箱或邮件内容。",
         controller.signal,
       );
       return { ok: true };
@@ -211,7 +211,7 @@ export class MailPushService {
         record,
         String(text).slice(0, 2000),
         controller.signal,
-        "知屿 Zhiyu 续费提醒",
+        "Helself 续费提醒",
       );
       return true;
     } finally {
@@ -298,7 +298,7 @@ export class MailPushService {
         .map((entry) => entry.checkedAt)
         .sort()
         .at(-1);
-      const text = `知屿 Zhiyu 邮件提醒\n新增邮件：${newMessages} 封\n相关邮箱未读：${unseen} 封\n检查时间：${checkedAt}`;
+      const text = `Helself 邮件提醒\n新增邮件：${newMessages} 封\n相关邮箱未读：${unseen} 封\n检查时间：${checkedAt}`;
       await this.#send(record, text, signal);
       signal.throwIfAborted();
       this.#requireUnlocked();
@@ -315,7 +315,7 @@ export class MailPushService {
     }
   }
 
-  async #send(record, text, signal, title = "知屿 Zhiyu 邮件提醒") {
+  async #send(record, text, signal, title = "Helself 邮件提醒") {
     this.#requireUnlocked();
     signal.throwIfAborted();
     const request = buildPushRequest(record, text, title);

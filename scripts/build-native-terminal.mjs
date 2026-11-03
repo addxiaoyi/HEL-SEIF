@@ -9,7 +9,7 @@ export function buildNativeTerminal({ test = false } = {}) {
     process.env.WINDIR || "C:/Windows",
     "Microsoft.NET/Framework64/v4.0.30319",
   );
-  const output = resolve("release/native-terminal/Zhiyu.Terminal.exe");
+  const output = resolve("release/native-terminal/Helself.Terminal.exe");
   const references = ["WindowsBase.dll", "PresentationCore.dll", "PresentationFramework.dll"].map(
     (file) => `/reference:${join(framework, "WPF", file)}`,
   );

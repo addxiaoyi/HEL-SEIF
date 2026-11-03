@@ -58,7 +58,7 @@ export function normalizeServerUrl(input) {
   try {
     url = new URL(String(input ?? "").trim());
   } catch {
-    throw new SyncError("服务器地址格式不正确，例如 https://zhiyu.example.com");
+    throw new SyncError("服务器地址格式不正确，例如 https://helself.example.com");
   }
   if (!["http:", "https:"].includes(url.protocol))
     throw new SyncError("服务器地址需要以 http:// 或 https:// 开头");
@@ -189,7 +189,7 @@ export class SyncClient {
     try {
       response = await this.#fetch(origin + path, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-Zhiyu": "1" },
+        headers: { "Content-Type": "application/json", "X-Helself": "1" },
         body: JSON.stringify(body),
         redirect: "error",
         signal: AbortSignal.timeout(timeout),

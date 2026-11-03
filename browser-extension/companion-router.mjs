@@ -1,12 +1,12 @@
 const TYPES = new Set([
-  "zhiyu-list",
-  "zhiyu-fill",
-  "zhiyu-stage",
-  "zhiyu-pending",
-  "zhiyu-save-pending",
-  "zhiyu-dismiss-pending",
-  "zhiyu-document",
-  "zhiyu-save-account",
+  "helself-list",
+  "helself-fill",
+  "helself-stage",
+  "helself-pending",
+  "helself-save-pending",
+  "helself-dismiss-pending",
+  "helself-document",
+  "helself-save-account",
   "nanpad-auto-capture",
 ]);
 const TOKEN_KEY = "nanpadConnectionToken";
@@ -146,7 +146,7 @@ export function createCompanionRouter({
     try {
       const ctx = await context(message, sender);
       const type = message.type;
-      if (type === "zhiyu-stage" || type === "nanpad-auto-capture") {
+      if (type === "helself-stage" || type === "nanpad-auto-capture") {
         if (ctx.popup || !canFill(ctx.url)) throw Error("invalid");
         const prefs = await chrome.storage.local.get("nanpadAutoCapture");
         if (prefs.nanpadAutoCapture === false) throw Error("disabled");
@@ -167,7 +167,7 @@ export function createCompanionRouter({
         pending.set(ctx.tabId, record);
         return { ok: true };
       }
-      if (type === "zhiyu-pending") {
+      if (type === "helself-pending") {
         const record = peek(ctx);
         return {
           ok: true,
@@ -176,15 +176,15 @@ export function createCompanionRouter({
             : null,
         };
       }
-      if (type === "zhiyu-dismiss-pending") {
+      if (type === "helself-dismiss-pending") {
         deletePending(ctx.tabId);
         return { ok: true };
       }
-      if (type === "zhiyu-save-pending" || type === "zhiyu-save-account") {
+      if (type === "helself-save-pending" || type === "helself-save-account") {
         if (!canFill(ctx.url)) throw Error("insecure");
         const record = peek(ctx);
         const value =
-          type === "zhiyu-save-account" && ctx.popup
+          type === "helself-save-account" && ctx.popup
             ? capture(message.capture, ctx)
             : record?.capture;
         if (!value) throw Error("expired");
@@ -193,7 +193,7 @@ export function createCompanionRouter({
         selections.delete(ctx.tabId);
         return { ok: true, ...result };
       }
-      if (type === "zhiyu-list") {
+      if (type === "helself-list") {
         if (!canFill(ctx.url)) throw Error("insecure");
         const result = await request("/v1/accounts/list", { url: `${ctx.origin}/` }, ctx);
         if (!Array.isArray(result.accounts) || typeof result.selectionToken !== "string")
@@ -212,7 +212,7 @@ export function createCompanionRouter({
           accounts: accounts.map(({ id, title, username }) => ({ id, title, username })),
         };
       }
-      if (type === "zhiyu-fill") {
+      if (type === "helself-fill") {
         if (!canFill(ctx.url)) throw Error("insecure");
         const selection = selections.get(ctx.tabId);
         selections.delete(ctx.tabId);
@@ -225,7 +225,7 @@ export function createCompanionRouter({
           (!ctx.popup && selection.documentId !== ctx.documentId)
         )
           throw Error("expired");
-        const page = await pageMessage(ctx, { type: "zhiyu-page-ready", url: ctx.url });
+        const page = await pageMessage(ctx, { type: "helself-page-ready", url: ctx.url });
         if (!page?.ready || typeof page.documentKey !== "string") throw Error("no-form");
         const credential = await request(
           "/v1/accounts/fill",
@@ -236,7 +236,7 @@ export function createCompanionRouter({
           if (typeof credential.username !== "string" || typeof credential.password !== "string")
             throw Error("rejected");
           const result = await pageMessage(ctx, {
-            type: "zhiyu-page-fill",
+            type: "helself-page-fill",
             url: ctx.url,
             documentKey: page.documentKey,
             credential,
@@ -247,9 +247,9 @@ export function createCompanionRouter({
           credential.password = "";
         }
       }
-      if (type === "zhiyu-document") {
+      if (type === "helself-document") {
         // 正文由目标文档的内容脚本读取，弹窗/网页不能提交任意网站 URL。
-        const document = await pageMessage(ctx, { type: "zhiyu-page-document", url: ctx.url });
+        const document = await pageMessage(ctx, { type: "helself-page-document", url: ctx.url });
         if (!document?.ok || typeof document.text !== "string" || document.text.length > 200000)
           throw Error("invalid");
         // 微信文章以 __biz/mid/idx/sn 定位；查询参数由桌面端按公开白名单清理。

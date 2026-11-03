@@ -42,7 +42,7 @@ function WebUpdatePanel() {
         {t(message)}
       </p>
       <p className="mt-3 text-meta leading-relaxed text-muted">
-        {t("在 VPS 的知屿目录里运行以下命令升级，资料目录不受影响：")}
+        {t("在 VPS 的Helself目录里运行以下命令升级，资料目录不受影响：")}
       </p>
       <pre className="mt-2 overflow-x-auto rounded-md bg-card px-3 py-2 font-mono text-2xs text-ink">
         docker compose pull && docker compose up -d
@@ -55,7 +55,7 @@ function WebUpdatePanel() {
         <Button
           size="sm"
           variant="ghost"
-          onClick={() => void openExternal("https://github.com/Songwo/zhiyu/releases/latest")}
+          onClick={() => void openExternal("https://github.com/addxiaoyi/HEL-SEIF/releases/latest")}
         >
           <ExternalLink />
           {t("发布页")}
@@ -145,7 +145,7 @@ function DesktopUpdatePanel() {
           <Button
             size="sm"
             onClick={() =>
-              void api?.openExternal("https://github.com/Songwo/zhiyu/releases/latest")
+              void api?.openExternal("https://github.com/addxiaoyi/HEL-SEIF/releases/latest")
             }
           >
             <Download />
@@ -177,7 +177,7 @@ function DesktopUpdatePanel() {
           size="sm"
           variant="ghost"
           disabled={!api}
-          onClick={() => void api?.openExternal("https://github.com/Songwo/zhiyu/releases/latest")}
+          onClick={() => void api?.openExternal("https://github.com/addxiaoyi/HEL-SEIF/releases/latest")}
         >
           <ExternalLink />
           {t("发布页")}
@@ -186,13 +186,13 @@ function DesktopUpdatePanel() {
       {status?.state === "outdated" && status.manual && (
         <p className="mt-3 text-xs leading-relaxed text-muted">
           {t(
-            "便携版不会自动安装。下载新的便携压缩包后，退出知屿，解压覆盖程序文件，保留 data 文件夹即可。",
+            "便携版不会自动安装。下载新的便携压缩包后，退出Helself，解压覆盖程序文件，保留 data 文件夹即可。",
           )}
         </p>
       )}
       {status?.state === "downloaded" && (
         <p className="mt-3 text-xs leading-relaxed text-muted">
-          {t("安装将关闭并重新打开知屿，请先结束正在进行的终端或其他任务。")}
+          {t("安装将关闭并重新打开Helself，请先结束正在进行的终端或其他任务。")}
         </p>
       )}
       {error && (

@@ -1,4 +1,4 @@
-/* 知屿同步协议（ZSP）动画：读取 zsp-steps.json，逐步播放配对、握手、同步和攻击场景。 */
+/* Helself同步协议（ZSP）动画：读取 zsp-steps.json，逐步播放配对、握手、同步和攻击场景。 */
 (() => {
   "use strict";
   const root = document.getElementById("zsp");

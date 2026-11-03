@@ -32,17 +32,17 @@ internal static class BootstrapperTests
     public static int Main()
     {
         try {
-            Check(Engine.ValidPath(@"D:\Apps\Zhiyu"), "标准安装路径");
-            Check(Engine.ValidPath(@"E:\My Apps\知屿"), "含空格与中文的路径");
+            Check(Engine.ValidPath(@"D:\Apps\Helself"), "标准安装路径");
+            Check(Engine.ValidPath(@"E:\My Apps\Helself"), "含空格与中文的路径");
             Check(Engine.VersionMatches("1.17.2.0", "1.17.2"), "接受 Windows PE 四段产品版本");
             Check(Engine.VersionMatches("1.17.2", "1.17.2"), "接受三段产品版本");
             Check(!Engine.VersionMatches("1.17.1.0", "1.17.2") && !Engine.VersionMatches("1.17.2.1", "1.17.2") && !Engine.VersionMatches("bad", "1.17.2"), "拒绝其他版本和错误版本格式");
             var absentDrive = Enumerable.Range('A', 26).Select(c => ((char)c) + @":\").FirstOrDefault(d => !Directory.Exists(d));
-            if (absentDrive != null) Check(!Engine.Writable(Path.Combine(absentDrive, "Zhiyu")), "磁盘断开时立即返回不可写，不循环查找父目录");
+            if (absentDrive != null) Check(!Engine.Writable(Path.Combine(absentDrive, "Helself")), "磁盘断开时立即返回不可写，不循环查找父目录");
             foreach (var invalid in new[] { "", @"D:\", @"relative", @"D:\Apps\..", @"D:\Apps\CON", "D:\\bad\" /S", @"D:\bad?", @"D:\bad\", "D:\\bad\npath" }) Check(!Engine.ValidPath(invalid), "拒绝非法路径 " + invalid.Replace("\n", "\\n"));
-            var args = Engine.Arguments(@"E:\My Apps\知屿", true, false, true);
-            Check(args == @"/S /allusers --no-desktop-shortcut /ZH_STARTUP=1 /D=E:\My Apps\知屿", "NSIS 参数与目录顺序");
-            Check(Engine.Arguments(@"D:\Apps\Zhiyu", false, true, false).Contains("/currentuser /ZH_STARTUP=0"), "当前用户与自启关闭");
+            var args = Engine.Arguments(@"E:\My Apps\Helself", true, false, true);
+            Check(args == @"/S /allusers --no-desktop-shortcut /ZH_STARTUP=1 /D=E:\My Apps\Helself", "NSIS 参数与目录顺序");
+            Check(Engine.Arguments(@"D:\Apps\Helself", false, true, false).Contains("/currentuser /ZH_STARTUP=0"), "当前用户与自启关闭");
             var bytes = Encoding.UTF8.GetBytes("synthetic installer bytes; never executed");
             var payload = new Payload { Url = "https://fixture.invalid/setup.exe", Size = bytes.Length };
             using (var client = new HttpClient(new FixtureHandler(bytes))) using (var stream = new MemoryStream()) {
@@ -86,39 +86,39 @@ internal static class BootstrapperTests
             encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
             using (var output = File.Create("screenshots/installer-preview/native-done.png")) encoder.Save(output);
             window.Close();
-            if (Environment.GetEnvironmentVariable("ZHIYU_INSTALLER_REAL_TEST") == "1") RealInstall(Payload.Read());
+            if (Environment.GetEnvironmentVariable("HELSELF_INSTALLER_REAL_TEST") == "1") RealInstall(Payload.Read());
             Console.WriteLine(count + " assertions passed"); return 0;
         } catch (Exception error) { Console.Error.WriteLine(error); return 1; }
     }
     static void RealInstall(Payload payload)
     {
         if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") throw new Exception("真实安装回归仅允许在一次性的 GitHub Actions Windows 环境运行。");
-        Check(Engine.Existing(false) == null && Engine.Existing(true) == null, "真实安装回归环境没有已有知屿");
-        var path = Path.Combine(Path.GetTempPath(), "ZhiyuFullInstallerTests-" + Guid.NewGuid().ToString("N"));
-        var setup = Environment.GetEnvironmentVariable("ZHIYU_INSTALLER_TEST_PAYLOAD");
+        Check(Engine.Existing(false) == null && Engine.Existing(true) == null, "真实安装回归环境没有已有Helself");
+        var path = Path.Combine(Path.GetTempPath(), "HelselfFullInstallerTests-" + Guid.NewGuid().ToString("N"));
+        var setup = Environment.GetEnvironmentVariable("HELSELF_INSTALLER_TEST_PAYLOAD");
         using (var file = File.OpenRead(setup)) Engine.Verify(file, payload);
         using (var child = Process.Start(new ProcessStartInfo(setup, Engine.Arguments(path, false, false, true)) { UseShellExecute = false, CreateNoWindow = true })) {
             if (!child.WaitForExit(120000)) throw new Exception("真实安装超时。");
             Check(child.ExitCode == 0, "真实 NSIS 安装退出码");
         }
         try {
-            Check(File.Exists(Path.Combine(path, "Zhiyu.exe")), "真实 NSIS 写入指定目录");
-            var actualVersion = FileVersionInfo.GetVersionInfo(Path.Combine(path, "Zhiyu.exe")).ProductVersion;
+            Check(File.Exists(Path.Combine(path, "Helself.exe")), "真实 NSIS 写入指定目录");
+            var actualVersion = FileVersionInfo.GetVersionInfo(Path.Combine(path, "Helself.exe")).ProductVersion;
             Console.WriteLine("Installed ProductVersion: " + actualVersion);
             Check(Engine.VersionMatches(actualVersion, payload.Version), "实际安装版本");
-            using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run")) Check(key != null && (string)key.GetValue("Zhiyu") == "\"" + Path.Combine(path, "Zhiyu.exe") + "\"", "实际安装写入自启偏好");
+            using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run")) Check(key != null && (string)key.GetValue("Helself") == "\"" + Path.Combine(path, "Helself.exe") + "\"", "实际安装写入自启偏好");
             using (var child = Process.Start(new ProcessStartInfo(setup, Engine.Arguments(path, false, false, true).Replace(" /ZH_STARTUP=1", "")) { UseShellExecute = false, CreateNoWindow = true })) {
                 if (!child.WaitForExit(120000)) throw new Exception("覆盖升级超时。");
                 Check(child.ExitCode == 0, "离线覆盖升级成功");
             }
-            using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run")) Check(key != null && key.GetValue("Zhiyu") != null, "离线覆盖升级保留自启偏好");
+            using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run")) Check(key != null && key.GetValue("Helself") != null, "离线覆盖升级保留自启偏好");
         } finally {
-            var uninstall = Path.Combine(path, "Uninstall Zhiyu.exe");
+            var uninstall = Path.Combine(path, "Uninstall Helself.exe");
             if (File.Exists(uninstall)) using (var child = Process.Start(new ProcessStartInfo(uninstall, "/S /currentuser") { UseShellExecute = false, CreateNoWindow = true })) child.WaitForExit(120000);
         }
         var deadline = DateTime.UtcNow.AddSeconds(30);
-        while (File.Exists(Path.Combine(path, "Zhiyu.exe")) && DateTime.UtcNow < deadline) Thread.Sleep(200);
-        Check(!File.Exists(Path.Combine(path, "Zhiyu.exe")), "真实卸载清理程序");
-        using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run")) Check(key == null || key.GetValue("Zhiyu") == null, "真实卸载移除本程序自启");
+        while (File.Exists(Path.Combine(path, "Helself.exe")) && DateTime.UtcNow < deadline) Thread.Sleep(200);
+        Check(!File.Exists(Path.Combine(path, "Helself.exe")), "真实卸载清理程序");
+        using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run")) Check(key == null || key.GetValue("Helself") == null, "真实卸载移除本程序自启");
     }
 }

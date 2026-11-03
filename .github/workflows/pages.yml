@@ -39,11 +39,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api repos/Songwo/zhiyu/releases/latest > "$RUNNER_TEMP/zhiyu-release.json"
-          node scripts/build-site.mjs "$RUNNER_TEMP/zhiyu-release.json" "$RUNNER_TEMP/zhiyu-site"
+          gh api repos/addxiaoyi/HEL-SEIF/releases/latest > "$RUNNER_TEMP/helself-release.json"
+          node scripts/build-site.mjs "$RUNNER_TEMP/helself-release.json" "$RUNNER_TEMP/helself-site"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: ${{ runner.temp }}/zhiyu-site
+          path: ${{ runner.temp }}/helself-site
       - uses: actions/deploy-pages@v4
         id: deployment

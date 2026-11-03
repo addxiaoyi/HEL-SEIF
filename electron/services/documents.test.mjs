@@ -27,7 +27,7 @@ const doc = () => ({
 test("Markdown 原文跨重启和元数据编辑保留，列表不携带正文", async () => {
   const dir = await mkdtemp(join(tmpdir(), "nanpad-docs-markdown-"));
   const markdown =
-    "# 源码\r\n\r\n| 名称 | 值 |\r\n| --- | --- |\r\n| 应用 | 知屿 |\r\n\r\n- [x] 保留格式\r\n";
+    "# 源码\r\n\r\n| 名称 | 值 |\r\n| --- | --- |\r\n| 应用 | Helself |\r\n\r\n- [x] 保留格式\r\n";
   try {
     const store = new DocumentsStore(dir);
     const saved = await store.save({ ...doc(), markdown });
@@ -163,7 +163,7 @@ test("并发迁移请求保留首次保存的内容", async () => {
 });
 
 async function metadataFixture(t, options = {}) {
-  const dir = await mkdtemp(join(tmpdir(), "zhiyu-document-metadata-"));
+  const dir = await mkdtemp(join(tmpdir(), "helself-document-metadata-"));
   let reads = 0;
   const store = new DocumentsStore(dir, {
     ...options,

@@ -130,7 +130,7 @@ func RunCheck(parent context.Context, check Check) CheckResult {
 		if err != nil {
 			return result
 		}
-		req.Header.Set("User-Agent", "Zhiyu-Probe/1")
+		req.Header.Set("User-Agent", "Helself-Probe/1")
 		response, err := client.Do(req)
 		if err != nil {
 			if ctx.Err() != nil {

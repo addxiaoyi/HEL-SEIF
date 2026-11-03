@@ -33,7 +33,7 @@ export function BoundIntegrationPanel({
       <div className="integration-toolbar">
         <h3 className="flex items-center gap-2 font-semibold text-meta">
           <Link2 className="size-4" />
-          {integration.provider === "cloudflare" ? "Cloudflare" : t("知屿独立探针")}
+          {integration.provider === "cloudflare" ? "Cloudflare" : t("Helself独立探针")}
         </h3>
         <div className="flex gap-2">
           <Button variant="ghost" size="sm" onClick={openIntegrations}>

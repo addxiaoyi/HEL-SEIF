@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	pb "github.com/Songwo/zhiyu/services/probe/proto"
+	pb "github.com/addxiaoyi/HEL-SEIF/services/probe/proto"
 	"github.com/shirou/gopsutil/v4/cpu"
 	"github.com/shirou/gopsutil/v4/disk"
 	"github.com/shirou/gopsutil/v4/host"

@@ -111,7 +111,7 @@ export function TitleBar() {
         </div>
         <LogoMark className="size-6 shrink-0 md:hidden" />
         <nav aria-label={t("当前位置")} className="titlebar-crumbs">
-          <span className="titlebar-crumb-root">{t("知屿")}</span>
+          <span className="titlebar-crumb-root">{t("Helself")}</span>
           <ChevronRight className="titlebar-crumb-sep" aria-hidden="true" />
           {settingsPage ? (
             <span className="titlebar-crumb-current">{t("系统设置")}</span>

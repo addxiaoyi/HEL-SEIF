@@ -138,7 +138,7 @@ export function bindResource(snapshot, connection, resource, assetId) {
       ...base,
       category: resource.type === "worker" ? "worker" : "custom",
       url: resource.url,
-      provider: connection.provider === "cloudflare" ? "Cloudflare" : "知屿探针",
+      provider: connection.provider === "cloudflare" ? "Cloudflare" : "Helself探针",
       status: "warning",
     });
   if (kind === "domain") item = syncZoneFields(item, resource);

@@ -9,7 +9,7 @@ import { completeOnboarding } from "./onboarding-helper.mjs";
 import { Vault } from "../electron/services/vault.mjs";
 
 // 所有网络与系统浏览器调用在测试进程中替换，生产代码没有测试域名或任意回调后门。
-const directory = await mkdtemp(join(tmpdir(), "zhiyu-identity-totp-"));
+const directory = await mkdtemp(join(tmpdir(), "helself-identity-totp-"));
 const screenshotDirectory = resolve("release/identity-totp-qa");
 const env = { ...process.env, NANPAD_TEST_DATA_DIR: directory };
 const packaged = process.argv[2];
@@ -612,6 +612,6 @@ try {
 } finally {
   await instance?.close();
   assert.equal(dirname(resolve(directory)), resolve(tmpdir()));
-  assert.ok(basename(directory).startsWith("zhiyu-identity-totp-"));
+  assert.ok(basename(directory).startsWith("helself-identity-totp-"));
   await rm(directory, { recursive: true, force: true });
 }

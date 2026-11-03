@@ -67,12 +67,12 @@ async function request(path, options = {}, authenticated = true) {
     if (response.status === 401) {
       await forgetConnection();
       connection("连接已失效，请重新配对", "error");
-      throw new Error("请在已解锁的知屿桌面端生成新的配对码。");
+      throw new Error("请在已解锁的Helself桌面端生成新的配对码。");
     }
     if (response.status === 423) {
       await forgetConnection();
       connection("密钥库已锁定", "error");
-      throw new Error("请解锁知屿，再生成新的配对码连接。");
+      throw new Error("请解锁Helself，再生成新的配对码连接。");
     }
     if (response.status === 429) throw new Error("操作过于频繁，请稍后再试。");
     if (!response.ok)
@@ -86,7 +86,7 @@ async function request(path, options = {}, authenticated = true) {
     if (error instanceof TypeError || error.name === "AbortError") {
       connected = false;
       connection("桌面端未连接", "error");
-      throw new Error("无法连接知屿，请打开 1.3.0 或更新版本并解锁。请求未自动重试。");
+      throw new Error("无法连接Helself，请打开 1.3.0 或更新版本并解锁。请求未自动重试。");
     }
     throw error;
   } finally {
@@ -209,9 +209,9 @@ $("#pair-form").addEventListener("submit", async (event) => {
     if (!state.unlocked) throw new Error("请先解锁桌面端密钥库。");
     connected = true;
     pairing.open = false;
-    connection("已连接本机知屿", "connected");
+    connection("已连接本机Helself", "connected");
     await loadAccounts();
-    message("已配对，当前站点的账号与文档可以保存到知屿。", "success");
+    message("已配对，当前站点的账号与文档可以保存到Helself。", "success");
   } catch (error) {
     message(error.message, "error");
   } finally {
@@ -239,7 +239,7 @@ $("#capture").addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!capture || !connected || busy) return;
   if (!username.value.trim() || !password.value) {
-    message("请填写账号和密码；只保存网址请使用“仅记录站点并打开知屿”。", "error");
+    message("请填写账号和密码；只保存网址请使用“仅记录站点并打开Helself”。", "error");
     (!username.value.trim() ? username : password).focus();
     return;
   }
@@ -247,7 +247,7 @@ $("#capture").addEventListener("submit", async (event) => {
   controls();
   try {
     const site = await currentCapture();
-    const result = await companion("zhiyu-save-account", {
+    const result = await companion("helself-save-account", {
       capture: { ...site, username: username.value.trim(), password: password.value },
     });
     if (typeof result.id !== "string" || !result.id)
@@ -259,7 +259,7 @@ $("#capture").addEventListener("submit", async (event) => {
     hidePassword();
     $(".capture-details").open = false;
     await loadAccounts();
-    message("已加密保存到知屿；同账号的不同密码会保留为新版本。", "success");
+    message("已加密保存到Helself；同账号的不同密码会保留为新版本。", "success");
   } catch (error) {
     message(error.message, "error");
   } finally {
@@ -270,9 +270,9 @@ $("#capture").addEventListener("submit", async (event) => {
 $("#site-only").addEventListener("click", async () => {
   try {
     await chrome.tabs.create({ url: captureUrl(await currentCapture()) });
-    message("已请求打开知屿，请在桌面端继续记录站点。");
+    message("已请求打开Helself，请在桌面端继续记录站点。");
   } catch (error) {
-    message(error.message || "无法打开知屿，请安装桌面端并允许打开外部应用。", "error");
+    message(error.message || "无法打开Helself，请安装桌面端并允许打开外部应用。", "error");
   }
 });
 window.addEventListener("pagehide", () => {
@@ -309,7 +309,7 @@ await Promise.allSettled([
         return;
       }
       connected = true;
-      connection("已连接本机知屿", "connected");
+      connection("已连接本机Helself", "connected");
     } catch (error) {
       connection("桌面连接不可用", "error");
       message(error.message, "error");
@@ -318,9 +318,9 @@ await Promise.allSettled([
 ]);
 
 const companionErrors = {
-  unpaired: "请连接已解锁的知屿桌面端。",
-  locked: "请解锁知屿，再重新配对。",
-  offline: "桌面端未连接，请打开知屿后重试。",
+  unpaired: "请连接已解锁的Helself桌面端。",
+  locked: "请解锁Helself，再重新配对。",
+  offline: "桌面端未连接，请打开Helself后重试。",
   expired: "记录已过期，请重新读取当前页。",
   insecure: "为保护密码，仅支持在 HTTPS 网站保存和填写账号。",
   navigated: "页面已切换，请重新读取后操作。",
@@ -347,7 +347,7 @@ async function loadAccounts() {
   $("#pending-account").hidden = true;
   if (!capture || !connected) return;
   try {
-    const { accounts } = await companion("zhiyu-list");
+    const { accounts } = await companion("helself-list");
     $("#account-empty").textContent = accounts.length
       ? "选择一个账号填写，网站不会自动提交登录。"
       : "本站暂无账号。登录后可自动提示保存。";
@@ -366,8 +366,8 @@ async function loadAccounts() {
         button.disabled = true;
         try {
           await currentCapture();
-          await companion("zhiyu-list");
-          await companion("zhiyu-fill", { id: account.id });
+          await companion("helself-list");
+          await companion("helself-fill", { id: account.id });
           message("已填写到当前登录表单，请核对后自行登录。", "success");
         } catch (error) {
           message(error.message, "error");
@@ -379,7 +379,7 @@ async function loadAccounts() {
       });
       list.append(button);
     }
-    const result = await companion("zhiyu-pending");
+    const result = await companion("helself-pending");
     if (result.pending) {
       $("#pending-name").textContent = result.pending.username;
       $("#pending-account").hidden = false;
@@ -393,7 +393,7 @@ $("#save-pending").addEventListener("click", async (event) => {
   busy = true;
   controls();
   try {
-    await companion("zhiyu-save-pending");
+    await companion("helself-save-pending");
     $("#pending-account").hidden = true;
     message("账号已加密保存；不同密码会保留为新版本。", "success");
     await loadAccounts();
@@ -410,7 +410,7 @@ $("#save-document").addEventListener("click", async (event) => {
   controls();
   $("#save-document").disabled = true;
   try {
-    const result = await companion("zhiyu-document");
+    const result = await companion("helself-document");
     message(
       result.status === "existing"
         ? "此来源已保存，未覆盖已有文档。"

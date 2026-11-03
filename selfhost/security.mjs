@@ -31,7 +31,7 @@ export function normalizeIp(address) {
 }
 
 /**
- * 解析 ZHIYU_ALLOWED_NETS：逗号分隔的 IP、CIDR 或关键字 `private`。
+ * 解析 HELSELF_ALLOWED_NETS：逗号分隔的 IP、CIDR 或关键字 `private`。
  * 写错的条目直接报错（拒绝启动），不能因为手误把服务开放给所有人。
  */
 export function parseAllowedNets(value) {
@@ -45,13 +45,13 @@ export function parseAllowedNets(value) {
   )) {
     const [address, prefix] = entry.split("/");
     const family = isIP(address);
-    if (!family) throw new Error(`ZHIYU_ALLOWED_NETS 里的「${entry}」不是有效的 IP 或网段`);
+    if (!family) throw new Error(`HELSELF_ALLOWED_NETS 里的「${entry}」不是有效的 IP 或网段`);
     const max = family === 4 ? 32 : 128;
     if (prefix === undefined) list.addAddress(address, family === 4 ? "ipv4" : "ipv6");
     else {
       const bits = Number(prefix);
       if (!/^\d+$/.test(prefix) || bits > max)
-        throw new Error(`ZHIYU_ALLOWED_NETS 里的「${entry}」前缀长度无效`);
+        throw new Error(`HELSELF_ALLOWED_NETS 里的「${entry}」前缀长度无效`);
       list.addSubnet(address, bits, family === 4 ? "ipv4" : "ipv6");
     }
   }
@@ -136,7 +136,7 @@ export function verifyTotp(secret, code, now = Date.now(), lastStep = 0) {
   }
   return matched === undefined ? { ok: false } : { ok: true, step: matched };
 }
-export function otpauthUri({ secret, account, issuer = "知屿 Zhiyu" }) {
+export function otpauthUri({ secret, account, issuer = "Helself" }) {
   const label = encodeURIComponent(`${issuer}:${account}`);
   return `otpauth://totp/${label}?secret=${base32Encode(secret)}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=${TOTP_PERIOD}`;
 }

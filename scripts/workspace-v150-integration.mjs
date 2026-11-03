@@ -11,7 +11,7 @@ const packaged = process.argv.slice(2).find((arg) => /\.exe$/i.test(arg));
 const expectedVersion = JSON.parse(
   await readFile(new URL("../package.json", import.meta.url), "utf8"),
 ).version;
-const directory = await mkdtemp(join(tmpdir(), "zhiyu-workspace-v150-"));
+const directory = await mkdtemp(join(tmpdir(), "helself-workspace-v150-"));
 const env = { ...process.env, NANPAD_TEST_DATA_DIR: directory };
 delete env.ELECTRON_RUN_AS_NODE;
 delete env.SINAN_DEV_URL;

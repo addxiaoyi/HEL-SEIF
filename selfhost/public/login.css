@@ -1,20 +1,24 @@
 :root {
-  --bg: #f3f2ee;
+  --bg: #f6f3ea;
   --card: #ffffff;
-  --ink: #1b2232;
-  --muted: #5b6478;
-  --line: #dad8d0;
-  --accent: #3b6fe0;
+  --ink: #111315;
+  --muted: #6b6b64;
+  --line: #e2ded1;
+  --accent: #1d5b4a;
+  --on-accent: #f6f3ea;
   --crit: #b5482f;
   color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #12161f;
-    --card: #1e2433;
-    --ink: #eef0f4;
-    --muted: #8c95a8;
-    --line: #2c3447;
+    --bg: #111315;
+    --card: color-mix(in srgb, #f6f3ea 7%, #111315);
+    --ink: #f6f3ea;
+    --muted: color-mix(in srgb, #f6f3ea 62%, #111315);
+    --line: color-mix(in srgb, #f6f3ea 18%, #111315);
+    --accent: #7fe0bf;
+    --on-accent: #111315;
+    --crit: #f2764f;
   }
 }
 * {
@@ -28,7 +32,8 @@ body {
   place-items: center;
   background: var(--bg);
   color: var(--ink);
-  font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  font-family: "Inter", "Inter Variable", system-ui, -apple-system, "Segoe UI", "PingFang SC",
+    "Microsoft YaHei", sans-serif;
 }
 .card {
   width: min(420px, 100%);
@@ -99,8 +104,8 @@ button {
   margin-top: 6px;
   border: 0;
   border-radius: 12px;
-  background: var(--ink);
-  color: var(--bg);
+  background: var(--accent);
+  color: var(--on-accent);
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;

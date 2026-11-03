@@ -10,7 +10,7 @@ export default mergeConfig(
   desktop,
   defineConfig({
     base: "/",
-    define: { "import.meta.env.VITE_ZHIYU_WEB": JSON.stringify("1") },
+    define: { "import.meta.env.VITE_HELSELF_WEB": JSON.stringify("1") },
     build: {
       outDir: fileURLToPath(new URL("./dist-web", import.meta.url)),
       emptyOutDir: true,

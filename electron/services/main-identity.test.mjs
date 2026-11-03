@@ -21,7 +21,7 @@ const profile = {
 const json = (value, status = 200) =>
   new Response(JSON.stringify(value), { status, headers: { "content-type": "application/json" } });
 async function setup(t, overrides = {}) {
-  const dir = await mkdtemp(join(tmpdir(), "zhiyu-main-identity-"));
+  const dir = await mkdtemp(join(tmpdir(), "helself-main-identity-"));
   const key = randomBytes(32);
   const safeStorage = {
     isEncryptionAvailable: () => true,

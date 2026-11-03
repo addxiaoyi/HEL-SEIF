@@ -193,7 +193,7 @@ export function LiveShell({
       cleanups.push(() => observer.disconnect());
       if (preview || !bridge) {
         term.write(
-          '\x1b[90m~/workspace  $ cat deployment.ts\x1b[0m\r\n\r\n\x1b[90m// 部署配置示例\x1b[0m\r\n\x1b[35mconst\x1b[0m service = {\r\n  name: \x1b[32m"zhiyu-api"\x1b[0m,\r\n  port: \x1b[33m8080\x1b[0m,\r\n  healthy: \x1b[35mtrue\x1b[0m,\r\n};\r\n\r\n\x1b[35mawait\x1b[0m \x1b[34mdeploy\x1b[0m(service);\r\n\r\n\x1b[90m// 此处只预览外观，不执行命令或连接服务器。\x1b[0m\r\n',
+          '\x1b[90m~/workspace  $ cat deployment.ts\x1b[0m\r\n\r\n\x1b[90m// 部署配置示例\x1b[0m\r\n\x1b[35mconst\x1b[0m service = {\r\n  name: \x1b[32m"helself-api"\x1b[0m,\r\n  port: \x1b[33m8080\x1b[0m,\r\n  healthy: \x1b[35mtrue\x1b[0m,\r\n};\r\n\r\n\x1b[35mawait\x1b[0m \x1b[34mdeploy\x1b[0m(service);\r\n\r\n\x1b[90m// 此处只预览外观，不执行命令或连接服务器。\x1b[0m\r\n',
         );
         report("preview");
         return;

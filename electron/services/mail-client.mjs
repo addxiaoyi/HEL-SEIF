@@ -266,7 +266,7 @@ export class MailClient {
         connectionTimeout: 12000,
         greetingTimeout: 12000,
         socketTimeout: 20000,
-        clientInfo: { name: "Zhiyu", vendor: "Zhiyu" },
+        clientInfo: { name: "Helself", vendor: "Helself" },
       });
       let rejectAbort;
       const interrupted = new Promise((_, reject) => {

@@ -114,7 +114,7 @@ export class WebReminderPush {
     const record = await this.#record();
     if (!record.token || (requiresDestination(record.provider) && !record.destination))
       throw new ReminderPushError("请先保存推送凭据和接收目标。");
-    await this.#send(record, "知屿网页版提醒推送测试：连接正常。之后续费与备忘提醒会推送到这里。");
+    await this.#send(record, "Helself网页版提醒推送测试：连接正常。之后续费与备忘提醒会推送到这里。");
     return { ok: true };
   }
 
@@ -131,14 +131,14 @@ export class WebReminderPush {
         (requiresDestination(record.provider) && !record.destination)
       )
         return false;
-      await this.#send(record, text, "知屿 Zhiyu 安全提醒");
+      await this.#send(record, text, "Helself 安全提醒");
       return true;
     } catch {
       return false;
     }
   }
 
-  async #send(record, text, title = "知屿 Zhiyu 续费提醒") {
+  async #send(record, text, title = "Helself 续费提醒") {
     let request;
     try {
       request = buildPushRequest(record, text, title);
@@ -177,7 +177,7 @@ export class WebReminderPush {
     if (due.length) {
       const lines = due.slice(0, 15).map((item) => attentionLine(item));
       if (due.length > 15) lines.push(`……还有 ${due.length - 15} 项`);
-      await this.#send(record, ["知屿提醒", ...lines].join("\n"));
+      await this.#send(record, ["Helself提醒", ...lines].join("\n"));
       for (const item of due) sent[item.key] = now;
     }
     await writeAtomic(this.#files.sent, JSON.stringify(sent));

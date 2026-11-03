@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	pb "github.com/Songwo/zhiyu/services/probe/proto"
+	pb "github.com/addxiaoyi/HEL-SEIF/services/probe/proto"
 	bolt "go.etcd.io/bbolt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

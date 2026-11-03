@@ -21,7 +21,7 @@ export class ViewErrorBoundary extends Component<{ children: ReactNode }, { erro
     if (isChunkLoadError(error))
       return (
         <div role="alert" className="mx-auto max-w-xl space-y-3 px-6 py-16 text-center">
-          <h2 className="text-lg font-semibold">{t("知屿已更新")}</h2>
+          <h2 className="text-lg font-semibold">{t("Helself已更新")}</h2>
           <p className="text-meta text-muted">
             {t("这个页面的文件已经换成新版本，刷新后即可继续使用。")}
           </p>

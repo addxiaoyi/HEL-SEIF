@@ -7,7 +7,7 @@ import { join, resolve } from "node:path";
 import { chromium } from "playwright";
 import { createWebServer } from "../selfhost/server.mjs";
 
-const root = await mkdtemp(join(tmpdir(), "zhiyu-web-e2e-"));
+const root = await mkdtemp(join(tmpdir(), "helself-web-e2e-"));
 const web = await createWebServer({
   root,
   staticDir: resolve("dist-web"),

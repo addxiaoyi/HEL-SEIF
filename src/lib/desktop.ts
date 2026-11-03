@@ -380,6 +380,10 @@ export interface DesktopBridge {
     open(target: SshTarget, size: { cols: number; rows: number }): Promise<{ sessionId: string }>;
     probe(target: SshTarget): Promise<HostProbe>;
     test(target: SshTarget, credential: SshCredential): Promise<{ ok: true; message: string }>;
+    /** Test with the credential in the vault — the SSH panel never asks for a saved secret again. */
+    testStored(target: SshTarget): Promise<{ ok: true; message: string }>;
+    /** The pinned host key fingerprint; null means this host has not connected yet. */
+    hostKey(target: { host: string; port?: number }): Promise<{ fingerprint: string | null }>;
     /** Forget the pinned host key fingerprint so the next connection re-pins it. */
     resetHostKey(target: { host: string; port?: number }): Promise<{ ok: true }>;
     close(sessionId: string): Promise<boolean>;

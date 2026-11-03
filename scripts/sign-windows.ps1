@@ -1,9 +1,9 @@
 ﻿param([Parameter(Mandatory=$true)][string]$Path)
 $ErrorActionPreference = 'Stop'
 $target = (Resolve-Path -LiteralPath $Path).Path
-$thumbprint = $env:ZHIYU_SIGN_CERT_SHA1
+$thumbprint = $env:HELSELF_SIGN_CERT_SHA1
 if (!$thumbprint) {
-  if ($env:ZHIYU_REQUIRE_SIGNING -eq '1') { throw '签名为必选，但未配置 ZHIYU_SIGN_CERT_SHA1。' }
+  if ($env:HELSELF_REQUIRE_SIGNING -eq '1') { throw '签名为必选，但未配置 HELSELF_SIGN_CERT_SHA1。' }
   Write-Output '未配置受信任代码签名证书：该产物未签名。'
   exit 0
 }

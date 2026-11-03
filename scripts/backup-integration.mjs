@@ -6,10 +6,10 @@ import { _electron as electron } from "playwright";
 import { completeOnboarding } from "./onboarding-helper.mjs";
 
 // 两个临时资料目录模拟两台电脑；备份文件写到第三个临时目录，不触碰真实资料。
-const source = await mkdtemp(join(tmpdir(), "zhiyu-backup-source-"));
-const target = await mkdtemp(join(tmpdir(), "zhiyu-backup-target-"));
-const outside = await mkdtemp(join(tmpdir(), "zhiyu-backup-files-"));
-const backupFile = join(outside, "integration.zhiyu-backup");
+const source = await mkdtemp(join(tmpdir(), "helself-backup-source-"));
+const target = await mkdtemp(join(tmpdir(), "helself-backup-target-"));
+const outside = await mkdtemp(join(tmpdir(), "helself-backup-files-"));
+const backupFile = join(outside, "integration.helself-backup");
 const PASSWORD = "integration-backup-2026";
 const DOC_TITLE = "备份回归文档";
 const errors = [];
@@ -71,7 +71,7 @@ try {
     ({ dialog }, filePath) => {
       dialog.showSaveDialog = async () => ({ canceled: false, filePath });
     },
-    join(source, "inside.zhiyu-backup"),
+    join(source, "inside.helself-backup"),
   );
   let settings = await openDataTab(page);
   await settings.getByRole("button", { name: "创建加密备份…", exact: true }).click();
@@ -85,9 +85,9 @@ try {
     dialog.showSaveDialog = async () => ({ canceled: false, filePath });
   }, backupFile);
   await settings.getByRole("button", { name: "选择保存位置并备份", exact: true }).click();
-  await page.getByText(/已创建加密备份 integration\.zhiyu-backup/).waitFor();
+  await page.getByText(/已创建加密备份 integration\.helself-backup/).waitFor();
   const bytes = await readFile(backupFile);
-  assert.equal(bytes.subarray(0, 8).toString("ascii"), "ZHIYUBAK");
+  assert.equal(bytes.subarray(0, 8).toString("ascii"), "HELSELFBAK");
   for (const plain of [DOC_TITLE, "sk-integration-backup-key", "vault-secret-1"])
     assert.equal(bytes.includes(Buffer.from(plain)), false, plain);
   await page.screenshot({ path: "screenshots/backup-create.png" });
@@ -108,7 +108,7 @@ try {
   }, backupFile);
   settings = await openDataTab(page);
   await settings.getByRole("button", { name: "选择备份文件…", exact: true }).click();
-  await settings.getByText("integration.zhiyu-backup").waitFor();
+  await settings.getByText("integration.helself-backup").waitFor();
   const restorePassword = settings.getByRole("textbox", { name: "备份密码", exact: true });
   await restorePassword.fill("integration-wrong-2026");
   await settings.getByRole("button", { name: "读取备份", exact: true }).click();
@@ -121,7 +121,7 @@ try {
   assert.match(previewText, new RegExp(`密钥库凭据\\s+${sourceVault.length} 条`));
   await page.screenshot({ path: "screenshots/backup-restore-preview.png" });
   await settings.getByRole("button", { name: "恢复并重启", exact: true }).click();
-  await page.getByText("备份已准备好，知屿即将重启并完成恢复。").waitFor();
+  await page.getByText("备份已准备好，Helself即将重启并完成恢复。").waitFor();
   await page.waitForTimeout(1200);
   assert.deepEqual(await instance.evaluate(() => globalThis.restartCalls), ["relaunch", "quit"]);
   await stat(join(target, ".restore-pending", "ready.json"));
@@ -150,7 +150,7 @@ try {
   await stat(join(target, "restore-snapshots", snapshots[0], "vault.enc"));
 
   // —— 自动备份：选择文件夹、保存密码、立即备份 ——
-  const autoDirectory = await mkdtemp(join(tmpdir(), "zhiyu-backup-auto-"));
+  const autoDirectory = await mkdtemp(join(tmpdir(), "helself-backup-auto-"));
   await instance.evaluate(({ dialog }, directory) => {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [directory] });
   }, autoDirectory);
@@ -172,7 +172,7 @@ try {
   await page.getByText("已完成一次自动备份").waitFor();
   const autoFiles = await readdir(autoDirectory);
   assert.equal(autoFiles.length, 1);
-  assert.match(autoFiles[0], /^zhiyu-auto-\d{8}-\d{6}\.zhiyu-backup$/);
+  assert.match(autoFiles[0], /^helself-auto-\d{8}-\d{6}\.helself-backup$/);
   await settings.getByText(/上次：/).waitFor();
   await page.screenshot({ path: "screenshots/backup-auto.png" });
   await instance.close();

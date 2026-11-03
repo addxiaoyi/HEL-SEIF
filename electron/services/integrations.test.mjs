@@ -25,7 +25,7 @@ const record = {
 };
 const input = { type: "A", name: "www.example.test", content: "192.0.2.2", ttl: 1, proxied: true };
 async function setup(t, options = {}) {
-  const dir = await mkdtemp(join(tmpdir(), "zhiyu-integrations-"));
+  const dir = await mkdtemp(join(tmpdir(), "helself-integrations-"));
   t.after(() => rm(dir, { recursive: true, force: true }));
   const state = {
     snapshot: { servers: [], domains: [], services: [], links: [] },

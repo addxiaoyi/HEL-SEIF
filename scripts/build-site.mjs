@@ -3,7 +3,7 @@ import { cp, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-const repository = "https://github.com/Songwo/zhiyu";
+const repository = "https://github.com/addxiaoyi/HEL-SEIF";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 export function releaseDetails(release) {
@@ -27,12 +27,12 @@ export function releaseDetails(release) {
       throw new Error(`Unexpected asset URL: ${name}`);
     return entry;
   };
-  const brand = release.assets?.some((item) => item.name === `Zhiyu-${version}-setup.exe`)
-    ? "Zhiyu"
+  const brand = release.assets?.some((item) => item.name === `Helself-${version}-setup.exe`)
+    ? "Helself"
     : "Nanpad";
   const installer = asset(`${brand}-${version}-setup.exe`);
-  const online = release.assets?.some((item) => item.name === `Zhiyu-${version}-online-setup.exe`)
-    ? asset(`Zhiyu-${version}-online-setup.exe`)
+  const online = release.assets?.some((item) => item.name === `Helself-${version}-online-setup.exe`)
+    ? asset(`Helself-${version}-online-setup.exe`)
     : null;
   const extension = asset(`${brand}-${version}-browser-extension.zip`);
   const checksum = asset("SHA256SUMS.txt");
@@ -50,7 +50,7 @@ export function releaseDetails(release) {
       const text = part.trim();
       return text && !/^(?:#|[-*>]|\d+\.|```)/.test(text);
     });
-  const summary = (paragraph?.trim() || release.name || `知屿 Zhiyu ${version}`)
+  const summary = (paragraph?.trim() || release.name || `Helself ${version}`)
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
     .replace(/[*`]/g, "")
     .replace(/\s+/g, " ");

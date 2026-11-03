@@ -160,7 +160,7 @@ export class SshManager {
         }
         hostKeyFailure = new Error(
           `主机指纹已变更：${host}:${port} 此前记录 ${known}，本次收到 ${fingerprint}。` +
-            "服务器可能已重装，也可能连接正被劫持；确认服务器确实更换后，可在该资产的 SSH 凭据面板重置指纹。",
+            "服务器可能已重装，也可能连接正被劫持；确认服务器确实更换后，可在该主机的「SSH 凭据」页重置指纹。",
         );
         callback(false);
       })();
@@ -212,6 +212,12 @@ export class SshManager {
       }
     });
     return client;
+  }
+
+  /** The fingerprint pinned for this host, if any — public key material, not a secret. */
+  async hostKeyFor(target) {
+    const known = await this.#hostKeys.get(String(target?.host || ""), target?.port || 22);
+    return typeof known === "string" && known ? known : null;
   }
 
   /** Forget the pinned host key so the next connection trust-on-first-use again. */

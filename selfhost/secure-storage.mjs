@@ -23,7 +23,7 @@ export function createServerSecureStorage(keyFile) {
   }
   return {
     isEncryptionAvailable: () => true,
-    getSelectedStorageBackend: () => "zhiyu_server_key",
+    getSelectedStorageBackend: () => "helself_server_key",
     encryptString(text) {
       const iv = randomBytes(12);
       const cipher = createCipheriv("aes-256-gcm", key, iv);

@@ -116,7 +116,7 @@ async function fixture(t, configOverrides = {}, limits = {}) {
     const verifier = nonce();
     const state = nonce();
     const result = await request("/v1/login/start", {
-      redirectUri: "http://127.0.0.1:50111/oauth/zhiyu/callback",
+      redirectUri: "http://127.0.0.1:50111/oauth/helself/callback",
       state,
       challenge: challenge(verifier),
     });
@@ -221,13 +221,13 @@ test("未配置时健康检查可访问且登录明确拒绝", async (t) => {
 test("只允许精确 IPv4 本机回调，不接受非本机、低端口和额外参数", async (t) => {
   const f = await fixture(t);
   for (const redirectUri of [
-    "https://evil.test/oauth/zhiyu/callback",
-    "http://localhost:50111/oauth/zhiyu/callback",
-    "http://127.0.0.1:80/oauth/zhiyu/callback",
+    "https://evil.test/oauth/helself/callback",
+    "http://localhost:50111/oauth/helself/callback",
+    "http://127.0.0.1:80/oauth/helself/callback",
     "http://127.0.0.1:50111/other",
-    "http://127.0.0.1:50111/oauth/zhiyu/callback?x=1",
-    "http://evil@127.0.0.1:50111/oauth/zhiyu/callback",
-    "http://2130706433:50111/oauth/zhiyu/callback",
+    "http://127.0.0.1:50111/oauth/helself/callback?x=1",
+    "http://evil@127.0.0.1:50111/oauth/helself/callback",
+    "http://2130706433:50111/oauth/helself/callback",
   ]) {
     assert.equal(
       (await f.request("/v1/login/start", { redirectUri, state: nonce(), challenge: nonce() }))
@@ -457,7 +457,7 @@ test("待授权容量和请求速率有上限", async (t) => {
   assert.equal(
     (
       await f.request("/v1/login/start", {
-        redirectUri: "http://127.0.0.1:50111/oauth/zhiyu/callback",
+        redirectUri: "http://127.0.0.1:50111/oauth/helself/callback",
         state: nonce(),
         challenge: nonce(),
       })

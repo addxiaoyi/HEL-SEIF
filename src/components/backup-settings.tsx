@@ -109,7 +109,7 @@ function CreateBackup({ secureAvailable }: { secureAvailable: boolean }) {
     <Block
       title={t("加密备份")}
       hint={t(
-        "把资产、文档、密钥库、个人资料、用量与接入配置打包成一个文件，用备份密码加密。不需要退出知屿。",
+        "把资产、文档、密钥库、个人资料、用量与接入配置打包成一个文件，用备份密码加密。不需要退出Helself。",
       )}
     >
       {!open ? (
@@ -212,7 +212,7 @@ function PreviewCard({ preview }: { preview: BackupPreview }) {
         <dd>{when(preview.createdAt)}</dd>
       </div>
       <div className="flex justify-between gap-3 py-2">
-        <dt className="text-muted">{t("知屿版本")}</dt>
+        <dt className="text-muted">{t("Helself版本")}</dt>
         <dd>
           {preview.appVersion || "—"}
           {preview.kind === "auto" ? ` · ${t("自动备份")}` : ""}
@@ -310,7 +310,7 @@ function RestoreBackup({ lastRestore }: { lastRestore: RestoreOutcome | null }) 
       const result = await api.restore(picked.ticket, password);
       if (result.secureSkipped)
         toast.warning(t("本机安全加密不可用，系统保护的凭据未恢复，请重启后重新输入。"));
-      toast.success(t("备份已准备好，知屿即将重启并完成恢复。"));
+      toast.success(t("备份已准备好，Helself即将重启并完成恢复。"));
       setPassword("");
     } catch (err) {
       setError(message(err));
@@ -645,7 +645,7 @@ function WebBackup() {
       <Block
         title={t("从备份恢复")}
         hint={t(
-          "选择桌面版或网页版导出的 .zhiyu-backup 文件，服务器上的资产、文档和密钥库会整体替换成备份里的内容。",
+          "选择桌面版或网页版导出的 .helself-backup 文件，服务器上的资产、文档和密钥库会整体替换成备份里的内容。",
         )}
       >
         <form
@@ -666,7 +666,7 @@ function WebBackup() {
         >
           <input
             type="file"
-            accept=".zhiyu-backup"
+            accept=".helself-backup,.zhiyu-backup"
             aria-label={t("备份文件")}
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             className="block text-meta"

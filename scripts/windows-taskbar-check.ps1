@@ -9,7 +9,7 @@ $ErrorActionPreference = 'Stop'
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;
-public class ZhiyuTaskbarProperties {
+public class HelselfTaskbarProperties {
   [StructLayout(LayoutKind.Sequential)]
   public struct Key {
     public Guid Format;
@@ -47,12 +47,12 @@ public class ZhiyuTaskbarProperties {
 }
 "@
 $window = [IntPtr]$WindowHandle
-$appId = [ZhiyuTaskbarProperties]::Read($window, 5)
-$icon = [ZhiyuTaskbarProperties]::Read($window, 3)
-$command = [ZhiyuTaskbarProperties]::Read($window, 2)
-$displayName = [ZhiyuTaskbarProperties]::Read($window, 4)
+$appId = [HelselfTaskbarProperties]::Read($window, 5)
+$icon = [HelselfTaskbarProperties]::Read($window, 3)
+$command = [HelselfTaskbarProperties]::Read($window, 2)
+$displayName = [HelselfTaskbarProperties]::Read($window, 4)
 if ($appId -cne $ExpectedAppId) { throw "Taskbar identity mismatch: $appId" }
 if (-not [string]::Equals($icon, "$ExpectedIconPath,0", [StringComparison]::OrdinalIgnoreCase)) { throw 'Taskbar icon path mismatch' }
 if (-not [string]::Equals($command, ('"' + $ExpectedExecutable + '"'), [StringComparison]::OrdinalIgnoreCase)) { throw 'Taskbar relaunch command mismatch' }
-if ($displayName -cne '知屿 Zhiyu') { throw "Taskbar display name mismatch: $displayName" }
+if ($displayName -cne 'Helself') { throw "Taskbar display name mismatch: $displayName" }
 @{ ok = $true; appId = $appId; displayName = $displayName; icon = $icon } | ConvertTo-Json -Compress

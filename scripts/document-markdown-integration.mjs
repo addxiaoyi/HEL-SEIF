@@ -8,7 +8,7 @@ const browser = await chromium.launch({ headless: true });
 const errors = [];
 const checks = [];
 const source =
-  "# Markdown 原文\r\n\r\n| 项目 | 状态 |\r\n| --- | --- |\r\n| 知屿 | 正常 |\r\n\r\n- [x] 已完成\r\n\r\n#### 四级标题\r\n\r\n正文[^1]\r\n\r\n[^1]: 脚注原文\r\n";
+  "# Markdown 原文\r\n\r\n| 项目 | 状态 |\r\n| --- | --- |\r\n| Helself | 正常 |\r\n\r\n- [x] 已完成\r\n\r\n#### 四级标题\r\n\r\n正文[^1]\r\n\r\n[^1]: 脚注原文\r\n";
 await mkdir("release/screenshots", { recursive: true });
 try {
   const context = await browser.newContext({
@@ -85,7 +85,7 @@ try {
   const input = page.getByRole("textbox", { name: "Markdown 源码", exact: true });
   // HTML textarea 的展示换行由浏览器规范化，未编辑时持久化原文不受影响。
   assert.equal(await input.inputValue(), source.replaceAll("\r\n", "\n"));
-  const edited = source.replaceAll("\r\n", "\n").replace("| 知屿 | 正常 |", "| 知屿 | 已更新 |");
+  const edited = source.replaceAll("\r\n", "\n").replace("| Helself | 正常 |", "| Helself | 已更新 |");
   await input.fill(edited);
   await page.getByRole("button", { name: "预览", exact: true }).click();
   await page.getByRole("cell", { name: "已更新", exact: true }).waitFor();

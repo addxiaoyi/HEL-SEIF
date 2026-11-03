@@ -364,7 +364,7 @@
   box-shadow: var(--shadow-card);
 }
 .usage-metric {
-  --tone: #6d5ce6;
+  --tone: #1d7a63;
   position: relative;
   isolation: isolate;
   overflow: hidden;

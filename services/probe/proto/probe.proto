@@ -1,6 +1,6 @@
 syntax = "proto3";
 package zhiyu.probe.v1;
-option go_package = "github.com/Songwo/zhiyu/services/probe/proto;probepb";
+option go_package = "github.com/addxiaoyi/HEL-SEIF/services/probe/proto;probepb";
 
 service ProbeService {
   rpc ReportSystemInfo(SystemInfo) returns (Ack);

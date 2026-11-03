@@ -1,6 +1,6 @@
 # Cloudflare 接入
 
-知屿通过 Cloudflare 官方 REST API 读取域名、Workers、Pages 和 Tunnel。账户列表用于确定资源范围；账户列表无权限时，会继续尝试从域名所属账户读取对应资源。每一类资源独立报告失败，权限不足不会让其他可读取的资源消失。
+Helself通过 Cloudflare 官方 REST API 读取域名、Workers、Pages 和 Tunnel。账户列表用于确定资源范围；账户列表无权限时，会继续尝试从域名所属账户读取对应资源。每一类资源独立报告失败，权限不足不会让其他可读取的资源消失。
 
 ## Token 权限
 
@@ -20,7 +20,7 @@
 
 ## 在域名页快速连接
 
-桌面版「域名」页顶部有「连接 Cloudflare」入口：粘贴 API Token 后，知屿先验证并读取账户下的全部域名；Token 无效或没有任何读取权限时不会保留这个连接。随后可以在列表里勾选要导入的域名：
+桌面版「域名」页顶部有「连接 Cloudflare」入口：粘贴 API Token 后，Helself先验证并读取账户下的全部域名；Token 无效或没有任何读取权限时不会保留这个连接。随后可以在列表里勾选要导入的域名：
 
 - 每个 Cloudflare 域名对应一个本机域名资产，重复导入只更新、不新增，备注、标签、费用等本机资料不会被覆盖。
 - 导入时写入 Cloudflare 的 NS，DNS 服务商记为 Cloudflare。
@@ -38,7 +38,7 @@
 
 ## DNS 支持
 
-可查看所有记录类型；高级记录仅展示经过白名单筛选的标量字段。当前可新增或修改 A、AAAA、CNAME、TXT、MX、NS。SRV、CAA、HTTPS 等高级记录请前往 Cloudflare 控制台编辑，也可在知屿查看后删除。
+可查看所有记录类型；高级记录仅展示经过白名单筛选的标量字段。当前可新增或修改 A、AAAA、CNAME、TXT、MX、NS。SRV、CAA、HTTPS 等高级记录请前往 Cloudflare 控制台编辑，也可在Helself查看后删除。
 
 记录名称填写完整域名，例如 `www.example.com` 或 `_dmarc.example.com`；支持中文域名转换为 Punycode 和左侧通配符。不接受省略域名的 `@`。TTL 支持自动（1）或 60–86400 秒；开启代理时使用自动 TTL。Enterprise 专属 30 秒 TTL 当前仅可读取。MX 必须填写 0–65535 的优先级。
 

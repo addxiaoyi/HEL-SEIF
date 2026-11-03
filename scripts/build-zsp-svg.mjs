@@ -154,11 +154,11 @@ export function buildSvg(storyboard) {
       : `<g transform="translate(${cx - 24} 134)" class="ico"><rect x="7" y="8" width="34" height="13" rx="3"/><rect x="7" y="27" width="34" height="13" rx="3"/><path d="M13 14.5h.01M13 33.5h.01M20 14.5h14M20 33.5h14"/></g>`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-labelledby="t d">
-<title id="t">知屿桌面版与网页版同步（ZSP）的配对与同步流程动画</title>
+<title id="t">Helself桌面版与网页版同步（ZSP）的配对与同步流程动画</title>
 <desc id="d">桌面版和网页版用一次性配对码配对，之后每次同步互相认证并加密；重放、篡改、冒充、回滚都会被拒绝。完整说明见 docs/SYNC.md。</desc>
 <style>
-svg{--bg:#ffffff;--ink:#1b2232;--muted:#5b6478;--line:rgba(27,34,50,.22);--blue:#3b6fe0;--blue-soft:#e5edff;--teal:#138a96;--amber:#ffb23f;--red:#e5484d;--chip:#f3f4f7;--ok:#1a8a5b;font-family:Inter,"Segoe UI","PingFang SC","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif}
-@media (prefers-color-scheme:dark){svg{--bg:#1b1d22;--ink:#eef0f5;--muted:#a2a8b6;--line:rgba(255,255,255,.25);--blue:#5b87f0;--blue-soft:rgba(91,135,240,.18);--teal:#35b6c2;--chip:#272a31;--ok:#47c98f}}
+svg{--bg:#f6f3ea;--ink:#111315;--muted:#6b6b64;--line:rgba(17,19,21,.18);--blue:#1d5b4a;--blue-soft:#e3efe8;--teal:#146b5b;--amber:#f2764f;--red:#b8302f;--chip:#ffffff;--ok:#1d5b4a;font-family:Inter,"Segoe UI","PingFang SC","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif}
+@media (prefers-color-scheme:dark){svg{--bg:#111315;--ink:#f2f0e9;--muted:#a3a49c;--line:rgba(242,240,233,.18);--blue:#7fe0bf;--blue-soft:rgba(127,224,191,.16);--teal:#c8f169;--amber:#f2764f;--chip:#1a1c1e;--ok:#7fe0bf}}
 .bg{fill:var(--bg)}.title{font-size:22px;font-weight:700;fill:var(--ink)}.why{font-size:15px;fill:var(--muted)}
 .muted{fill:var(--muted)}.small{font-size:13px}.pill{font-size:13px;fill:var(--muted)}
 .wire{stroke:var(--line);stroke-width:2;stroke-dasharray:6 6;fill:none}
@@ -166,14 +166,14 @@ svg{--bg:#ffffff;--ink:#1b2232;--muted:#5b6478;--line:rgba(27,34,50,.22);--blue:
 .name{font-size:17px;font-weight:700;fill:var(--ink)}
 .chip{fill:var(--chip);stroke:var(--line);stroke-width:1}.chip.ok{stroke:var(--ok)}.chip-t{font-size:13px;fill:var(--muted)}.chip-t.ok{fill:var(--ok)}
 .pk-bg{fill:var(--blue)}.pk-enc{fill:var(--teal)}.human{fill:var(--amber)}.pk-evil{fill:var(--red)}
-.pk{font-size:13px;fill:#fff}.human+.pk{fill:#3a2a00}.lock{font-size:12px}
-.evil-bg{fill:rgba(229,72,77,.14)}.evil{font-size:30px;fill:var(--red)}
-.res{fill:rgba(229,72,77,.12)}.res-t{font-size:14px;font-weight:700;fill:var(--red)}
+.pk{font-size:13px;fill:#111315}.human+.pk{fill:#111315}.lock{font-size:12px}
+.evil-bg{fill:rgba(242,118,79,.18)}.evil{font-size:30px;fill:var(--red)}
+.res{fill:rgba(242,118,79,.16)}.res-t{font-size:14px;font-weight:700;fill:var(--red)}
 ${css.join("\n")}
 @media (prefers-reduced-motion:reduce){.step{animation:none!important;opacity:0}.s0{opacity:1!important}*[class*="p0_"],*[class*="h0"]{animation:none!important;opacity:1!important}}
 </style>
 <rect class="bg" width="${W}" height="${H}" rx="22"/>
-<text class="pill" x="32" y="42">知屿 · 同步协议 ZSP</text>
+<text class="pill" x="32" y="42">Helself · 同步协议 ZSP</text>
 <line class="wire" x1="${WIRE.left}" y1="${WIRE.y}" x2="${WIRE.right}" y2="${WIRE.y}"/>
 <rect class="ico-bg" x="${X.desktop - 38}" y="132" width="76" height="76" rx="20"/>${icon(X.desktop, "desktop")}
 <text class="name" x="${X.desktop}" y="236" text-anchor="middle">桌面版</text><text class="muted small" x="${X.desktop}" y="256" text-anchor="middle">你的电脑</text>

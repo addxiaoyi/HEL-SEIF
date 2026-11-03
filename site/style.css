@@ -1,34 +1,49 @@
-/* 知屿产品主页：与应用同一套中性灰底、白卡与品牌色（书页蓝、朝阳橙、海浪青）。 */
+/* Helself产品主页：与应用同一套纸白底、白卡与品牌色（松绿、薄荷、莱姆与陶土）。 */
 :root {
-  --bg: #f7f6f2;
+  --paper: #f6f3ea;
+  --bg: var(--paper);
   --card: #ffffff;
-  --ink: #1b2232;
-  --muted: #5b6478;
-  --subtle: #8a91a1;
-  --line: rgba(27, 34, 50, 0.09);
-  --blue: #3b6fe0;
-  --blue-soft: #e5edff;
-  --amber: #ffb23f;
-  --teal: #2bb3c0;
-  --violet: #6d5ce6;
-  --shadow-card: 0 1px 2px rgba(27, 34, 50, 0.05), 0 0 0 1px rgba(27, 34, 50, 0.05),
-    0 12px 32px -18px rgba(27, 34, 50, 0.22);
-  --shadow-float: 0 2px 6px rgba(27, 34, 50, 0.06), 0 0 0 1px rgba(27, 34, 50, 0.06),
-    0 40px 80px -40px rgba(27, 34, 50, 0.45);
+  --ink: #111315;
+  --muted: #6b6b64;
+  --subtle: #6f6f68;
+  --line: rgba(17, 19, 21, 0.1);
+  --pine: #1d5b4a;
+  --pine-soft: #e5efe9;
+  --mint: #7fe0bf;
+  --mint-ink: #146b5b;
+  --lime: #c8f169;
+  --clay: #f2764f;
+  --clay-ink: #a8451f;
+  --danger: #b8302f;
+  --danger-ink: #952827;
+  --enc: #146b5b;
+  --accent: var(--pine);
+  --accent-soft: var(--pine-soft);
+  --shadow-card: 0 1px 2px rgba(17, 19, 21, 0.05), 0 0 0 1px rgba(17, 19, 21, 0.06),
+    0 12px 32px -18px rgba(17, 19, 21, 0.18);
+  --shadow-float: 0 2px 6px rgba(17, 19, 21, 0.06), 0 0 0 1px rgba(17, 19, 21, 0.07),
+    0 40px 80px -40px rgba(17, 19, 21, 0.35);
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #121316;
-    --card: #1b1d22;
-    --ink: #eef0f5;
-    --muted: #a2a8b6;
-    --subtle: #7b8191;
-    --line: rgba(255, 255, 255, 0.08);
-    --blue-soft: rgba(91, 135, 240, 0.16);
-    --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 16px 36px -20px rgba(0, 0, 0, 0.8);
-    --shadow-float: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 40px 90px -40px rgba(0, 0, 0, 0.9);
+    --bg: #111315;
+    --card: #1a1c1e;
+    --ink: #f2f0e9;
+    --muted: #a3a49c;
+    --subtle: #8b8c85;
+    --line: rgba(242, 240, 233, 0.1);
+    --pine-soft: rgba(127, 224, 191, 0.14);
+    --mint-ink: #7fe0bf;
+    --clay-ink: #f2764f;
+    --danger: #f06a6f;
+    --danger-ink: #ffb3b5;
+    --enc: #c8f169;
+    --accent: var(--mint);
+    --accent-soft: rgba(127, 224, 191, 0.14);
+    --shadow-card: 0 0 0 1px rgba(242, 240, 233, 0.07), 0 16px 36px -20px rgba(0, 0, 0, 0.8);
+    --shadow-float: 0 0 0 1px rgba(242, 240, 233, 0.08), 0 40px 90px -40px rgba(0, 0, 0, 0.9);
   }
 }
 *,
@@ -52,6 +67,10 @@ body {
     system-ui,
     sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+::selection {
+  background: color-mix(in oklab, var(--lime) 70%, transparent);
+  color: #111315;
 }
 img,
 video {
@@ -153,29 +172,39 @@ nav a:hover {
   height: 520px;
   border-radius: 50%;
   filter: blur(80px);
-  opacity: 0.55;
+  opacity: 0.32;
   animation: drift 24s ease-in-out infinite alternate;
 }
+/* 光晕只用品牌点缀色的浅调，浅色底下不承载文字。 */
 .hero-glow span:nth-child(1) {
   top: -220px;
   left: -120px;
-  background: #c9d9ff;
+  background: var(--lime);
 }
 .hero-glow span:nth-child(2) {
   top: -160px;
   right: -140px;
-  background: #ffe1b0;
+  background: var(--clay);
   animation-duration: 28s;
 }
 .hero-glow span:nth-child(3) {
   top: 260px;
   left: 40%;
-  background: #c4eef0;
+  background: var(--mint);
   animation-duration: 32s;
 }
 @media (prefers-color-scheme: dark) {
   .hero-glow span {
-    opacity: 0.16;
+    opacity: 0.18;
+  }
+  .hero-glow span:nth-child(1) {
+    background: var(--pine);
+  }
+  .hero-glow span:nth-child(2) {
+    background: var(--clay);
+  }
+  .hero-glow span:nth-child(3) {
+    background: var(--mint);
   }
 }
 @keyframes drift {
@@ -202,8 +231,8 @@ nav a:hover {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--teal);
-  box-shadow: 0 0 0 4px color-mix(in oklab, var(--teal) 22%, transparent);
+  background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 22%, transparent);
 }
 h1 {
   margin: 0;
@@ -213,10 +242,15 @@ h1 {
 }
 h1 em {
   font-style: normal;
-  background: linear-gradient(100deg, var(--blue), var(--teal) 70%, var(--amber));
+  background: linear-gradient(100deg, var(--pine), var(--mint-ink) 60%, var(--clay-ink));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+@media (prefers-color-scheme: dark) {
+  h1 em {
+    background-image: linear-gradient(100deg, var(--mint), var(--lime) 60%, var(--clay));
+  }
 }
 .intro {
   max-width: 640px;
@@ -249,9 +283,16 @@ h1 em {
   transform: translateY(-2px);
 }
 .button.primary {
-  background: var(--ink);
-  color: var(--bg);
-  box-shadow: 0 16px 32px -16px rgba(27, 34, 50, 0.7);
+  background: var(--pine);
+  color: var(--paper);
+  box-shadow: 0 16px 32px -16px rgba(29, 91, 74, 0.55);
+}
+@media (prefers-color-scheme: dark) {
+  .button.primary {
+    background: var(--mint);
+    color: #111315;
+    box-shadow: 0 16px 32px -16px rgba(127, 224, 191, 0.35);
+  }
 }
 .fine {
   margin-top: 14px;
@@ -282,7 +323,7 @@ h1 em {
 }
 .eyebrow {
   margin: 0 0 10px;
-  color: var(--blue);
+  color: var(--accent);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -356,32 +397,39 @@ h2 {
   height: 6px;
   margin-top: 10px;
   border-radius: 50%;
-  background: var(--tone, var(--blue));
+  background: var(--tone, var(--accent));
 }
 .tag {
   display: inline-flex;
   padding: 4px 12px;
   border-radius: 999px;
-  background: color-mix(in oklab, var(--tone) 13%, transparent);
+  background: var(--tag-bg, color-mix(in oklab, var(--tone) 13%, transparent));
   color: var(--tone);
   font-size: 13px;
   font-weight: 700;
 }
-.tag-blue,
-.feature:has(.tag-blue) {
-  --tone: var(--blue);
+.tag-pine,
+.feature:has(.tag-pine) {
+  --tone: var(--accent);
 }
-.tag-amber,
-.feature:has(.tag-amber) {
-  --tone: #e08a1f;
+.tag-clay,
+.feature:has(.tag-clay) {
+  --tone: var(--clay-ink);
 }
-.tag-violet,
-.feature:has(.tag-violet) {
-  --tone: var(--violet);
+.tag-lime,
+.feature:has(.tag-lime) {
+  --tone: var(--ink);
+  --tag-bg: color-mix(in oklab, var(--lime) 62%, transparent);
 }
-.tag-teal,
-.feature:has(.tag-teal) {
-  --tone: #1f9aa6;
+.tag-mint,
+.feature:has(.tag-mint) {
+  --tone: var(--mint-ink);
+}
+@media (prefers-color-scheme: dark) {
+  .tag-lime,
+  .feature:has(.tag-lime) {
+    --tone: #111315;
+  }
 }
 .feature .shot img {
   transition: transform 0.6s var(--ease);
@@ -416,7 +464,7 @@ h2 {
   box-shadow: var(--shadow-card);
 }
 .release-meta h2 span {
-  color: var(--blue);
+  color: var(--accent);
 }
 .release-meta p {
   color: var(--muted);
@@ -425,7 +473,7 @@ h2 {
   margin-top: 16px;
 }
 .text-link {
-  color: var(--blue);
+  color: var(--accent);
   font-weight: 600;
   text-decoration: none;
 }
@@ -454,7 +502,7 @@ h2 {
   font-size: 14px;
 }
 .primary-option {
-  background: var(--blue-soft);
+  background: var(--accent-soft);
 }
 .release-links {
   display: flex;
@@ -607,7 +655,7 @@ nav a[aria-current="page"] {
   font-size: 14px;
 }
 .guide-search input:focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
 .guide-toc nav {
@@ -629,8 +677,8 @@ nav a[aria-current="page"] {
   border-radius: 8px;
 }
 .guide-toc nav a[aria-current] {
-  background: var(--blue-soft);
-  color: var(--blue);
+  background: var(--accent-soft);
+  color: var(--accent);
   font-weight: 600;
 }
 .guide-content {
@@ -666,14 +714,14 @@ nav a[aria-current="page"] {
   padding-left: 22px;
 }
 .guide-steps li::marker {
-  color: var(--blue);
+  color: var(--accent);
   font-weight: 700;
 }
 .guide-tip {
   margin-top: 16px;
   padding: 12px 16px;
   border-radius: 14px;
-  background: color-mix(in oklab, var(--amber) 14%, transparent);
+  background: color-mix(in oklab, var(--clay) 14%, transparent);
   color: var(--ink) !important;
   font-size: 15px;
 }

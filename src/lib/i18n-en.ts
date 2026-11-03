@@ -173,8 +173,8 @@ export const EN: Record<string, string> = {
   主身份已绑定: "Primary identity linked",
   "已退出 Linux.do 登录，本机资料已保留": "Signed out of Linux.do. Your local data has been kept.",
   身份资料已更新: "Identity profile updated",
-  "使用社区账号绑定知屿，也可以先在本机开始。":
-    "Link your community account to Zhiyu, or start locally.",
+  "使用社区账号绑定Helself，也可以先在本机开始。":
+    "Link your community account to Helself, or start locally.",
   "管理你的社区身份、资料同步和本人帖子。":
     "Manage your community identity, profile sync, and posts.",
   已绑定主身份: "Primary identity linked",
@@ -511,8 +511,8 @@ export const EN: Record<string, string> = {
   下载更新: "Download update",
   重启并安装: "Restart and install",
   重试检查: "Check again",
-  "安装将关闭并重新打开知屿，请先结束正在进行的终端或其他任务。":
-    "Installation will close and reopen Zhiyu. Finish any terminal sessions or other ongoing tasks first.",
+  "安装将关闭并重新打开Helself，请先结束正在进行的终端或其他任务。":
+    "Installation will close and reopen Helself. Finish any terminal sessions or other ongoing tasks first.",
   "应用内更新仅支持 Windows 正式安装版。": "In-app updates require the installed Windows release.",
   "更新失败，请检查网络或安装权限后重试。":
     "Update failed. Check your connection or installation permissions and try again.",
@@ -561,10 +561,10 @@ export const EN: Record<string, string> = {
   "导入失败，请重新选择文件后重试。": "Import failed. Select the file again and retry.",
   "导出浏览器密码需要先解锁密钥库。": "Unlock the vault to export browser passwords.",
   导出密码失败: "Could not export passwords",
-  "在 Chrome、Edge 与知屿之间迁移账号，让同一网站的每个账号各归其位。":
-    "Move accounts between Chrome, Edge and Zhiyu, keeping every account for a website separate.",
+  "在 Chrome、Edge 与Helself之间迁移账号，让同一网站的每个账号各归其位。":
+    "Move accounts between Chrome, Edge and Helself, keeping every account for a website separate.",
   迁移方向: "Transfer direction",
-  导入到知屿: "Import to Zhiyu",
+  导入到Helself: "Import to Helself",
   导出到浏览器: "Export to browser",
   选择来源浏览器: "Source browser",
   选择目标浏览器: "Destination browser",
@@ -603,10 +603,10 @@ export const EN: Record<string, string> = {
   "导入 {0} 个账号": "Import {0} accounts",
   "选择 CSV 文件": "Choose CSV file",
   "导出 CSV 文件": "Export CSV file",
-  "配对并解锁后，登录页会建议本站账号，选择后填写，不自动提交登录。提交新账号时可确认保存；支持的在线文档会提示保存到知屿，点击后才读取当前可见正文。自动提示可在插件中关闭。":
-    "When paired and unlocked, login pages suggest accounts for that site. Choose one to fill it without submitting. Confirm saving new accounts after login. Supported document pages offer to save to Zhiyu and read visible content only after you choose to save. Automatic prompts can be disabled in the extension.",
-  "已有 Chrome / Edge 密码可在「密钥库 → 浏览器密码」中通过 CSV 批量迁移。插件不会读取浏览器的原生密码库；知屿锁定后停止读取和填写账号。":
-    "Migrate existing Chrome / Edge passwords via CSV under Vault → Browser passwords. The extension does not read the browser's native password store. Reading and filling accounts stops when Zhiyu is locked.",
+  "配对并解锁后，登录页会建议本站账号，选择后填写，不自动提交登录。提交新账号时可确认保存；支持的在线文档会提示保存到Helself，点击后才读取当前可见正文。自动提示可在插件中关闭。":
+    "When paired and unlocked, login pages suggest accounts for that site. Choose one to fill it without submitting. Confirm saving new accounts after login. Supported document pages offer to save to Helself and read visible content only after you choose to save. Automatic prompts can be disabled in the extension.",
+  "已有 Chrome / Edge 密码可在「密钥库 → 浏览器密码」中通过 CSV 批量迁移。插件不会读取浏览器的原生密码库；Helself锁定后停止读取和填写账号。":
+    "Migrate existing Chrome / Edge passwords via CSV under Vault → Browser passwords. The extension does not read the browser's native password store. Reading and filling accounts stops when Helself is locked.",
   个人知识与资产空间: "Your knowledge and asset space",
   "AI 问答": "AI chat",
   对话上下文: "Conversation context",
@@ -973,7 +973,7 @@ export const EN: Record<string, string> = {
   你的名字: "Your name",
   确认主密码: "Confirm master password",
   首次设置: "First-time setup",
-  欢迎使用知屿: "Welcome to Zhiyu",
+  欢迎使用Helself: "Welcome to Helself",
   重试: "Retry",
   仅桌面版可用: "Available in the desktop app",
   本地个人空间: "Local workspace",
@@ -984,7 +984,7 @@ export const EN: Record<string, string> = {
     "An existing vault was found. Enter its original master password.",
   "主密码至少 10 位，无法找回。请妥善保管。":
     "Use at least 10 characters. The master password cannot be recovered. Keep it safe.",
-  进入知屿: "Open Zhiyu",
+  进入Helself: "Open Helself",
   "请粘贴授权页返回的完整 code#state。":
     "Paste the complete code#state returned by the authorization page.",
   "等待浏览器授权返回…": "Waiting for browser authorization...",
@@ -1118,10 +1118,9 @@ export const EN: Record<string, string> = {
   "黄色 = 到期 / 高负载 / 用量；红色 = 离线或不足 7 天。":
     "Yellow: expiry, load or usage. Red: offline or fewer than 7 days remaining.",
   // ---------------------------------------------------------------- brand
-  知屿: "Zhiyu",
-  "知屿 Zhiyu": "Zhiyu",
+  Helself: "Helself",
   个人数字资产指挥台: "Personal digital-asset command centre",
-  "知屿 —— 个人数字资产指挥台。": "Zhiyu — a command centre for your own digital estate.",
+  "Helself —— 个人数字资产指挥台。": "Helself — a command centre for your own digital estate.",
 
   // ---------------------------------------------------------------- verbs
   保存: "Save",
@@ -1694,8 +1693,8 @@ export const EN: Record<string, string> = {
   "\n[33m已取消：密钥库未解锁。[0m": "\n[33mCancelled: the vault is locked.[0m",
   "授权在你自己的浏览器里完成，应用只拿到已验证的地址与刷新令牌 —— OAuth\n        本来就不会把密码交给第三方应用。":
     "Authorisation happens in your own browser; the app only ever receives the verified address and a refresh token — OAuth exists precisely so a password never reaches a third-party app.",
-  "知屿把服务器、域名、邮箱、AI 订阅、密钥和证书收在一块盘面上，替你盯住到期和异常。\n          录入之后，主机指标通过 SSH 实时采集，域名走 WHOIS，证书直接握手读取——都是真实数据。":
-    "Zhiyu gathers servers, domains, mailboxes, AI subscriptions, secrets and certificates onto one face and watches expiries and failures for you. Once recorded, host metrics are probed live over SSH, domains go through WHOIS, and certificates are read from a real handshake — all of it real data.",
+  "Helself把服务器、域名、邮箱、AI 订阅、密钥和证书收在一块盘面上，替你盯住到期和异常。\n          录入之后，主机指标通过 SSH 实时采集，域名走 WHOIS，证书直接握手读取——都是真实数据。":
+    "Helself gathers servers, domains, mailboxes, AI subscriptions, secrets and certificates onto one face and watches expiries and failures for you. Once recorded, host metrics are probed live over SSH, domains go through WHOIS, and certificates are read from a real handshake — all of it real data.",
 
   // ---------------------------------------------------------------- fill-ins
   快速登录: "Quick sign-in",
@@ -1958,8 +1957,8 @@ export const EN: Record<string, string> = {
     "Data lives on your own server; credentials are encrypted in the browser before upload.",
   "还没有提醒。从常见事项开始：": "No reminders yet. Start with a common one:",
   退出登录: "Sign out",
-  "选择桌面版或网页版导出的 .zhiyu-backup 文件，服务器上的资产、文档和密钥库会整体替换成备份里的内容。":
-    "Choose a .zhiyu-backup file from the desktop or web version; the assets, documents and vault on the server are replaced with its contents.",
+  "选择桌面版或网页版导出的 .helself-backup 文件，服务器上的资产、文档和密钥库会整体替换成备份里的内容。":
+    "Choose a .helself-backup file from the desktop or web version; the assets, documents and vault on the server are replaced with its contents.",
   重复: "Repeat",
   不重复: "Once",
   每周: "Weekly",
@@ -2083,7 +2082,7 @@ export const EN: Record<string, string> = {
   快速开始进度: "Quick start progress",
   "（已完成）": " (done)",
   "完成这几步，续费、关联和资料都会替你记着。已完成 {0} / {1}":
-    "Finish these steps and Zhiyu keeps track of renewals, links and notes for you. {0} / {1} done",
+    "Finish these steps and Helself keeps track of renewals, links and notes for you. {0} / {1} done",
   添加第一项资产: "Add your first asset",
   "服务器、域名、AI 订阅或任何在线服务，先记下一项。":
     "A server, domain, AI subscription or any online service. Start with one.",
@@ -2770,14 +2769,14 @@ export const EN: Record<string, string> = {
   个人: "Personal",
   连接与服务: "Connections & services",
   数据与安全: "Data & security",
-  关于知屿: "About Zhiyu",
+  关于Helself: "About Helself",
   后退: "Back",
   前进: "Forward",
   "后退（Alt+←）": "Back (Alt+←)",
   "前进（Alt+→）": "Forward (Alt+→)",
   下载新版便携包: "Download new portable build",
-  "便携版不会自动安装。下载新的便携压缩包后，退出知屿，解压覆盖程序文件，保留 data 文件夹即可。":
-    "The portable build does not install updates. Download the new portable archive, quit Zhiyu, extract it over the program files and keep the data folder.",
+  "便携版不会自动安装。下载新的便携压缩包后，退出Helself，解压覆盖程序文件，保留 data 文件夹即可。":
+    "The portable build does not install updates. Download the new portable archive, quit Helself, extract it over the program files and keep the data folder.",
   "便携版请在发布页下载新的便携压缩包，解压覆盖程序文件，保留 data 文件夹。":
     "For the portable build, download the new portable archive from the release page and extract it over the program files, keeping the data folder.",
   运行模式: "Edition",
@@ -2900,8 +2899,8 @@ export const EN: Record<string, string> = {
   "{0} 天 {1} 小时": "{0} d {1} h",
   "{0} 小时 {1} 分钟": "{0} h {1} min",
   "{0} 核": "{0} cores",
-  "{0}（Docker 部署时是挂载的 ./zhiyu-data）":
-    "{0} (the mounted ./zhiyu-data when deployed with Docker)",
+  "{0}（Docker 部署时是挂载的 ./helself-data）":
+    "{0} (the mounted ./helself-data when deployed with Docker)",
   "{0}，最近 {1} 个采样点": "{0}, last {1} samples",
   "5 分钟 {0} · 15 分钟 {1} · {2} 核": "5 min {0} · 15 min {1} · {2} cores",
   "AI 账号的网页登录要在桌面版弹出的独立登录窗口里完成，网页版无法代为登录；可以改用「用量记录」里的 API 用量来源。":
@@ -2916,7 +2915,7 @@ export const EN: Record<string, string> = {
   主机监控: "Host monitor",
   "交换 {0}": "swap {0}",
   "上传 {0}": "up {0}",
-  知屿已更新: "Zhiyu has been updated",
+  Helself已更新: "Helself has been updated",
   刷新页面: "Reload page",
   "这个页面的文件已经换成新版本，刷新后即可继续使用。":
     "This page's files were replaced by a new version. Reload to continue.",
@@ -2931,8 +2930,8 @@ export const EN: Record<string, string> = {
   "合计 ↓ {0} · ↑ {1}": "Total ↓ {0} · ↑ {1}",
   回到总览: "Back to overview",
   图例: "Legend",
-  "在 VPS 的知屿目录里运行以下命令升级，资料目录不受影响：":
-    "To upgrade, run this in the Zhiyu folder on your VPS. Your data folder is not affected:",
+  "在 VPS 的Helself目录里运行以下命令升级，资料目录不受影响：":
+    "To upgrade, run this in the Helself folder on your VPS. Your data folder is not affected:",
   "容器 CPU": "Container CPU",
   "容器 CPU 以单核为 100%。没有设置上限时，容器最多可以用满整台机器。":
     "Container CPU counts one core as 100%. Without a limit, the container can use the whole machine.",
@@ -2965,14 +2964,14 @@ export const EN: Record<string, string> = {
     "The sign-in password protects the web entrance; the vault master password is only used in your browser. They are independent.",
   "登录密码已更新，其他设备需要重新登录":
     "Sign-in password updated. Other devices need to sign in again",
-  知屿服务: "Zhiyu service",
-  知屿用户: "Zhiyu user",
-  "知屿直接运行在这台主机上，看到的是整台机器的数据。":
-    "Zhiyu runs directly on this host, so these figures cover the whole machine.",
-  "知屿运行在 {0} 容器里，已挂载宿主机 /proc：CPU、内存、负载、网络与进程都是整台 VPS 的；磁盘为资料目录所在的分区。":
-    "Zhiyu runs in a {0} container with the host's /proc mounted: CPU, memory, load, network and processes cover the whole VPS; disk is the partition holding the data folder.",
-  "知屿运行在 {0} 容器里，没有挂载宿主机 /proc：CPU、内存、负载与运行时长来自宿主机内核，但网络与进程只含容器自己。在 docker-compose.yml 加上 /proc:/host/proc:ro 后可看到整台 VPS。":
-    "Zhiyu runs in a {0} container without the host's /proc: CPU, memory, load and uptime come from the host kernel, but network and processes only cover the container. Add /proc:/host/proc:ro in docker-compose.yml to see the whole VPS.",
+  Helself服务: "Helself service",
+  Helself用户: "Helself user",
+  "Helself直接运行在这台主机上，看到的是整台机器的数据。":
+    "Helself runs directly on this host, so these figures cover the whole machine.",
+  "Helself运行在 {0} 容器里，已挂载宿主机 /proc：CPU、内存、负载、网络与进程都是整台 VPS 的；磁盘为资料目录所在的分区。":
+    "Helself runs in a {0} container with the host's /proc mounted: CPU, memory, load, network and processes cover the whole VPS; disk is the partition holding the data folder.",
+  "Helself运行在 {0} 容器里，没有挂载宿主机 /proc：CPU、内存、负载与运行时长来自宿主机内核，但网络与进程只含容器自己。在 docker-compose.yml 加上 /proc:/host/proc:ro 后可看到整台 VPS。":
+    "Helself runs in a {0} container without the host's /proc: CPU, memory, load and uptime come from the host kernel, but network and processes only cover the container. Add /proc:/host/proc:ro in docker-compose.yml to see the whole VPS.",
   "知识文档不能超过 500 KB。": "Knowledge documents can't exceed 500 KB.",
   确认新登录密码: "Confirm new sign-in password",
   磁盘读写: "Disk I/O",
@@ -3049,4 +3048,25 @@ export const EN: Record<string, string> = {
   竖线: "Bar",
   方块: "Block",
   下划线: "Underline",
+  主机指纹: "Host key fingerprint",
+  解锁密钥库后查看: "Unlock the vault to view",
+  "尚未记录，首次连接时会自动记录。":
+    "Not recorded yet; pinned automatically on the first connection.",
+  "首次连接采用信任记录：之后服务器必须出示同一把主机密钥，否则连接会被拒绝。更换主机或重装系统后，需要在这里确认新指纹。":
+    "The first connection pins the server's host key. Every later connection must present the same key or it is refused. After a reinstall or host change, confirm the new fingerprint here.",
+  "查看主机指纹需要先解锁密钥库。": "Unlock the vault to view the host key fingerprint.",
+  "测试连接需要先解锁密钥库。": "Unlock the vault to test the connection.",
+  重置主机指纹: "Reset host key fingerprint",
+  "重置主机指纹需要先解锁密钥库。": "Unlock the vault to reset the host key fingerprint.",
+  "确认服务器已经重装或更换过主机密钥。\n\n重置后，{0}:{1} 下一次连接会重新记录并信任服务器出示的指纹。如果连接正被劫持，这会把攻击者放行。":
+    "Confirm the server was reinstalled or its host key was replaced.\n\nAfter a reset, the next connection to {0}:{1} records and trusts whatever key the server presents. If the connection is being intercepted, this lets the attacker in.",
+  "已重置主机指纹，下一次连接会重新记录。":
+    "Host key fingerprint reset; it will be recorded again on the next connection.",
+  "这台主机只记录信息，尚未配置 SSH。配置后可在此查看主机指纹并测试连接。":
+    "This host is record-only and has no SSH configuration. Set it up to view the host key fingerprint and test the connection here.",
+  编辑凭据: "Edit credentials",
+  "请先在服务器上核对主机公钥（ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub），确认无误后再重置指纹。":
+    "Check the server's host key first (ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub), then reset the fingerprint only if it matches.",
+  "凭据用主密码派生的密钥加密后单独存放，不写入资产文件；网页版在浏览器里解密后随请求发送，服务器不保存。":
+    "Credentials are encrypted with a key derived from the master password and stored separately, never in the asset file. On the web build they are decrypted in the browser and sent per request; the server does not keep them.",
 };

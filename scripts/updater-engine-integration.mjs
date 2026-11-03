@@ -9,9 +9,9 @@ import { spawn } from "node:child_process";
 import electron from "electron";
 
 if (!process.versions.electron) {
-  const directory = await mkdtemp(join(tmpdir(), "zhiyu-update-engine-"));
+  const directory = await mkdtemp(join(tmpdir(), "helself-update-engine-"));
   try {
-    const env = { ...process.env, ZHIYU_UPDATE_FIXTURE: directory };
+    const env = { ...process.env, HELSELF_UPDATE_FIXTURE: directory };
     delete env.ELECTRON_RUN_AS_NODE;
     const child = spawn(electron, [fileURLToPath(import.meta.url)], {
       env,
@@ -28,7 +28,7 @@ if (!process.versions.electron) {
     await rm(directory, { recursive: true, force: true });
   }
 } else {
-  const directory = process.env.ZHIYU_UPDATE_FIXTURE;
+  const directory = process.env.HELSELF_UPDATE_FIXTURE;
   const { app } = electron;
   app.setPath("userData", directory);
   void app.whenReady().then(async () => {

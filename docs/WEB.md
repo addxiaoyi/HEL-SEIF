@@ -1,6 +1,6 @@
 # 网页版（自托管）
 
-把知屿部署在你自己的服务器上，在家里和公司都用浏览器打开同一份资料，公司电脑上不用安装任何东西。
+把Helself部署在你自己的服务器上，在家里和公司都用浏览器打开同一份资料，公司电脑上不用安装任何东西。
 
 - 资料只在你的服务器上：资产、文档存成和桌面版相同的文件（`assets.json`、`documents/`），没有第三方云。
 - 整站需要登录：登录密码用 scrypt 加盐保存，会话 Cookie 为 HttpOnly + SameSite=Strict，登录失败过多会暂停 15 分钟，并支持两步验证（TOTP）、来源 IP 限制和登录记录，见下文「安全加固」。
@@ -9,34 +9,36 @@
 
 ## 用 Docker 部署（推荐）
 
-正式版镜像为 `ghcr.io/songwo/zhiyu-web`（amd64 / arm64），不用克隆源码：
+正式版镜像为 `ghcr.io/addxiaoyi/helself-web`（amd64 / arm64），不用克隆源码：
 
 ```bash
-mkdir zhiyu && cd zhiyu
-curl -fsSLO https://raw.githubusercontent.com/Songwo/zhiyu/main/docker-compose.yml
+mkdir helself && cd helself
+curl -fsSLO https://raw.githubusercontent.com/addxiaoyi/HEL-SEIF/main/docker-compose.yml
 docker compose up -d
-docker compose logs zhiyu    # 找「设置口令」
+docker compose logs helself    # 找「设置口令」
 ```
 
 不用 compose 也可以：
 
 ```bash
-docker run -d --name zhiyu --restart unless-stopped -p 8848:8848 \
-  -v "$PWD/zhiyu-data:/data" \
+docker run -d --name helself --restart unless-stopped -p 8848:8848 \
+  -v "$PWD/helself-data:/data" \
   -v /proc:/host/proc:ro -v /etc/os-release:/host/etc/os-release:ro \
-  ghcr.io/songwo/zhiyu-web:latest
+  ghcr.io/addxiaoyi/helself-web:latest
 ```
 
 后两个只读挂载给「主机监控」用，见下文；不需要时可以去掉。
 
 升级：`docker compose pull && docker compose up -d`。想从源码构建镜像：克隆仓库后运行 `docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build`。
 
+> 从旧版本升级：旧配置使用 `ZHIYU_*` 环境变量和 `./zhiyu-data` 资料目录。新版本只读取 `HELSELF_*`；请把资料目录重命名为 `helself-data`（或修改 compose 里的挂载行），并把环境变量改成 `HELSELF_*`。容器内挂载点仍是 `/data`，资料文件本身不需要转换。
+
 浏览器打开 `http://服务器地址:8848`，第一次会进入「创建网页版账号」：填写日志里的**设置口令**、用户名和登录密码（至少 10 位）。设置口令只能用一次，用来防止别人抢先注册你的实例。
 
-资料保存在 `./zhiyu-data`：
+资料保存在 `./helself-data`：
 
 ```text
-zhiyu-data/
+helself-data/
   workspace/   资料（与桌面版资料目录一致，备份与恢复的范围）
   server/      网页登录账号与会话、提醒推送配置、服务器密钥（secure.key）、
                SSH 主机指纹、用量来源凭据、邮件草稿
@@ -51,7 +53,7 @@ zhiyu-data/
 ```bash
 npm ci
 npm run web:build
-ZHIYU_DATA=./zhiyu-data npm run web:start
+HELSELF_DATA=./helself-data npm run web:start
 ```
 
 ## 与桌面版同步
@@ -64,7 +66,7 @@ ZHIYU_DATA=./zhiyu-data npm run web:start
 
 ![ZSP 同步协议动画](../site/zsp-flow.svg)
 
-[打开可逐步播放的协议动画](https://songwo.github.io/zhiyu/sync.html)；同步协议（ZSP）的设计、威胁模型和参数见 [SYNC.md](SYNC.md)。要点：配对码只用一次、5 分钟有效、错 3 次作废，并用 PAKE 防止抓包后离线穷举；之后每次同步用固定的设备密钥互相认证、AES-256-GCM 加密，即使服务器没有 HTTPS 也不会被中间人篡改；服务器序号倒退（例如恢复了旧备份）时桌面版会拒绝同步并提示。**密钥库默认不同步**，开启后只传 AES-256-GCM 密文，服务器看不到明文；系统加密保存的 Cloudflare Token、模型 API Key 等不参与同步，需要在网页版里重新填写。「已配对的设备」里可以随时撤销。
+[打开可逐步播放的协议动画](https://addxiaoyi.github.io/HEL-SEIF/sync.html)；同步协议（ZSP）的设计、威胁模型和参数见 [SYNC.md](SYNC.md)。要点：配对码只用一次、5 分钟有效、错 3 次作废，并用 PAKE 防止抓包后离线穷举；之后每次同步用固定的设备密钥互相认证、AES-256-GCM 加密，即使服务器没有 HTTPS 也不会被中间人篡改；服务器序号倒退（例如恢复了旧备份）时桌面版会拒绝同步并提示。**密钥库默认不同步**，开启后只传 AES-256-GCM 密文，服务器看不到明文；系统加密保存的 Cloudflare Token、模型 API Key 等不参与同步，需要在网页版里重新填写。「已配对的设备」里可以随时撤销。
 
 ## 安全加固
 
@@ -74,7 +76,7 @@ ZHIYU_DATA=./zhiyu-data npm run web:start
 
 | 攻击者能做什么                   | 怎么挡                                                                                                         |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| 扫描端口，找到并打开登录页       | 来源限制（`ZHIYU_ALLOWED_NETS`）：名单外的连接直接断开，不返回任何内容；未登录时页面不暴露版本号和用户名       |
+| 扫描端口，找到并打开登录页       | 来源限制（`HELSELF_ALLOWED_NETS`）：名单外的连接直接断开，不返回任何内容；未登录时页面不暴露版本号和用户名       |
 | 猜密码、撞库                     | 密码 scrypt 加盐；每个来源 8 次失败锁 15 分钟、全站失败越多每次越慢（上限 5 秒）、全站每分钟最多 40 次尝试     |
 | 拿到了密码（泄露、钓鱼、被偷看） | 两步验证：还要手机验证器的 6 位码；验证码用过即作废，不能重放；另有 8 个一次性恢复码                           |
 | 在网络上偷看或篡改流量           | HTTPS（`docker-compose.https.yml` 自动申请证书）；Cookie 标记 Secure + HttpOnly + SameSite=Strict，并发送 HSTS |
@@ -87,15 +89,15 @@ ZHIYU_DATA=./zhiyu-data npm run web:start
 1. **用 HTTPS。** 最省事的方式：把域名解析到服务器，然后
 
    ```bash
-   curl -fsSLO https://raw.githubusercontent.com/Songwo/zhiyu/main/docker-compose.https.yml
-   curl -fsSLO https://raw.githubusercontent.com/Songwo/zhiyu/main/Caddyfile
-   ZHIYU_DOMAIN=zhiyu.example.com docker compose -f docker-compose.https.yml up -d
+   curl -fsSLO https://raw.githubusercontent.com/addxiaoyi/HEL-SEIF/main/docker-compose.https.yml
+   curl -fsSLO https://raw.githubusercontent.com/addxiaoyi/HEL-SEIF/main/Caddyfile
+   HELSELF_DOMAIN=helself.example.com docker compose -f docker-compose.https.yml up -d
    ```
 
-   这个配置里知屿不对外发布端口，只有 Caddy 的 80 / 443 暴露，证书自动申请和续期。已经有自己的 Nginx / Caddy 时：反向代理到 `127.0.0.1:8848`，把 `docker-compose.yml` 的端口改成 `127.0.0.1:8848:8848`，设置 `ZHIYU_SECURE_COOKIE=1` 和 `ZHIYU_TRUST_PROXY=1`。代理只能有一层，并且要把客户端地址追加到 `X-Forwarded-For` 末尾（Caddy、Nginx 的 `$proxy_add_x_forwarded_for` 默认就是）。
+   这个配置里Helself不对外发布端口，只有 Caddy 的 80 / 443 暴露，证书自动申请和续期。已经有自己的 Nginx / Caddy 时：反向代理到 `127.0.0.1:8848`，把 `docker-compose.yml` 的端口改成 `127.0.0.1:8848:8848`，设置 `HELSELF_SECURE_COOKIE=1` 和 `HELSELF_TRUST_PROXY=1`。代理只能有一层，并且要把客户端地址追加到 `X-Forwarded-For` 末尾（Caddy、Nginx 的 `$proxy_add_x_forwarded_for` 默认就是）。
 
 2. **开启两步验证。** 登录后打开「设置 → 个人资料 → 账号安全」，用 Google Authenticator、Microsoft Authenticator、1Password 等扫码，并把 8 个恢复码存进密码管理器。这是挡住「密码泄露」最有效的一步。
-3. **限制来源。** 如果你只从固定的地方访问，设置 `ZHIYU_ALLOWED_NETS`：只允许自己的公网 IP、家里 / 公司网段或 VPN 网段，其余连接直接断开，扫描器看到的只是一个不回话的端口。`private` 代表全部内网地址（10.x、172.16–31.x、192.168.x、Tailscale 的 100.64.x 等）。写错的条目会让服务拒绝启动，不会因为手误变成对所有人开放。更稳妥的做法是不把端口暴露到公网，只通过 Tailscale / WireGuard 访问。
+3. **限制来源。** 如果你只从固定的地方访问，设置 `HELSELF_ALLOWED_NETS`：只允许自己的公网 IP、家里 / 公司网段或 VPN 网段，其余连接直接断开，扫描器看到的只是一个不回话的端口。`private` 代表全部内网地址（10.x、172.16–31.x、192.168.x、Tailscale 的 100.64.x 等）。写错的条目会让服务拒绝启动，不会因为手误变成对所有人开放。更稳妥的做法是不把端口暴露到公网，只通过 Tailscale / WireGuard 访问。
 4. **开启提醒推送。** 「设置 → 提醒推送」配置好之后，新地址登录和短时间内反复失败会直接推送到手机。
 5. **定期看「账号安全」。** 登录设备里有不认识的就退出，并改密码。
 
@@ -113,14 +115,14 @@ ZHIYU_DATA=./zhiyu-data npm run web:start
 
 | 变量                  | 默认                                  | 说明                                                              |
 | --------------------- | ------------------------------------- | ----------------------------------------------------------------- |
-| `ZHIYU_PORT`          | `8848`                                | 监听端口                                                          |
-| `ZHIYU_HOST`          | `0.0.0.0`                             | 监听地址                                                          |
-| `ZHIYU_DATA`          | `./zhiyu-data`（Docker 内为 `/data`） | 资料目录                                                          |
-| `ZHIYU_SECURE_COOKIE` | `0`                                   | 设为 `1` 时 Cookie 只走 HTTPS                                     |
-| `ZHIYU_TRUST_PROXY`   | `0`                                   | 设为 `1` 时信任反向代理的 `X-Forwarded-*`                         |
-| `ZHIYU_ALLOWED_NETS`  | 空（不限制）                          | 只允许这些来源：IP、CIDR 或 `private`，逗号分隔；其他连接直接断开 |
-| `ZHIYU_SETUP_TOKEN`   | 随机生成                              | 指定首次设置口令                                                  |
-| `ZHIYU_HOST_PROC`     | `/host/proc`（存在时）或 `/proc`      | 主机监控读取的 /proc 位置                                         |
+| `HELSELF_PORT`          | `8848`                                | 监听端口                                                          |
+| `HELSELF_HOST`          | `0.0.0.0`                             | 监听地址                                                          |
+| `HELSELF_DATA`          | `./helself-data`（Docker 内为 `/data`） | 资料目录                                                          |
+| `HELSELF_SECURE_COOKIE` | `0`                                   | 设为 `1` 时 Cookie 只走 HTTPS                                     |
+| `HELSELF_TRUST_PROXY`   | `0`                                   | 设为 `1` 时信任反向代理的 `X-Forwarded-*`                         |
+| `HELSELF_ALLOWED_NETS`  | 空（不限制）                          | 只允许这些来源：IP、CIDR 或 `private`，逗号分隔；其他连接直接断开 |
+| `HELSELF_SETUP_TOKEN`   | 随机生成                              | 指定首次设置口令                                                  |
+| `HELSELF_HOST_PROC`     | `/host/proc`（存在时）或 `/proc`      | 主机监控读取的 /proc 位置                                         |
 
 ## 网页版能做什么
 
@@ -133,7 +135,7 @@ ZHIYU_DATA=./zhiyu-data npm run web:start
 | SSH 终端、SFTP 文件浏览与下载       | 服务器连接主机。凭据在浏览器里用主密码解密后随连接发送，服务器用完即丢、不保存；不支持 SSH agent 与服务器上的私钥文件 |
 | 主机探测、指标历史、自动采集        | 同上，由服务器 SSH 采集；页面打开且密钥库解锁时按「设置 → 监控采集」的周期自动刷新                                    |
 | 域名 / 证书检查、自建节点 TCP 检测  | 由服务器发起                                                                                                          |
-| Cloudflare 直连、知屿探针、DNS 管理 | Token 用服务器密钥（`server/secure.key`）加密后存在 `workspace/integrations.json`                                     |
+| Cloudflare 直连、Helself探针、DNS 管理 | Token 用服务器密钥（`server/secure.key`）加密后存在 `workspace/integrations.json`                                     |
 | AI 助手与知识库                     | 模型 API Key 同样用服务器密钥加密；知识文档在浏览器里选文件上传。网页版不能代为检查邮箱                               |
 | 用量记录（机场订阅、API 用量）      | 服务器每 5 分钟刷新，浏览器关着也会；来源凭据用服务器密钥加密，存在 `server/usage-credentials.json`                   |
 | 「本机」AI 客户端用量               | 指服务所在的机器：读服务用户主目录里的 Codex / Claude Code 等日志，Docker 容器里默认没有                              |
@@ -168,7 +170,7 @@ ZHIYU_DATA=./zhiyu-data npm run web:start
 
 「设置 → 提醒推送」选择 Telegram、Server酱 / 微信、企业微信群机器人或 WxPusher，填写凭据和接收目标后开启。服务器启动一分钟后检查一次，之后每小时检查一次续费与备忘提醒，按「资产到期前多少天开始提醒」推送；同一件事每天最多一次，只发名称和剩余天数。可以先点「发送测试消息」确认渠道。
 
-推送凭据保存在 `zhiyu-data/server/push.json`，只有服务器能读，不会返回给浏览器，也不在备份范围内（换服务器后重新填写）。服务器需要能访问对应渠道的接口（例如 `api.telegram.org`）。
+推送凭据保存在 `helself-data/server/push.json`，只有服务器能读，不会返回给浏览器，也不在备份范围内（换服务器后重新填写）。服务器需要能访问对应渠道的接口（例如 `api.telegram.org`）。
 
 ## 备份、恢复与换电脑
 
@@ -182,4 +184,4 @@ ZHIYU_DATA=./zhiyu-data npm run web:start
 
 ## 忘记登录密码
 
-登录密码和密钥库主密码是两回事。忘了登录密码时，停止服务，删除 `zhiyu-data/server/account.json`，重新启动后用日志里的新设置口令重新创建账号；资料与密钥库不受影响。密钥库主密码无法找回。
+登录密码和密钥库主密码是两回事。忘了登录密码时，停止服务，删除 `helself-data/server/account.json`，重新启动后用日志里的新设置口令重新创建账号；资料与密钥库不受影响。密钥库主密码无法找回。

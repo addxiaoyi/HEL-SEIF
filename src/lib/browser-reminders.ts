@@ -3,7 +3,7 @@ import { attentionLine, notificationCandidates } from "../../electron/services/n
 import { isDesktop } from "./desktop";
 import { snapshotOf, useAppStore } from "./store";
 
-const SEEN_KEY = "zhiyu-browser-reminders";
+const SEEN_KEY = "helself-browser-reminders";
 
 /** 读写「今天已经提醒过哪些」；隐私模式下读写失败就当没提醒过。 */
 function seen(): Record<string, string> {
@@ -29,7 +29,7 @@ export function useBrowserReminders() {
         (item) => item.reason !== "offline" && done[item.key] !== today,
       );
       if (!items.length) return;
-      new Notification("知屿提醒", {
+      new Notification("Helself提醒", {
         body: items
           .slice(0, 5)
           .map((item) => attentionLine(item))

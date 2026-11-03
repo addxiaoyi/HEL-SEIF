@@ -11,26 +11,26 @@ const directory = resolve("release", `v${version}`);
 const test = process.argv.includes("--test");
 const offline = resolve(
   process.argv.slice(2).find((arg) => !arg.startsWith("--")) ||
-    join(directory, `Zhiyu-${version}-setup.exe`),
+    join(directory, `Helself-${version}-setup.exe`),
 );
 const bytes = await readFile(offline);
 const sha = createHash("sha256").update(bytes).digest("hex");
 await mkdir(directory, { recursive: true });
 await writeFile(
   join(directory, "online-payload.txt"),
-  `${version}\nhttps://github.com/Songwo/zhiyu/releases/download/v${version}/Zhiyu-${version}-setup.exe\n${sha}\n${bytes.length}\n`,
+  `${version}\nhttps://github.com/addxiaoyi/HEL-SEIF/releases/download/v${version}/Helself-${version}-setup.exe\n${sha}\n${bytes.length}\n`,
 );
 const assembly = join(directory, "OnlineAssemblyInfo.cs");
 await writeFile(
   assembly,
-  `using System.Reflection;\n[assembly: AssemblyTitle("知屿在线安装器")]\n[assembly: AssemblyProduct("Zhiyu Online Installer")]\n[assembly: AssemblyVersion("${version}.0")]\n[assembly: AssemblyFileVersion("${version}.0")]\n`,
+  `using System.Reflection;\n[assembly: AssemblyTitle("Helself在线安装器")]\n[assembly: AssemblyProduct("Helself Online Installer")]\n[assembly: AssemblyVersion("${version}.0")]\n[assembly: AssemblyFileVersion("${version}.0")]\n`,
 );
 const framework = join(process.env.WINDIR || "C:/Windows", "Microsoft.NET/Framework64/v4.0.30319");
 const compiler = join(framework, "csc.exe");
 const references = ["WindowsBase.dll", "PresentationCore.dll", "PresentationFramework.dll"].map(
   (file) => `/reference:${join(framework, "WPF", file)}`,
 );
-const output = join(directory, `Zhiyu-${version}-online-setup.exe`);
+const output = join(directory, `Helself-${version}-online-setup.exe`);
 const args = [
   "/nologo",
   "/target:winexe",
@@ -75,7 +75,7 @@ if (test) {
     stdio: "inherit",
     windowsHide: true,
     timeout: 300000,
-    env: { ...process.env, ZHIYU_INSTALLER_TEST_PAYLOAD: offline },
+    env: { ...process.env, HELSELF_INSTALLER_TEST_PAYLOAD: offline },
   });
   if (suite.status !== 0) throw new Error("原生安装器测试失败。");
 }

@@ -56,7 +56,7 @@ async function freePort() {
 }
 
 async function fixture(t, options = {}) {
-  const directory = await mkdtemp(join(tmpdir(), "zhiyu-identity-test-"));
+  const directory = await mkdtemp(join(tmpdir(), "helself-identity-test-"));
   const file = join(directory, "vault.enc");
   const vault = new Vault(file);
   await vault.create(MASTER);

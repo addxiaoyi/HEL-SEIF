@@ -1,24 +1,65 @@
 /**
- * 知屿标记：一本摊开的书像浮在海面的小岛，右上方一轮初升的太阳，前面一道海浪。
- * 没有底板，透明背景；配色在浅色与深色背景上都能看清。
- * 同一几何用于界面、安装图标、网站图标与浏览器插件。
+ * Helself 标志：两根圆头立柱与一道横梁构成 H，横梁正中嵌一颗亮色核心。
+ * 图标用深色圆角底板（纸白立柱 + 亮绿核心）；界面内用透明版本，立柱跟随文字颜色。
+ * 同一几何用于界面、安装图标、网站图标、分享卡与浏览器插件。
  */
+
+/** @typedef {{ x: number, y: number, width: number, height: number }} Rect */
+
 export const BRAND_MARK = {
-  /** 只取图形所在的区域，透明图标里标记尽量撑满。 */
-  viewBox: "8 8 48 48",
-  pageLeft: "M31 34.4C26.2 30 18.6 28.6 10 30.2V41.8C18.6 40.4 26 41.6 31 45.8Z",
-  pageRight: "M33 34.4C37.8 30 45.4 28.6 54 30.2V41.8C45.4 40.4 38 41.6 33 45.8Z",
-  wavePath: "M12.5 51C17.6 48.1 22.8 48.1 28 51S38.4 53.9 43.6 51S50.2 48.9 51.5 48.9",
-  sun: { cx: 45.5, cy: 19, r: 5.2 },
-  page: "#3B6FE0",
-  pageShade: "#8DB0F5",
-  waveColor: "#2BB3C0",
-  glow: "#FFB23F",
+  /** 图标底板使用的完整视图。 */
+  viewBox: "0 0 64 64",
+  /** 透明标记裁到图形附近，界面里小尺寸也能撑满。 */
+  markViewBox: "11 11 42 42",
+  /** @type {Rect[]} */
+  columns: [
+    { x: 16, y: 14, width: 8, height: 36 },
+    { x: 40, y: 14, width: 8, height: 36 },
+  ],
+  columnRadius: 4,
+  /** @type {Rect & { radius: number }} */
+  beam: { x: 22, y: 28.75, width: 20, height: 6.5, radius: 3.25 },
+  core: { cx: 32, cy: 32, r: 6 },
+  tile: { radius: 15 },
+  colors: {
+    ink: "#111315",
+    paper: "#F6F3EA",
+    lime: "#C8F169",
+    pine: "#1D5B4A",
+    mint: "#7FE0BF",
+    clay: "#F2764F",
+  },
 };
 
-/** 输出独立的 SVG 文本（透明背景）。 */
-export function brandSvg() {
+/** @param {Rect} rect @param {number} radius */
+function rect(rect, radius) {
+  return `<rect x="${rect.x}" y="${rect.y}" width="${rect.width}" height="${rect.height}" rx="${radius}"/>`;
+}
+
+/**
+ * 透明标记：立柱与横梁跟随文字颜色，核心固定为品牌亮色。
+ * @param {{ frame?: string, core?: string, tile?: boolean }} [options]
+ */
+export function brandMark(options = {}) {
+  const { frame = "currentColor", core = BRAND_MARK.colors.lime } = options;
   const m = BRAND_MARK;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${m.viewBox}" width="64" height="64" fill="none">
-<circle cx="${m.sun.cx}" cy="${m.sun.cy}" r="${m.sun.r}" fill="${m.glow}"/><path d="${m.pageLeft}" fill="${m.page}"/><path d="${m.pageRight}" fill="${m.pageShade}"/><path d="${m.wavePath}" stroke="${m.waveColor}" stroke-width="3.4" stroke-linecap="round"/></svg>`;
+  const frameRects = [...m.columns.map((column) => rect(column, m.columnRadius)), rect(m.beam, m.beam.radius)].join("");
+  return `<g fill="${frame}">${frameRects}</g><circle cx="${m.core.cx}" cy="${m.core.cy}" r="${m.core.r}" fill="${core}"/>`;
+}
+
+/** 深色圆角底板版本，用于图标、网站图标与分享卡。 */
+export function brandIcon() {
+  const m = BRAND_MARK;
+  return `<rect x="0" y="0" width="64" height="64" rx="${m.tile.radius}" fill="${m.colors.ink}"/>${brandMark({ frame: m.colors.paper })}`;
+}
+
+/**
+ * 输出独立的 SVG 文本。
+ * @param {{ tile?: boolean, size?: number, frame?: string }} [options]
+ */
+export function brandSvg(options = {}) {
+  const { tile = true, size = 64, frame } = options;
+  const inner = tile ? brandIcon() : brandMark(frame ? { frame } : {});
+  const viewBox = tile ? BRAND_MARK.viewBox : BRAND_MARK.markViewBox;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="${size}" height="${size}" fill="none">${inner}</svg>`;
 }

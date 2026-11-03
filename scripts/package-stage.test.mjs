@@ -23,7 +23,7 @@ import {
 } from "./package-stage.mjs";
 
 async function fixture(t) {
-  const root = await realpath(await mkdtemp(join(tmpdir(), "zhiyu-package-test-")));
+  const root = await realpath(await mkdtemp(join(tmpdir(), "helself-package-test-")));
   t.after(() => rm(root, { recursive: true, force: true }));
   return root;
 }

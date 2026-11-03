@@ -1,12 +1,12 @@
-# 知屿独立探针
+# Helself独立探针
 
-这是知屿自己的监控协议与服务端，不兼容 Nezha Agent。常驻服务端接收主机指标、保留历史并检查 HTTP/TCP 服务；知屿桌面关闭后仍继续运行。Agent 只上报指标，没有终端、执行脚本、文件读取或远程命令入口。
+这是Helself自己的监控协议与服务端，不兼容 Nezha Agent。常驻服务端接收主机指标、保留历史并检查 HTTP/TCP 服务；Helself桌面关闭后仍继续运行。Agent 只上报指标，没有终端、执行脚本、文件读取或远程命令入口。
 
 ## 数据链路
 
 ```text
-服务器上的 Agent ── gRPC / HTTP/2 + protobuf ──> 知屿探针服务端
-知屿桌面        ── HTTPS JSON API ───────────> 同一服务端端口
+服务器上的 Agent ── gRPC / HTTP/2 + protobuf ──> Helself探针服务端
+Helself桌面        ── HTTPS JSON API ───────────> 同一服务端端口
 ```
 
 默认 TLS。服务端用 `ProtoMajor == 2`、`Content-Type: application/grpc` 和 `/zhiyu.probe.v1.ProbeService/` 前缀分流。使用 Go 原生 HTTP/2，h2c 支持 gRPC 标准客户端的 prior knowledge 连接，拒绝旧式 HTTP/1 Upgrade；不会在认证前缓存升级请求体。协议在 [proto/probe.proto](proto/probe.proto) 中，只有静态主机信息和双向状态流两个 RPC。每次 RPC 都用独立的 `client-uuid` 与 `client-secret` metadata 认证。注册生成 256 位随机凭据，服务端只存 SHA-256 摘要；删除主机会立即终止其现有状态流，并删除该主机及历史。
@@ -18,13 +18,13 @@
 需要 Go **1.27.2** 或更新的稳定版。生成的 protobuf Go 文件已提交，正常构建无需 protoc。
 
 ```sh
-go build -trimpath -o zhiyu-probe ./cmd/zhiyu-probe
+go build -trimpath -o helself-probe ./cmd/helself-probe
 go test ./...
 go test -race ./...
 go vet ./...
 ```
 
-Windows 可输出 `zhiyu-probe.exe`。`-race` 需要可用的 C 编译器。如需重新生成协议，使用 protoc 28.3+、`protoc-gen-go` 和 `protoc-gen-go-grpc`：
+Windows 可输出 `helself-probe.exe`。`-race` 需要可用的 C 编译器。如需重新生成协议，使用 protoc 28.3+、`protoc-gen-go` 和 `protoc-gen-go-grpc`：
 
 ```sh
 protoc --go_out=. --go_opt=paths=source_relative \
@@ -40,17 +40,17 @@ protoc --go_out=. --go_opt=paths=source_relative \
 以下配置路径供专用服务账户使用；文件内容请在本机编辑器中填入，不要发送到聊天或仓库。
 
 ```sh
-sudo useradd --system --home /var/lib/zhiyu-probe --shell /usr/sbin/nologin zhiyu-probe
-sudo install -m 0755 zhiyu-probe /usr/local/bin/zhiyu-probe
-sudo install -d -m 0700 -o zhiyu-probe -g zhiyu-probe /etc/zhiyu-probe
+sudo useradd --system --home /var/lib/helself-probe --shell /usr/sbin/nologin helself-probe
+sudo install -m 0755 helself-probe /usr/local/bin/helself-probe
+sudo install -d -m 0700 -o helself-probe -g helself-probe /etc/helself-probe
 umask 077
-./zhiyu-probe token > admin-token
-sudo install -m 0600 -o zhiyu-probe -g zhiyu-probe admin-token /etc/zhiyu-probe/admin-token
-sudo install -m 0600 -o zhiyu-probe -g zhiyu-probe /path/to/fullchain.pem /etc/zhiyu-probe/tls.crt
-sudo install -m 0600 -o zhiyu-probe -g zhiyu-probe /path/to/privkey.pem /etc/zhiyu-probe/tls.key
-sudo install -m 0644 deploy/zhiyu-probe-server.service /etc/systemd/system/zhiyu-probe-server.service
+./helself-probe token > admin-token
+sudo install -m 0600 -o helself-probe -g helself-probe admin-token /etc/helself-probe/admin-token
+sudo install -m 0600 -o helself-probe -g helself-probe /path/to/fullchain.pem /etc/helself-probe/tls.crt
+sudo install -m 0600 -o helself-probe -g helself-probe /path/to/privkey.pem /etc/helself-probe/tls.key
+sudo install -m 0644 deploy/helself-probe-server.service /etc/systemd/system/helself-probe-server.service
 sudo systemctl daemon-reload
-sudo systemctl enable --now zhiyu-probe-server
+sudo systemctl enable --now helself-probe-server
 ```
 
 用本机安全方式移除临时 `admin-token` 副本。证书续期后更新副本并重启服务端；当前版本不会自动重载证书。管理员 Token 更换也需要更新文件并重启，随后更新桌面连接配置。程序日志不会输出 Token 或 Agent secret。
@@ -58,10 +58,10 @@ sudo systemctl enable --now zhiyu-probe-server
 也可以直接启动（前台进程）：
 
 ```sh
-zhiyu-probe server --listen 0.0.0.0:8008 \
-  --data /var/lib/zhiyu-probe/probe.db \
-  --admin-token-file /etc/zhiyu-probe/admin-token \
-  --tls-cert /etc/zhiyu-probe/tls.crt --tls-key /etc/zhiyu-probe/tls.key
+helself-probe server --listen 0.0.0.0:8008 \
+  --data /var/lib/helself-probe/probe.db \
+  --admin-token-file /etc/helself-probe/admin-token \
+  --tls-cert /etc/helself-probe/tls.crt --tls-key /etc/helself-probe/tls.key
 ```
 
 管理员 Token、Agent 配置及数据库在 Unix 上必须禁止组和其他用户读取（`0600`），父目录建议 `0700`。Windows 不使用 POSIX 权限位，请用 NTFS ACL 限制到运行服务的账户。数据库内有主机名称、地址、指标和检查目标，虽然没有 Agent 明文 secret，也要保护备份。
@@ -75,7 +75,7 @@ docker compose build
 umask 077
 mkdir -p private data
 chmod 700 private data
-docker run --rm zhiyu-probe:local token > private/admin-token
+docker run --rm helself-probe:local token > private/admin-token
 cp /path/to/fullchain.pem private/tls.crt
 cp /path/to/privkey.pem private/tls.key
 chmod 600 private/*
@@ -93,20 +93,20 @@ node scripts/probe-docker-integration.mjs
 
 脚本会构建镜像，用临时 CA 和包含 SAN 的证书验证 TLS，通过本机原生 Agent 上报真实指标，并检查 HTTP/TCP 故障与恢复、容器重启后的历史以及凭据撤销。所有容器、网络、卷使用随机专属名称，完成或失败都会清理本次测试资源；不停止已有容器，不读取用户配置。根文件系统保持只读，端口仅绑定 `127.0.0.1`，不会向系统证书库安装测试 CA。
 
-可用 `ZHIYU_PROBE_BINARY` 指定 Agent 路径，`ZHIYU_DOCKER_BINARY` 指定 Docker CLI；`ZHIYU_PROBE_DOCKER_IMAGE` 指定测试镜像名。已有当前代码构建的镜像时，可设 `ZHIYU_PROBE_SKIP_DOCKER_BUILD=1` 复用。Windows 默认使用 `release/qa-probe/zhiyu-probe.exe`，Linux 默认使用 `release/qa-probe/zhiyu-probe-linux-amd64`；其他平台应显式指定路径。临时凭据写入系统临时目录，可用 `TEMP`/`TMP` 选择临时盘；镜像缓存使用 Docker 自身配置的存储目录。
+可用 `HELSELF_PROBE_BINARY` 指定 Agent 路径，`HELSELF_DOCKER_BINARY` 指定 Docker CLI；`HELSELF_PROBE_DOCKER_IMAGE` 指定测试镜像名。已有当前代码构建的镜像时，可设 `HELSELF_PROBE_SKIP_DOCKER_BUILD=1` 复用。Windows 默认使用 `release/qa-probe/helself-probe.exe`，Linux 默认使用 `release/qa-probe/helself-probe-linux-amd64`；其他平台应显式指定路径。临时凭据写入系统临时目录，可用 `TEMP`/`TMP` 选择临时盘；镜像缓存使用 Docker 自身配置的存储目录。
 
 ## 桌面连接与 Agent 注册
 
-1. 在知屿的「云服务与探针」添加探针连接，填 `https://probe.example.com:8008` 和管理员 Token。桌面使用操作系统加密保存，不依赖资产密钥库解锁。
+1. 在Helself的「云服务与探针」添加探针连接，填 `https://probe.example.com:8008` 和管理员 Token。桌面使用操作系统加密保存，不依赖资产密钥库解锁。
 2. 在探针工作区注册主机。注册后显示一次 `{ id, secret }`，仅供对应 Agent 使用，遗失时删除原主机并重新注册。
-3. 复制 `deploy/agent.example.json` 到采集主机的 `/etc/zhiyu-probe/agent.json`，替换地址、id 和 secret，设置 `0600`、所属用户 `zhiyu-probe`。
-4. 安装 `deploy/zhiyu-probe-agent.service`，执行 `systemctl daemon-reload` 和 `systemctl enable --now zhiyu-probe-agent`。服务端与采集主机分离时，只在各自主机安装对应单元。
+3. 复制 `deploy/agent.example.json` 到采集主机的 `/etc/helself-probe/agent.json`，替换地址、id 和 secret，设置 `0600`、所属用户 `helself-probe`。
+4. 安装 `deploy/helself-probe-agent.service`，执行 `systemctl daemon-reload` 和 `systemctl enable --now helself-probe-agent`。服务端与采集主机分离时，只在各自主机安装对应单元。
 5. 桌面会显示在线主机、最新指标及历史；将主机绑定到已有服务器资产，可与文档、账号和服务继续建立关系。
 
 直接运行 Agent 的命令：
 
 ```sh
-zhiyu-probe agent --config /etc/zhiyu-probe/agent.json
+helself-probe agent --config /etc/helself-probe/agent.json
 ```
 
 Agent 默认每 3 秒采样，支持 1–4 秒。连接中断后以 1、2、4…30 秒退避自动重连；单次上报确认最多等待 10 秒。生产使用系统信任的 TLS 证书；私有 CA 可在 JSON 中填 `caFile`。没有 `insecureSkipVerify` 开关。

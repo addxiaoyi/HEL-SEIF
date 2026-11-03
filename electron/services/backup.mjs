@@ -14,18 +14,22 @@ import {
 const gzipAsync = promisify(gzip);
 const gunzipAsync = promisify(gunzip);
 
-export const BACKUP_EXTENSION = "zhiyu-backup";
+export const BACKUP_EXTENSION = "helself-backup";
+export const LEGACY_BACKUP_EXTENSION = "zhiyu-backup";
 export const BACKUP_LIMITS = { bytes: 512 * 1024 * 1024, files: 20000 };
 export const PENDING_DIRECTORY = ".restore-pending";
 export const SNAPSHOT_DIRECTORY = "restore-snapshots";
 
-const MAGIC = Buffer.from("ZHIYUBAK", "ascii");
-const FORMAT = "zhiyu-backup";
+const MAGIC = Buffer.from("HELSELFBAK", "ascii");
+const LEGACY_MAGIC = Buffer.from("ZHIYUBAK", "ascii");
+const FORMAT = "helself-backup";
+const LEGACY_FORMAT = "zhiyu-backup";
 const FORMAT_VERSION = 1;
 const IV_LEN = 12;
 const TAG_LEN = 16;
 const MAX_HEADER = 4096;
-const CHECK = Buffer.from("zhiyu-backup-check");
+const CHECK = Buffer.from("helself-backup-check");
+const LEGACY_CHECK = Buffer.from("zhiyu-backup-check");
 const ASSET_COLLECTIONS = [
   "servers",
   "services",
@@ -123,7 +127,7 @@ function sealCheck(key) {
   };
 }
 
-function openCheck(key, check) {
+function openCheck(key, check, expected = CHECK) {
   try {
     const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(check.iv, "base64"));
     decipher.setAuthTag(Buffer.from(check.tag, "base64"));
@@ -131,7 +135,7 @@ function openCheck(key, check) {
       decipher.update(Buffer.from(check.data, "base64")),
       decipher.final(),
     ]);
-    return plain.equals(CHECK);
+    return plain.equals(expected);
   } catch {
     return false;
   }
@@ -312,7 +316,7 @@ export async function createBackup({
     ? { included: true, ...extractSecure(contents, secureStorage) }
     : { included: false, entries: [], failed: [] };
   const manifest = {
-    app: "zhiyu",
+    app: "helself",
     formatVersion: FORMAT_VERSION,
     appVersion: String(appVersion),
     createdAt: now.toISOString(),
@@ -359,12 +363,15 @@ export async function createBackup({
 }
 
 function parseHeader(data) {
-  if (!Buffer.isBuffer(data) || data.length < MAGIC.length + 4 + TAG_LEN)
-    throw new BackupError("这不是知屿备份文件。", "FORMAT");
-  if (!data.subarray(0, MAGIC.length).equals(MAGIC))
-    throw new BackupError("这不是知屿备份文件。", "FORMAT");
-  const length = data.readUInt32BE(MAGIC.length);
-  const start = MAGIC.length + 4;
+  if (!Buffer.isBuffer(data) || data.length < LEGACY_MAGIC.length + 4 + TAG_LEN)
+    throw new BackupError("这不是Helself备份文件。", "FORMAT");
+  const magic = data.subarray(0, LEGACY_MAGIC.length).equals(LEGACY_MAGIC)
+    ? LEGACY_MAGIC
+    : MAGIC;
+  if (!data.subarray(0, magic.length).equals(magic))
+    throw new BackupError("这不是Helself备份文件。", "FORMAT");
+  const length = data.readUInt32BE(magic.length);
+  const start = magic.length + 4;
   if (length < 2 || length > MAX_HEADER || start + length + TAG_LEN > data.length) throw corrupt();
   let header;
   try {
@@ -372,9 +379,10 @@ function parseHeader(data) {
   } catch {
     throw corrupt();
   }
-  if (header?.format !== FORMAT || typeof header.v !== "number") throw corrupt();
+  const legacy = header?.format === LEGACY_FORMAT;
+  if ((!legacy && header?.format !== FORMAT) || typeof header.v !== "number") throw corrupt();
   if (header.v > FORMAT_VERSION)
-    throw new BackupError("备份由更新版本的知屿创建，请先升级后再恢复。", "VERSION");
+    throw new BackupError("备份由更新版本的Helself创建，请先升级后再恢复。", "VERSION");
   const kdf = normalizeKdf(header.kdf);
   const salt = Buffer.from(String(header.salt ?? ""), "base64");
   const iv = Buffer.from(String(header.iv ?? ""), "base64");
@@ -390,7 +398,7 @@ function parseHeader(data) {
     typeof check.data !== "string"
   )
     throw corrupt();
-  return { kdf, salt, iv, check, end: start + length };
+  return { kdf, salt, iv, check, end: start + length, legacy };
 }
 
 function parseManifest(payload) {
@@ -404,7 +412,7 @@ function parseManifest(payload) {
     throw corrupt();
   }
   if (
-    manifest?.app !== "zhiyu" ||
+    !["helself", "zhiyu", "nanpad"].includes(manifest?.app) ||
     manifest.formatVersion !== FORMAT_VERSION ||
     !Array.isArray(manifest.files) ||
     manifest.files.length > BACKUP_LIMITS.files ||
@@ -444,13 +452,13 @@ function parseManifest(payload) {
 
 /** 解密并完整校验备份；密码错误与内容被篡改给出不同的错误。 */
 export async function openBackup(data, password) {
-  const { kdf, salt, iv, check, end } = parseHeader(data);
+  const { kdf, salt, iv, check, end, legacy } = parseHeader(data);
   if (typeof password !== "string" || !password || password.length > MAX_MASTER_LENGTH)
     throw wrongPassword();
   const key = await deriveKey(password, salt, kdf);
   let compressed;
   try {
-    if (!openCheck(key, check)) throw wrongPassword();
+    if (!openCheck(key, check, legacy ? LEGACY_CHECK : CHECK)) throw wrongPassword();
     const decipher = createDecipheriv("aes-256-gcm", key, iv);
     decipher.setAAD(data.subarray(0, end));
     decipher.setAuthTag(data.subarray(data.length - TAG_LEN));
@@ -487,7 +495,7 @@ export async function readBackupFile(path) {
     throw new BackupError("无法读取所选备份文件。", "READ");
   }
   if (!info.isFile() || info.size > BACKUP_LIMITS.bytes + 1024 * 1024)
-    throw new BackupError("所选文件不是有效的知屿备份。", "FORMAT");
+    throw new BackupError("所选文件不是有效的Helself备份。", "FORMAT");
   return readFile(path);
 }
 
@@ -630,9 +638,9 @@ async function pruneDirectories(directory, keep) {
     await rm(join(directory, name), { recursive: true, force: true }).catch(() => {});
 }
 
-const AUTO_NAME = /^zhiyu-auto-\d{8}-\d{6}\.zhiyu-backup$/;
+const AUTO_NAME = /^helself-auto-\d{8}-\d{6}\.helself-backup$/;
 export const autoBackupName = (date = new Date()) =>
-  `zhiyu-auto-${backupStamp(date)}.${BACKUP_EXTENSION}`;
+  `helself-auto-${backupStamp(date)}.${BACKUP_EXTENSION}`;
 
 /** 只清理自动备份自己命名的文件，用户放在同一目录的其他文件一律不动。 */
 export async function pruneAutoBackups(directory, keep) {

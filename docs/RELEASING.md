@@ -4,11 +4,11 @@
 
 ## 宣传与下载页同步
 
-[GitHub Pages 下载页](https://songwo.github.io/zhiyu/)使用 `site/` 下的模板和图片，版本、日期、更新摘要、安装包、插件及校验文件地址由最新已发布的 GitHub 正式版生成，不读取尚未发布的 `package.json` 版本。
+[GitHub Pages 下载页](https://addxiaoyi.github.io/HEL-SEIF/)使用 `site/` 下的模板和图片，版本、日期、更新摘要、安装包、插件及校验文件地址由最新已发布的 GitHub 正式版生成，不读取尚未发布的 `package.json` 版本。
 
 `产品主页` 工作流在页面源码改动、正式 Release 发布或编辑、以及 `Windows 正式版` 流水线成功后自动部署，也支持手动运行。使用 `workflow_run` 接续自动发布，因为 `GITHUB_TOKEN` 创建的 Release 不会触发另一条 `release` 工作流。草稿、预发布、缺失或尚未上传完成的附件会使页面构建失败，现有线上页面保留。
 
-本地预览先将 `gh api repos/Songwo/zhiyu/releases/latest` 的 JSON 保存到 `release/pages-latest.json`，执行 `node scripts/build-site.mjs release/pages-latest.json release/site`，再使用静态服务器查看 `release/site`。页面为完整静态 HTML，访客无需请求 GitHub API；所有下载入口绑定同一个正式版本，资源使用内容摘要更新缓存。
+本地预览先将 `gh api repos/addxiaoyi/HEL-SEIF/releases/latest` 的 JSON 保存到 `release/pages-latest.json`，执行 `node scripts/build-site.mjs release/pages-latest.json release/site`，再使用静态服务器查看 `release/site`。页面为完整静态 HTML，访客无需请求 GitHub API；所有下载入口绑定同一个正式版本，资源使用内容摘要更新缓存。
 
 界面改动后，在开发预览已启动时运行 `node scripts/capture-site.mjs`，重新生成资产总览、文档阅读、用量图表与浏览器密码迁移四张展示图。只更新迁移界面可使用 `--passwords-only`。脚本只使用独立浏览器上下文和示例资料，不连接真实桌面数据或外部账号。检查图片后随 `site/` 一起提交；截图不会在每次发布时自动重拍。
 
@@ -46,7 +46,7 @@ npm run desktop:dist -- --win --x64 --publish never
 
 打包脚本将主进程及编译后的界面放入系统临时目录中的独立暂存区，使用仓库锁文件版本安装 `ssh2`、`electron-updater`、`imapflow`、`openai`、`minisearch`、`nodemailer`、`mailparser`、`html-to-text`、`sanitize-html`、`unified`、`remark-parse`、`remark-gfm`、`js-yaml`、`@noble/hashes` 及其运行依赖（清单在 `scripts/package-stage.mjs`，主进程新引用的第三方包没有加入清单时打包会直接报错），再通过 electron-builder 内置的目录遍历器收集依赖，避免将网页构建工具装进桌面包。暂存区先解析真实路径，npm 子进程只通过工作目录定位项目，避免 macOS 符号链接路径与 `--prefix` 解析不一致。排除可选原生加速模块，SSH 使用库自带的 JavaScript 实现；无需 Visual Studio 编译环境。复用本机已安装的同版本 Electron，输出到 `release/v版本号/`；构建结束清理暂存区。
 
-安装包生成后检查版本和包内容，运行 `node scripts/release-smoke.mjs release/v1.17.1/win-unpacked/Zhiyu.exe` 验证打包程序，计算 SHA256，补齐 Release 说明中的验证记录。该脚本使用独立临时数据目录，不修改日常资料。发布时显式选择源码、文档和必要资源，不提交临时截图、日志、用户数据或运行目录。将发布标签指向已经验证的提交，再上传 `Zhiyu-1.17.1-setup.exe`、便携版 ZIP、浏览器扩展包与 `SHA256SUMS.txt`，以及下文要求的应用内更新附件。
+安装包生成后检查版本和包内容，运行 `node scripts/release-smoke.mjs release/v1.17.1/win-unpacked/Helself.exe` 验证打包程序，计算 SHA256，补齐 Release 说明中的验证记录。该脚本使用独立临时数据目录，不修改日常资料。发布时显式选择源码、文档和必要资源，不提交临时截图、日志、用户数据或运行目录。将发布标签指向已经验证的提交，再上传 `Helself-1.17.1-setup.exe`、便携版 ZIP、浏览器扩展包与 `SHA256SUMS.txt`，以及下文要求的应用内更新附件。
 
 1.3.1 的 Windows 正式发布流水线额外运行 `passwords-desktop-integration.mjs` 验证实际打包程序的 CSV、加密库、后台资产同步、锁库与文档保存，并在 `extension:build` 后运行 `browser-companion-integration.mjs` 加载真实扩展，覆盖原生表单整页导航、多账号填写与文档提示。依赖中文界面标签的 Electron 测试必须显式设置 `locale: "zh-CN"`，不能依赖开发机的系统语言。测试只使用独立临时资料和合成账号，不读取真实浏览器密码库；真实浏览器原生 CSV 导入结果与第三方在线文档兼容性应单独记录。
 
@@ -60,9 +60,9 @@ npm run desktop:dist -- --win --x64 --publish never
 
 ## 1.17.2 原生在线安装器
 
-离线包完成并签名后运行 `npm run desktop:online`，编译并测试 WPF 原生引导器。引导器中固定同一版本离线包的官方地址、长度与 SHA256；离线包被重新签名或重新构建时必须重新生成引导器，最后才计算 SHA256SUMS。新增发布附件 `Zhiyu-版本-online-setup.exe`，不要用它替换 `latest.yml` 指向的离线包。
+离线包完成并签名后运行 `npm run desktop:online`，编译并测试 WPF 原生引导器。引导器中固定同一版本离线包的官方地址、长度与 SHA256；离线包被重新签名或重新构建时必须重新生成引导器，最后才计算 SHA256SUMS。新增发布附件 `Helself-版本-online-setup.exe`，不要用它替换 `latest.yml` 指向的离线包。
 
-运行 `node scripts/installer-startup-integration.mjs`，使用隔离的 HKCU 测试键验证实际 NSIS 宏，不触碰日常自启项。Windows CI 额外设置 `ZHIYU_INSTALLER_REAL_TEST=1`，在一次性 runner 上试装与卸载实际包，检查目录、版本、自启项与卸载清理；此开关禁止在日常电脑执行。
+运行 `node scripts/installer-startup-integration.mjs`，使用隔离的 HKCU 测试键验证实际 NSIS 宏，不触碰日常自启项。Windows CI 额外设置 `HELSELF_INSTALLER_REAL_TEST=1`，在一次性 runner 上试装与卸载实际包，检查目录、版本、自启项与卸载清理；此开关禁止在日常电脑执行。
 
 下载页同时提供在线、离线和便携版，旧 Release 没有在线附件时不伪造下载地址。GUI 预览、真实下载与真实安装检查分别记录；Windows 管理员授权确认和第三方安全软件提示不能由 UI 单元检查替代。
 
@@ -84,7 +84,7 @@ node scripts/vault-usability-integration.mjs
 正式包生成后，另运行工作区集成验证：
 
 ```bash
-node scripts/workspace-v150-integration.mjs release/v1.6.0/win-unpacked/Zhiyu.exe
+node scripts/workspace-v150-integration.mjs release/v1.6.0/win-unpacked/Helself.exe
 ```
 
 该命令从参数指定的实际程序启动，核对版本并使用独立临时资料；通过本机合成模型服务验证文档修改、账号元信息修改与关系提案的真实主进程链路，不使用日常凭据或真实模型额度。省略程序参数会启动源码主进程，不能替代正式包验证。
@@ -129,7 +129,7 @@ node scripts/wxpusher-ui-integration.mjs
 node scripts/page-scroll-integration.mjs
 ```
 
-运行 `node scripts/identity-totp-desktop-integration.mjs release/v1.6.0/win-unpacked/Zhiyu.exe` 验证隔离正式程序中的身份授权、本人帖子全文与账号提取、TOTP 和锁库链路。通过测试进程替换网络与系统浏览器调用，不读取真实身份或向论坛发送授权信息，并明确关闭测试资料的本机日志采集。省略程序参数会启动源码主进程，不能替代打包程序检查。
+运行 `node scripts/identity-totp-desktop-integration.mjs release/v1.6.0/win-unpacked/Helself.exe` 验证隔离正式程序中的身份授权、本人帖子全文与账号提取、TOTP 和锁库链路。通过测试进程替换网络与系统浏览器调用，不读取真实身份或向论坛发送授权信息，并明确关闭测试资料的本机日志采集。省略程序参数会启动源码主进程，不能替代打包程序检查。
 
 `npm test` 包含身份回调与缓存、TOTP、文档账号提取、采集周期、Markdown 源码、服务资产、WxPusher 和打包暂存目录回归。检查服务器仅手动模式不自动连接，切换周期后复用相应缓存；本机 Token 监控不随之停止。WxPusher 只用合成响应验证请求格式与失败处理，不向真实接收目标发送测试消息。
 
@@ -137,7 +137,7 @@ Linux.do 的真实 OAuth 需要账户持有人在软件里配置自己的 Connec
 
 macOS 的 Apple Silicon / Intel 构建由「macOS 打包检查」工作流验证，成功后仅产生未签名测试 ZIP。具体命令、路径与限制见 [macOS 构建说明](MAC-BUILD.md)。没有实际工作流结果时，不填写 macOS 构建通过；Windows 测试不能替代 macOS 构建、运行、签名或公证验证。
 
-1.6.0 发布附件使用 `Zhiyu-1.6.0-setup.exe` 和 `Zhiyu-1.6.0-browser-extension.zip`，插件目录为 `zhiyu-browser-extension`。仓库、Pages 下载页、更新源和新附件统一使用知屿 Zhiyu。内部安装身份、原用户目录和已有协议用于升级兼容，不随外部品牌更名而随意修改；历史附件名与历史验证结果保持事实原状。
+1.6.0 发布附件使用 `Helself-1.6.0-setup.exe` 和 `Helself-1.6.0-browser-extension.zip`，插件目录为 `helself-browser-extension`。仓库、Pages 下载页、更新源和新附件统一使用Helself。内部安装身份、原用户目录和已有协议用于升级兼容，不随外部品牌更名而随意修改；历史附件名与历史验证结果保持事实原状。
 
 ## 1.7.0 主身份登录与兼容验证
 
@@ -152,8 +152,8 @@ node scripts/main-identity-ui-integration.mjs
 正式包生成后，验证实际 Electron 程序中的主身份链路，同时保留旧身份与 TOTP 兼容回归：
 
 ```bash
-node scripts/main-identity-desktop-integration.mjs release/v1.7.0/win-unpacked/Zhiyu.exe
-node scripts/identity-totp-desktop-integration.mjs release/v1.7.0/win-unpacked/Zhiyu.exe
+node scripts/main-identity-desktop-integration.mjs release/v1.7.0/win-unpacked/Helself.exe
+node scripts/identity-totp-desktop-integration.mjs release/v1.7.0/win-unpacked/Helself.exe
 ```
 
 两个桌面脚本都以第一个参数指定实际可执行文件，通过 `--user-data-dir` 使用独立临时资料，检查运行的是打包程序，并关闭测试资料的本机用量扫描。省略程序参数会启动源码主进程，不能替代正式包验收。
@@ -166,7 +166,7 @@ node scripts/identity-totp-desktop-integration.mjs release/v1.7.0/win-unpacked/Z
 
 截至 2026 年 10 月 9 日，公网 `https://auth.allinsong.top/healthz` 已返回 `configured: true`，`POST /v1/login/start` 已返回 HTTP 200，并核对官方授权地址、`https://auth.allinsong.top/oauth/linuxdo/callback` 回调和 S256 PKCE。随后已通过用户本人发起的真实授权与绑定，本机已连接状态、邮箱和等级字段已核对；没有公开其账号信息。未提供可用头像时继续保留本地头像，不能据此宣称任意头像或受限帖子均可读取。协议测试与真实 OAuth 结果必须分别记录，不发布完整授权链接、应用密钥或服务凭据。
 
-1.7.0 安装包、更新元数据、下载页和扩展版本保持一致，附件使用 `Zhiyu-1.7.0-setup.exe` 与 `Zhiyu-1.7.0-browser-extension.zip`。插件本版只同步版本号。升级继续保留原数据目录及 1.6.0 密钥库身份资产，不把旧账号自动迁移为主身份；主身份使用独立系统加密文件，登录不能代替本地主密码。
+1.7.0 安装包、更新元数据、下载页和扩展版本保持一致，附件使用 `Helself-1.7.0-setup.exe` 与 `Helself-1.7.0-browser-extension.zip`。插件本版只同步版本号。升级继续保留原数据目录及 1.6.0 密钥库身份资产，不把旧账号自动迁移为主身份；主身份使用独立系统加密文件，登录不能代替本地主密码。
 
 ## 1.7.1 安全与性能修补验证
 
@@ -206,7 +206,7 @@ node scripts/subscription-desktop-integration.mjs
 正式包生成后，必须另跑同一条订阅集成链路：
 
 ```bash
-node scripts/subscription-desktop-integration.mjs release/v1.7.2/win-unpacked/Zhiyu.exe
+node scripts/subscription-desktop-integration.mjs release/v1.7.2/win-unpacked/Helself.exe
 ```
 
 `subscription-desktop-integration.mjs` 用第一个参数指定实际程序，使用独立临时资料并校验是否为打包实例。测试只启动本机合成订阅／指标服务，预先写入合成 v2rayN 目录，避免探测或读取日常客户端。`usage-subscription-ui-qa.mjs` 是由该脚本调用的交互检查模块，不作为独立启动命令。检查完成后查看 `screenshots/` 下本次生成的桌面与窄窗口截图；源码主进程通过不能替代正式包验证。

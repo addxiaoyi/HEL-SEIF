@@ -292,7 +292,7 @@ export function CheckEditor({
         }}
       >
         <p className="text-meta text-muted">
-          {t("检查由常驻监控服务端执行，关闭知屿后仍持续运行。")}
+          {t("检查由常驻监控服务端执行，关闭Helself后仍持续运行。")}
         </p>
         <Field label={t("检查名称")}>
           <Input

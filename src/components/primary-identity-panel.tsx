@@ -223,7 +223,7 @@ export function PrimaryIdentityPanel({ initial = false }: { initial?: boolean })
           <p>
             {t(
               initial
-                ? "使用社区账号绑定知屿，也可以先在本机开始。"
+                ? "使用社区账号绑定Helself，也可以先在本机开始。"
                 : "管理你的社区身份、资料同步和本人帖子。",
             )}
           </p>

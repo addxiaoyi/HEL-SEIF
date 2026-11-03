@@ -18,7 +18,7 @@ try {
   delete env.SINAN_DEV_URL;
   delete env.NANPAD_TEST_DATA_DIR;
   instance = await electron.launch({
-    executablePath: resolve(process.argv[2] ?? "release/win-unpacked/Zhiyu.exe"),
+    executablePath: resolve(process.argv[2] ?? "release/win-unpacked/Helself.exe"),
     args: [
       `--user-data-dir=${directory}`,
       "nanpad://capture?url=https%3A%2F%2Frelease.example.test%2Flogin%3Ftoken%3Dprivate&title=Release",

@@ -9,9 +9,9 @@ import { createBackup } from "../electron/services/backup.mjs";
 const quiet = { log() {}, error() {} };
 
 async function rig(t, options = {}) {
-  const root = await mkdtemp(join(tmpdir(), "zhiyu-web-"));
-  const staticDir = await mkdtemp(join(tmpdir(), "zhiyu-web-static-"));
-  await writeFile(join(staticDir, "index.html"), "<!doctype html><title>知屿</title>");
+  const root = await mkdtemp(join(tmpdir(), "helself-web-"));
+  const staticDir = await mkdtemp(join(tmpdir(), "helself-web-static-"));
+  await writeFile(join(staticDir, "index.html"), "<!doctype html><title>Helself</title>");
   const web = await createWebServer({
     root,
     staticDir,
@@ -33,7 +33,7 @@ async function rig(t, options = {}) {
       redirect: "manual",
       headers: {
         ...(cookie ? { cookie } : {}),
-        ...(method === "GET" ? {} : { "content-type": "application/json", "x-zhiyu": "1" }),
+        ...(method === "GET" ? {} : { "content-type": "application/json", "x-helself": "1" }),
         ...headers,
       },
       body: body === undefined ? undefined : raw ? body : JSON.stringify(body),
@@ -87,7 +87,7 @@ test("整站需要登录；改动类请求必须带自定义头且同源", async
       await call("/api/web/store", {
         method: "PUT",
         body: { revision: null, data: {} },
-        headers: { "x-zhiyu": "" },
+        headers: { "x-helself": "" },
       })
     ).status,
     403,
@@ -239,11 +239,11 @@ test("备份与恢复：下载的备份能恢复，桌面版备份也能直接�
     body: { password: "backup-pass-123" },
   });
   assert.equal(download.status, 200);
-  assert.match(download.headers.get("content-disposition"), /zhiyu-web-\d{8}-\d{6}\.zhiyu-backup/);
+  assert.match(download.headers.get("content-disposition"), /helself-web-\d{8}-\d{6}\.helself-backup/);
   assert.ok((await download.arrayBuffer()).byteLength > 100);
 
   // 模拟桌面版：另一个资料目录做出的备份
-  const desktopRoot = await mkdtemp(join(tmpdir(), "zhiyu-desktop-"));
+  const desktopRoot = await mkdtemp(join(tmpdir(), "helself-desktop-"));
   t.after(() => rm(desktopRoot, { recursive: true, force: true }));
   await writeFile(
     join(desktopRoot, "assets.json"),
@@ -267,7 +267,7 @@ test("备份与恢复：下载的备份能恢复，桌面版备份也能直接�
   const { data: backup } = await createBackup({ root: desktopRoot, password: "desktop-pass-123" });
   const header = (password) => ({
     "content-type": "application/octet-stream",
-    "x-zhiyu-backup-password": Buffer.from(password).toString("base64"),
+    "x-helself-backup-password": Buffer.from(password).toString("base64"),
   });
   assert.equal(
     (

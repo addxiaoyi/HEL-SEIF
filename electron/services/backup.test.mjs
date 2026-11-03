@@ -36,7 +36,7 @@ function systemStorage(machine, { usable = true } = {}) {
 }
 
 async function tempDir(t, name) {
-  const directory = await mkdtemp(join(tmpdir(), `zhiyu-backup-${name}-`));
+  const directory = await mkdtemp(join(tmpdir(), `helself-backup-${name}-`));
   t.after(() => rm(directory, { recursive: true, force: true }));
   return directory;
 }
@@ -133,7 +133,7 @@ test("备份文件是密文：魔数与头部之外看不到资产、清单、�
     appVersion: "1.7.4",
     secureStorage: storage,
   });
-  assert.equal(data.subarray(0, 8).toString("ascii"), "ZHIYUBAK");
+  assert.equal(data.subarray(0, 10).toString("ascii"), "HELSELFBAK");
   const text = data.toString("latin1");
   for (const secret of [
     MARKER,
@@ -144,7 +144,7 @@ test("备份文件是密文：魔数与头部之外看不到资产、清单、�
     "Tester",
   ])
     assert.equal(text.includes(secret), false, secret);
-  const header = JSON.parse(data.subarray(12, 12 + data.readUInt32BE(8)).toString("utf8"));
+  const header = JSON.parse(data.subarray(14, 14 + data.readUInt32BE(10)).toString("utf8"));
   assert.deepEqual(Object.keys(header).sort(), ["check", "format", "iv", "kdf", "salt", "v"]);
   assert.equal(preview.summary.assetTotal, 4);
   assert.equal(preview.summary.documents, 2);
@@ -302,7 +302,7 @@ test("篡改密文、头部或截断文件都会被拒绝", async (t) => {
   const root = await tempDir(t, "tamper");
   await seedDataDirectory(root, systemStorage("A"));
   const { data } = await createBackup({ root, password: PASSWORD });
-  const headerEnd = 12 + data.readUInt32BE(8);
+  const headerEnd = 14 + data.readUInt32BE(10);
   const expectCode = (code) => (error) => {
     assert.ok(error instanceof BackupError, String(error));
     assert.equal(error.code, code);
@@ -318,14 +318,14 @@ test("篡改密文、头部或截断文件都会被拒绝", async (t) => {
   await assert.rejects(openBackup(tag, PASSWORD), expectCode("CORRUPT"));
 
   // 头部作为附加认证数据：换掉正文 IV 也无法通过认证。
-  const header = JSON.parse(data.subarray(12, headerEnd).toString("utf8"));
+  const header = JSON.parse(data.subarray(14, headerEnd).toString("utf8"));
   const forgedIv = Buffer.from(header.iv, "base64");
   forgedIv[0] ^= 0xff;
   const forgedHeader = Buffer.from(JSON.stringify({ ...header, iv: forgedIv.toString("base64") }));
   const length = Buffer.alloc(4);
   length.writeUInt32BE(forgedHeader.length);
   const forged = Buffer.concat([
-    data.subarray(0, 8),
+    data.subarray(0, 10),
     length,
     forgedHeader,
     data.subarray(headerEnd),
@@ -343,7 +343,7 @@ test("篡改密文、头部或截断文件都会被拒绝", async (t) => {
   length.writeUInt32BE(future.length);
   await assert.rejects(
     openBackup(
-      Buffer.concat([data.subarray(0, 8), length, future, data.subarray(headerEnd)]),
+      Buffer.concat([data.subarray(0, 10), length, future, data.subarray(headerEnd)]),
       PASSWORD,
     ),
     expectCode("VERSION"),
@@ -406,19 +406,19 @@ test("恢复快照只保留最近几份", async (t) => {
 test("自动备份清理只删除自己命名的文件", async (t) => {
   const directory = await tempDir(t, "prune");
   for (const day of ["01", "02", "03", "04"])
-    await put(directory, `zhiyu-auto-202610${day}-120000.zhiyu-backup`, day);
-  await put(directory, "知屿备份-20261001-1200.zhiyu-backup", "manual");
+    await put(directory, `helself-auto-202610${day}-120000.helself-backup`, day);
+  await put(directory, "Helself备份-20261001-1200.helself-backup", "manual");
   await put(directory, "notes.txt", "keep");
   const removed = await pruneAutoBackups(directory, 2);
   assert.deepEqual(removed.sort(), [
-    "zhiyu-auto-20261001-120000.zhiyu-backup",
-    "zhiyu-auto-20261002-120000.zhiyu-backup",
+    "helself-auto-20261001-120000.helself-backup",
+    "helself-auto-20261002-120000.helself-backup",
   ]);
   assert.deepEqual((await readdir(directory)).sort(), [
+    "Helself备份-20261001-1200.helself-backup",
+    "helself-auto-20261003-120000.helself-backup",
+    "helself-auto-20261004-120000.helself-backup",
     "notes.txt",
-    "zhiyu-auto-20261003-120000.zhiyu-backup",
-    "zhiyu-auto-20261004-120000.zhiyu-backup",
-    "知屿备份-20261001-1200.zhiyu-backup",
   ]);
 });
 
@@ -463,8 +463,8 @@ test("自动备份：按周期运行、保留最近 N 份，密码由系统加�
   }
   const files = (await readdir(target)).sort();
   assert.deepEqual(files, [
-    "zhiyu-auto-20261022-080000.zhiyu-backup",
-    "zhiyu-auto-20261023-080000.zhiyu-backup",
+    "helself-auto-20261022-080000.helself-backup",
+    "helself-auto-20261023-080000.helself-backup",
   ]);
   assert.deepEqual(new Set(passwords), new Set([PASSWORD]));
   const restored = await openBackup(await readFile(join(target, files[1])), PASSWORD);

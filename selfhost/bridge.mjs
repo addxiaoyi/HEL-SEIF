@@ -347,10 +347,10 @@ export function createWebBridge({
     "host:stats": () => hostStats.snapshot(),
     /** 网页版不自更新（镜像由 docker compose pull 升级），这里只告诉用户有没有新版本。 */
     "app:check-update": async () => {
-      const page = "https://github.com/Songwo/zhiyu/releases/latest";
+      const page = "https://github.com/addxiaoyi/HEL-SEIF/releases/latest";
       try {
-        const res = await fetchImpl("https://api.github.com/repos/Songwo/zhiyu/releases/latest", {
-          headers: { accept: "application/vnd.github+json", "user-agent": "zhiyu-web" },
+        const res = await fetchImpl("https://api.github.com/repos/addxiaoyi/HEL-SEIF/releases/latest", {
+          headers: { accept: "application/vnd.github+json", "user-agent": "helself-web" },
           signal: AbortSignal.timeout(8000),
         });
         if (!res.ok) throw new Error(`GitHub 返回 ${res.status}`);
@@ -417,6 +417,12 @@ export function createWebBridge({
         },
         sshCredential(credential),
       ),
+    "ssh:host-key": async (target) => {
+      if (!target || typeof target.host !== "string" || !target.host.trim())
+        throw new BridgeError("主机地址不正确。");
+      const fingerprint = (await readHostKeys())[hostKey(target.host, target.port)] ?? null;
+      return { fingerprint };
+    },
     "ssh:reset-host-key": async (target) => {
       if (!target || typeof target.host !== "string" || !target.host.trim())
         throw new BridgeError("主机地址不正确。");

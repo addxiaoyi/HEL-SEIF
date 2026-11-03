@@ -10,8 +10,8 @@ export const BACKUP_EN: Record<string, string> = {
   "{0} 类系统保护的凭据无法在本机解密，未放入备份。":
     "{0} kinds of system-protected credentials could not be decrypted on this computer and were left out.",
   加密备份: "Encrypted backup",
-  "把资产、文档、密钥库、个人资料、用量与接入配置打包成一个文件，用备份密码加密。不需要退出知屿。":
-    "Packs assets, documents, the vault, your profile, usage and connections into one file encrypted with a backup password. No need to quit Zhiyu.",
+  "把资产、文档、密钥库、个人资料、用量与接入配置打包成一个文件，用备份密码加密。不需要退出Helself。":
+    "Packs assets, documents, the vault, your profile, usage and connections into one file encrypted with a backup password. No need to quit Helself.",
   "创建加密备份…": "Create encrypted backup…",
   备份密码: "Backup password",
   "至少 10 位，可以与主密码相同。忘记备份密码将无法恢复；备份里的密钥库仍需要创建备份时的主密码解锁。":
@@ -25,7 +25,7 @@ export const BACKUP_EN: Record<string, string> = {
     "The vault is locked; you will be asked to unlock it first.",
   选择保存位置并备份: "Choose location and back up",
   创建时间: "Created",
-  知屿版本: "Zhiyu version",
+  Helself版本: "Helself version",
   自动备份: "Auto backup",
   文档: "Documents",
   "{0} 篇": "{0}",
@@ -38,11 +38,11 @@ export const BACKUP_EN: Record<string, string> = {
   "{0} 个，共 {1}": "{0}, {1} in total",
   "本机安全加密不可用，系统保护的凭据未恢复，请重启后重新输入。":
     "Secure storage is unavailable here, so system-protected credentials were not restored. Re-enter them after the restart.",
-  "备份已准备好，知屿即将重启并完成恢复。":
-    "Backup is ready. Zhiyu will restart to finish restoring.",
+  "备份已准备好，Helself即将重启并完成恢复。":
+    "Backup is ready. Helself will restart to finish restoring.",
   从备份恢复: "Restore from backup",
   "用备份替换当前全部资料。替换前会把当前资料完整移到资料目录的 restore-snapshots 中，随后自动重启。":
-    "Replaces all current data with the backup. Your current data is first moved, intact, into restore-snapshots inside the data folder, then Zhiyu restarts.",
+    "Replaces all current data with the backup. Your current data is first moved, intact, into restore-snapshots inside the data folder, then Helself restarts.",
   "上次启动已从备份恢复；恢复前的资料保存在 {0}。":
     "Restored from a backup at the last start; the earlier data is kept in {0}.",
   "上次恢复未完成：{0}": "The last restore did not finish: {0}",

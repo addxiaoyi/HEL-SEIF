@@ -13,7 +13,7 @@ afterEach(async () => {
   );
 });
 async function fixture(content) {
-  const directory = await mkdtemp(join(tmpdir(), "zhiyu-oauth-json-"));
+  const directory = await mkdtemp(join(tmpdir(), "helself-oauth-json-"));
   directories.push(directory);
   const path = join(directory, "client.json");
   await writeFile(path, content);

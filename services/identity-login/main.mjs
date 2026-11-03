@@ -7,13 +7,13 @@ const closeTransport = async () => {
   try {
     await transport?.close();
   } catch {
-    process.stderr.write("知屿登录服务出站连接未能正常关闭。\n");
+    process.stderr.write("Helself登录服务出站连接未能正常关闭。\n");
     process.exitCode = 1;
   }
 };
 
 try {
-  const filename = process.env.ZHIYU_IDENTITY_CONFIG;
+  const filename = process.env.HELSELF_IDENTITY_CONFIG;
   const file = filename ? JSON.parse(await readFile(filename, "utf8")) : {};
   if (!file || typeof file !== "object" || Array.isArray(file))
     throw new Error("配置文件须为 JSON 对象。");
@@ -34,11 +34,11 @@ try {
     },
   });
   server.on("error", () => {
-    process.stderr.write("知屿登录服务无法启动，请检查监听端口和服务配置。\n");
+    process.stderr.write("Helself登录服务无法启动，请检查监听端口和服务配置。\n");
     process.exitCode = 1;
     void closeTransport();
   });
-  server.listen(port, "127.0.0.1", () => process.stdout.write("知屿登录服务已启动。\n"));
+  server.listen(port, "127.0.0.1", () => process.stdout.write("Helself登录服务已启动。\n"));
   let closing = false;
   const shutdown = () => {
     if (closing) return;
@@ -56,7 +56,7 @@ try {
   process.on("SIGINT", shutdown);
 } catch {
   // 避免 JSON 解析错误把配置中的敏感片段输出到日志。
-  process.stderr.write("知屿登录服务配置无效或无法读取，请检查受保护的配置文件。\n");
+  process.stderr.write("Helself登录服务配置无效或无法读取，请检查受保护的配置文件。\n");
   process.exitCode = 1;
   await closeTransport();
 }

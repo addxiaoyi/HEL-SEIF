@@ -6,7 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Runtime.InteropServices;
-using Zhiyu.Terminal;
+using Helself.Terminal;
 
 public static class TerminalTests {
     static int checks;

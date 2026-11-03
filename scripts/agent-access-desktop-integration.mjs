@@ -12,7 +12,7 @@ const packaged = process.argv.slice(2).find((arg) => /\.exe$/i.test(arg));
 const expectedVersion = JSON.parse(
   await readFile(new URL("../package.json", import.meta.url), "utf8"),
 ).version;
-const directory = await mkdtemp(join(tmpdir(), "zhiyu-agent-access-"));
+const directory = await mkdtemp(join(tmpdir(), "helself-agent-access-"));
 const documentId = "doc-desktop-access";
 const originalTitle = "桌面合成手册";
 const nextTitle = "新版合成手册";

@@ -3,5 +3,5 @@ data
 private
 *.db
 *.exe
-zhiyu-probe
+helself-probe
 coverage*

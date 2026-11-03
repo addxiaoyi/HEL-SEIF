@@ -10,7 +10,7 @@ import { chooseOption } from "./select-helper.mjs";
 import { runUsageSubscriptionUiQa } from "./usage-subscription-ui-qa.mjs";
 
 // 只使用隔离数据与本机合成服务；可传入正式打包的 exe 验证同一条链路。
-const directory = await mkdtemp(join(tmpdir(), "zhiyu-subscription-desktop-"));
+const directory = await mkdtemp(join(tmpdir(), "helself-subscription-desktop-"));
 const fixtureRoot = join(directory, "synthetic-v2rayn");
 const selectedRoot = join(directory, "selected-v2rayn");
 const screenshotRoot = resolve("screenshots");

@@ -9,7 +9,7 @@ import { chooseOption } from "./select-helper.mjs";
 import { captureUrl } from "../electron/services/browser-capture.mjs";
 
 const { version } = JSON.parse(await readFile("package.json", "utf8"));
-const extension = resolve(`release/v${version}/zhiyu-browser-extension`);
+const extension = resolve(`release/v${version}/helself-browser-extension`);
 const manifest = JSON.parse(await readFile(join(extension, "manifest.json"), "utf8"));
 assert.equal(manifest.version, version);
 assert.deepEqual(manifest.permissions, ["activeTab", "scripting", "storage", "tabs"]);
@@ -91,15 +91,15 @@ try {
   });
   const base = `http://127.0.0.1:${server.address().port}`;
   await popup.goto(base);
-  await popup.getByRole("button", { name: "仅记录站点并打开知屿" }).click();
-  await popup.getByRole("status").filter({ hasText: "已请求打开知屿" }).waitFor();
+  await popup.getByRole("button", { name: "仅记录站点并打开Helself" }).click();
+  await popup.getByRole("status").filter({ hasText: "已请求打开Helself" }).waitFor();
   const result = await popup.evaluate(() => window.captureResult);
   assert.ok(!result.url.includes("private"));
   await popup.screenshot({ path: "screenshots/nanpad-v070-extension-site.png" });
   await popup.goto(`${base}/?blocked=1`);
   await popup.getByRole("status").filter({ hasText: "请在 HTTP" }).waitFor();
   assert.equal(
-    await popup.getByRole("button", { name: "仅记录站点并打开知屿" }).isDisabled(),
+    await popup.getByRole("button", { name: "仅记录站点并打开Helself" }).isDisabled(),
     true,
   );
   await browser.close();

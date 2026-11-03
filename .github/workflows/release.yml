@@ -21,7 +21,7 @@ jobs:
     permissions:
       contents: write
     env:
-      ZHIYU_RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+      HELSELF_RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,10 +34,10 @@ jobs:
       - name: 校验版本标签与源码
         shell: pwsh
         run: |
-          if ($env:ZHIYU_RELEASE_TAG -notmatch '^v\d+\.\d+\.\d+$') { throw 'Invalid stable release tag' }
+          if ($env:HELSELF_RELEASE_TAG -notmatch '^v\d+\.\d+\.\d+$') { throw 'Invalid stable release tag' }
           $version = (Get-Content package.json | ConvertFrom-Json).version
-          if ("v$version" -ne $env:ZHIYU_RELEASE_TAG) { throw 'Version tag mismatch' }
-          $tagCommit = git rev-parse "refs/tags/$($env:ZHIYU_RELEASE_TAG)^{}"
+          if ("v$version" -ne $env:HELSELF_RELEASE_TAG) { throw 'Version tag mismatch' }
+          $tagCommit = git rev-parse "refs/tags/$($env:HELSELF_RELEASE_TAG)^{}"
           if ($LASTEXITCODE -ne 0) { throw 'Release tag missing' }
           $headCommit = git rev-parse HEAD
           if ($LASTEXITCODE -ne 0 -or $tagCommit -ne $headCommit) { throw 'Release source mismatch' }
@@ -67,7 +67,7 @@ jobs:
       - run: npm run desktop:dist
       - name: 构建原生在线安装器并验证真实安装与卸载
         env:
-          ZHIYU_INSTALLER_REAL_TEST: "1"
+          HELSELF_INSTALLER_REAL_TEST: "1"
         run: npm run desktop:online
       - name: 生成 Windows 便携版
         run: npm run desktop:portable
@@ -79,7 +79,7 @@ jobs:
         shell: pwsh
         run: |
           $version = (Get-Content package.json | ConvertFrom-Json).version
-          node scripts/brand-icons-integration.mjs "release/v$version/win-unpacked/Zhiyu.exe"
+          node scripts/brand-icons-integration.mjs "release/v$version/win-unpacked/Helself.exe"
       - name: 验证本机默认监控与 Markdown 导入
         run: |
           node scripts/local-usage-integration.mjs
@@ -90,13 +90,13 @@ jobs:
         shell: pwsh
         run: |
           $version = (Get-Content package.json | ConvertFrom-Json).version
-          node scripts/workspace-v150-integration.mjs "release/v$version/win-unpacked/Zhiyu.exe"
+          node scripts/workspace-v150-integration.mjs "release/v$version/win-unpacked/Helself.exe"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          node scripts/agent-access-desktop-integration.mjs "release/v$version/win-unpacked/Zhiyu.exe"
+          node scripts/agent-access-desktop-integration.mjs "release/v$version/win-unpacked/Helself.exe"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node scripts/vault-usability-integration.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          node scripts/security-patch-desktop-integration.mjs "release/v$version/win-unpacked/Zhiyu.exe"
+          node scripts/security-patch-desktop-integration.mjs "release/v$version/win-unpacked/Helself.exe"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node scripts/sidebar-centering-integration.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -109,15 +109,15 @@ jobs:
         shell: pwsh
         run: |
           $version = (Get-Content package.json | ConvertFrom-Json).version
-          node scripts/passwords-desktop-integration.mjs "release/v$version/win-unpacked/Zhiyu.exe"
+          node scripts/passwords-desktop-integration.mjs "release/v$version/win-unpacked/Helself.exe"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          node scripts/identity-totp-desktop-integration.mjs "release/v$version/win-unpacked/Zhiyu.exe"
+          node scripts/identity-totp-desktop-integration.mjs "release/v$version/win-unpacked/Helself.exe"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          node scripts/main-identity-desktop-integration.mjs "release/v$version/win-unpacked/Zhiyu.exe"
+          node scripts/main-identity-desktop-integration.mjs "release/v$version/win-unpacked/Helself.exe"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          node scripts/local-usage-packaged-integration.mjs "release/v$version/win-unpacked/Zhiyu.exe"
+          node scripts/local-usage-packaged-integration.mjs "release/v$version/win-unpacked/Helself.exe"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          node scripts/subscription-desktop-integration.mjs "release/v$version/win-unpacked/Zhiyu.exe"
+          node scripts/subscription-desktop-integration.mjs "release/v$version/win-unpacked/Helself.exe"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: 验证浏览器插件真实交互
         run: node scripts/browser-companion-integration.mjs
@@ -128,24 +128,24 @@ jobs:
         run: |
           $version = (Get-Content package.json | ConvertFrom-Json).version
           $directory = "release/v$version"
-          $installer = "$directory/Zhiyu-$version-setup.exe"
-          $online = "$directory/Zhiyu-$version-online-setup.exe"
+          $installer = "$directory/Helself-$version-setup.exe"
+          $online = "$directory/Helself-$version-online-setup.exe"
           if (!(Test-Path $online)) { throw 'Online installer missing' }
-          $extension = "$directory/Zhiyu-$version-browser-extension.zip"
-          $portable = "$directory/Zhiyu-$version-portable-x64.zip"
+          $extension = "$directory/Helself-$version-browser-extension.zip"
+          $portable = "$directory/Helself-$version-portable-x64.zip"
           if (!(Test-Path $portable)) { throw 'Portable archive missing' }
-          Compress-Archive -Path "$directory/zhiyu-browser-extension/*" -DestinationPath $extension
+          Compress-Archive -Path "$directory/helself-browser-extension/*" -DestinationPath $extension
           $hash = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLower()
           $extensionHash = (Get-FileHash $extension -Algorithm SHA256).Hash.ToLower()
           $portableHash = (Get-FileHash $portable -Algorithm SHA256).Hash.ToLower()
           $onlineHash = (Get-FileHash $online -Algorithm SHA256).Hash.ToLower()
-          @("$hash  Zhiyu-$version-setup.exe", "$onlineHash  Zhiyu-$version-online-setup.exe", "$portableHash  Zhiyu-$version-portable-x64.zip", "$extensionHash  Zhiyu-$version-browser-extension.zip") | Set-Content "$directory/SHA256SUMS.txt" -Encoding utf8
+          @("$hash  Helself-$version-setup.exe", "$onlineHash  Helself-$version-online-setup.exe", "$portableHash  Helself-$version-portable-x64.zip", "$extensionHash  Helself-$version-browser-extension.zip") | Set-Content "$directory/SHA256SUMS.txt" -Encoding utf8
           $metadata = "$directory/latest.yml"
           $blockmap = "$installer.blockmap"
           if (!(Test-Path $metadata) -or !(Test-Path $blockmap)) { throw 'Update metadata missing' }
-          gh release create "v$version" $installer $online $portable $extension $metadata $blockmap "$directory/SHA256SUMS.txt" --verify-tag --title "知屿 Zhiyu $version" --notes-file "docs/releases/v$version.md"
+          gh release create "v$version" $installer $online $portable $extension $metadata $blockmap "$directory/SHA256SUMS.txt" --verify-tag --title "Helself $version" --notes-file "docs/releases/v$version.md"
 
-  # 网页版镜像：Windows 正式版全部检查通过后，推送到 ghcr.io/<owner>/zhiyu-web:<版本> 与 latest。
+  # 网页版镜像：Windows 正式版全部检查通过后，推送到 ghcr.io/<owner>/helself-web:<版本> 与 latest。
   web-image:
     needs: windows
     permissions:

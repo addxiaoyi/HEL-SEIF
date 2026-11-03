@@ -14,7 +14,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/Songwo/zhiyu/services/probe/internal/probe"
+	"github.com/addxiaoyi/HEL-SEIF/services/probe/internal/probe"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func main() {
 }
 func run() error {
 	if len(os.Args) < 2 {
-		return errors.New("usage: zhiyu-probe server | agent | token")
+		return errors.New("usage: helself-probe server | agent | token")
 	}
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()

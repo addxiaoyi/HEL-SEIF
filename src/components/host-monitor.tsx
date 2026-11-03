@@ -365,15 +365,15 @@ function ScopeNote({ data }: { data: HostSnapshot }) {
   const container = data.info.container;
   const host = data.scope?.procHost;
   let text: string;
-  if (!container) text = t("知屿直接运行在这台主机上，看到的是整台机器的数据。");
+  if (!container) text = t("Helself直接运行在这台主机上，看到的是整台机器的数据。");
   else if (host)
     text = t(
-      "知屿运行在 {0} 容器里，已挂载宿主机 /proc：CPU、内存、负载、网络与进程都是整台 VPS 的；磁盘为资料目录所在的分区。",
+      "Helself运行在 {0} 容器里，已挂载宿主机 /proc：CPU、内存、负载、网络与进程都是整台 VPS 的；磁盘为资料目录所在的分区。",
       container,
     );
   else
     text = t(
-      "知屿运行在 {0} 容器里，没有挂载宿主机 /proc：CPU、内存、负载与运行时长来自宿主机内核，但网络与进程只含容器自己。在 docker-compose.yml 加上 /proc:/host/proc:ro 后可看到整台 VPS。",
+      "Helself运行在 {0} 容器里，没有挂载宿主机 /proc：CPU、内存、负载与运行时长来自宿主机内核，但网络与进程只含容器自己。在 docker-compose.yml 加上 /proc:/host/proc:ro 后可看到整台 VPS。",
       container,
     );
   return (
@@ -771,7 +771,7 @@ export function HostMonitorView() {
           {data.service && (
             <section className="host-card">
               <header>
-                <h3>{t("知屿服务")}</h3>
+                <h3>{t("Helself服务")}</h3>
                 <span>PID {data.service.pid}</span>
               </header>
               <dl className="host-pairs">

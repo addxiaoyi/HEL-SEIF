@@ -81,6 +81,7 @@ import { readMonitorMinutes, validateMonitorMinutes } from "./services/server-mo
 import { mergeDemo, DEMO_KNOWLEDGE } from "./services/demo.mjs";
 import {
   BACKUP_EXTENSION,
+  LEGACY_BACKUP_EXTENSION,
   applyPendingRestore,
   assertBackupPassword,
   backupStamp,
@@ -107,10 +108,10 @@ try {
 } catch (error) {
   if (!portableDirectory) throw error;
   dialog.showErrorBox(
-    "知屿便携版无法启动",
+    "Helself便携版无法启动",
     [
       `无法写入资料目录：${portableDirectory}`,
-      "请把便携版解压到可写入的位置（例如 D:\\Zhiyu 或 U 盘），不要放在 C:\\Program Files 等受保护目录。",
+      "请把便携版解压到可写入的位置（例如 D:\\Helself 或 U 盘），不要放在 C:\\Program Files 等受保护目录。",
       error.message,
     ].join("\n\n"),
   );
@@ -278,12 +279,12 @@ function notifyAttention() {
   if (reminders.length)
     void mailPush
       ?.remind(
-        ["知屿提醒", ...reminders.slice(0, 10).map((item) => attentionLine(item))].join("\n"),
+        ["Helself提醒", ...reminders.slice(0, 10).map((item) => attentionLine(item))].join("\n"),
       )
       .catch((error) => console.warn("reminder-push", error.message));
   if (!wantSystem) return;
   const notification = new Notification({
-    title: en ? "Zhiyu: assets need attention" : "知屿：资产需要留意",
+    title: en ? "Helself: assets need attention" : "Helself：资产需要留意",
     body: items
       .slice(0, 5)
       .map((item) => attentionLine(item, en))
@@ -299,10 +300,10 @@ function notifyAttention() {
 function updateTray() {
   if (!tray) return;
   const en = preferences.locale === "en";
-  tray.setToolTip("知屿 Zhiyu");
+  tray.setToolTip("Helself");
   tray.setContextMenu(
     Menu.buildFromTemplate([
-      { label: en ? "Open Zhiyu" : "打开知屿", click: showWindow },
+      { label: en ? "Open Helself" : "打开Helself", click: showWindow },
       {
         label: en ? "Lock vault" : "锁定密钥库",
         click: lockVault,
@@ -435,13 +436,13 @@ async function createWindow() {
     win.setAppDetails({
       appId: windowsAppId(app.isPackaged),
       appIconPath: app.isPackaged
-        ? join(process.resourcesPath, "zhiyu.ico")
+        ? join(process.resourcesPath, "helself.ico")
         : join(here, "../build/icon.ico"),
       appIconIndex: 0,
       relaunchCommand: app.isPackaged
         ? `"${process.execPath}"`
         : `"${process.execPath}" "${join(here, "main.mjs")}"`,
-      relaunchDisplayName: "知屿 Zhiyu",
+      relaunchDisplayName: "Helself",
     });
   }
 
@@ -818,7 +819,7 @@ function registerIpc() {
     assertCurrent();
     if (confirm.response !== 1) return null;
     const selected = await dialog.showSaveDialog(win, {
-      defaultPath: "知屿-浏览器密码.csv",
+      defaultPath: "Helself-浏览器密码.csv",
       filters: [{ name: "浏览器密码 CSV", extensions: ["csv"] }],
     });
     assertCurrent();
@@ -1312,8 +1313,8 @@ function registerIpc() {
   const updateEngine = electronUpdater.autoUpdater;
   updateEngine.setFeedURL({
     provider: "github",
-    owner: "Songwo",
-    repo: "zhiyu",
+    owner: "addxiaoyi",
+    repo: "HEL-SEIF",
     private: false,
     releaseType: "release",
   });
@@ -1398,9 +1399,9 @@ function registerIpc() {
         title: say("保存加密备份", "Save encrypted backup"),
         defaultPath: join(
           app.getPath("documents"),
-          `${say("知屿备份", "zhiyu-backup")}-${backupStamp()}.${BACKUP_EXTENSION}`,
+          `${say("Helself备份", "helself-backup")}-${backupStamp()}.${BACKUP_EXTENSION}`,
         ),
-        filters: [{ name: say("知屿加密备份", "Zhiyu backup"), extensions: [BACKUP_EXTENSION] }],
+        filters: [{ name: say("Helself加密备份", "Helself backup"), extensions: [BACKUP_EXTENSION, LEGACY_BACKUP_EXTENSION] }],
       });
       if (selected.canceled || !selected.filePath) return null;
       if (insideUserData(selected.filePath))
@@ -1427,9 +1428,9 @@ function registerIpc() {
   };
   handle("backup:pick", async () => {
     const selected = await dialog.showOpenDialog(win, {
-      title: say("选择知屿备份", "Choose a Zhiyu backup"),
+      title: say("选择Helself备份", "Choose a Helself backup"),
       properties: ["openFile"],
-      filters: [{ name: say("知屿加密备份", "Zhiyu backup"), extensions: [BACKUP_EXTENSION] }],
+      filters: [{ name: say("Helself加密备份", "Helself backup"), extensions: [BACKUP_EXTENSION, LEGACY_BACKUP_EXTENSION] }],
     });
     if (selected.canceled || !selected.filePaths[0]) return null;
     const path = selected.filePaths[0];
@@ -1574,8 +1575,8 @@ function registerIpc() {
   // ---- ssh ----------------------------------------------------------------
   nativeTerminals = new NativeTerminalManager({
     executable: app.isPackaged
-      ? join(process.resourcesPath, "native-terminal", "Zhiyu.Terminal.exe")
-      : join(here, "../release/native-terminal/Zhiyu.Terminal.exe"),
+      ? join(process.resourcesPath, "native-terminal", "Helself.Terminal.exe")
+      : join(here, "../release/native-terminal/Helself.Terminal.exe"),
     ssh,
     onEvent: (event) => emit("ssh:native-event", event),
     connect: async (id, size, sink) => {
@@ -1623,6 +1624,20 @@ function registerIpc() {
   });
   // The credential form tests what is on screen, which is not saved yet.
   handle("ssh:test", (target, credential) => ssh.test(target, credential));
+  // The SSH panel tests the saved credential, so retrying after a host-key
+  // change never asks the user to paste a stored password back into a form.
+  handle("ssh:test-stored", async (target) => {
+    if (!target || typeof target.id !== "string") throw new Error("主机标识不正确。");
+    return ssh.test(savedServer(target.id), await vault.get(credentialId(target.id)));
+  });
+  handle("ssh:host-key", async (target) => {
+    if (!target || typeof target.host !== "string" || !target.host.trim()) {
+      throw new Error("主机地址不正确。");
+    }
+    if (!vault.unlocked) throw new Error("密钥库已锁定，无法读取主机指纹；请先解锁密钥库。");
+    const record = await vault.get(hostKeyId(target.host, target.port));
+    return { fingerprint: typeof record?.fingerprint === "string" ? record.fingerprint : null };
+  });
   // A deliberately reinstalled server changes its host key, which TOFU then
   // refuses; this is the user's conscious acceptance of the new key.
   handle("ssh:reset-host-key", async (target) => {
@@ -1869,8 +1884,8 @@ function showRestoreOutcome(outcome) {
     title: en ? "Restore incomplete" : "恢复未完成",
     message: en ? "The backup could not be applied." : "备份未能完整替换当前资料。",
     detail: en
-      ? `${outcome.message}\n\nNothing was deleted: earlier data is in the restore-snapshots folder and the prepared files are in .restore-pending inside the data folder. Restart Zhiyu to retry.`
-      : `${outcome.message}\n\n没有删除任何资料：原资料在资料目录的 restore-snapshots 中，待恢复的文件在 .restore-pending 中。重新启动知屿会继续尝试。`,
+      ? `${outcome.message}\n\nNothing was deleted: earlier data is in the restore-snapshots folder and the prepared files are in .restore-pending inside the data folder. Restart Helself to retry.`
+      : `${outcome.message}\n\n没有删除任何资料：原资料在资料目录的 restore-snapshots 中，待恢复的文件在 .restore-pending 中。重新启动Helself会继续尝试。`,
     buttons: [en ? "OK" : "知道了"],
     noLink: true,
   });
@@ -1883,23 +1898,23 @@ function buildMenu() {
     ...(isMac
       ? [
           {
-            label: "知屿 Zhiyu",
+            label: "Helself",
             submenu: [
               {
-                label: label("关于知屿 Zhiyu", "About Zhiyu"),
+                label: label("关于Helself", "About Helself"),
                 click: () => {
-                  app.setAboutPanelOptions({ applicationName: "知屿 Zhiyu" });
+                  app.setAboutPanelOptions({ applicationName: "Helself" });
                   app.showAboutPanel();
                 },
               },
               { type: "separator" },
               { role: "services", label: label("服务", "Services") },
               { type: "separator" },
-              { role: "hide", label: label("隐藏知屿 Zhiyu", "Hide Zhiyu") },
+              { role: "hide", label: label("隐藏Helself", "Hide Helself") },
               { role: "hideOthers", label: label("隐藏其他应用", "Hide Others") },
               { role: "unhide", label: label("显示全部", "Show All") },
               { type: "separator" },
-              { role: "quit", label: label("退出知屿 Zhiyu", "Quit Zhiyu") },
+              { role: "quit", label: label("退出Helself", "Quit Helself") },
             ],
           },
         ]
@@ -1953,7 +1968,7 @@ function buildMenu() {
       submenu: [
         {
           label: label("项目主页", "Project homepage"),
-          click: () => shell.openExternal("https://github.com/Songwo/zhiyu"),
+          click: () => shell.openExternal("https://github.com/addxiaoyi/HEL-SEIF"),
         },
       ],
     },

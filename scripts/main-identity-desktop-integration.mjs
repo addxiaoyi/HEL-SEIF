@@ -5,7 +5,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import { _electron as electron } from "playwright";
 
 // 使用真实 Electron、真实本机回调和系统加密；仅外部登录服务与论坛响应为合成样本。
-const directory = await mkdtemp(join(tmpdir(), "zhiyu-main-identity-"));
+const directory = await mkdtemp(join(tmpdir(), "helself-main-identity-"));
 const screenshots = resolve("release/main-identity-qa");
 const packaged = process.argv[2];
 const env = { ...process.env, NANPAD_TEST_DATA_DIR: directory };
@@ -189,7 +189,7 @@ try {
     assert.match(request.challenge, /^[A-Za-z0-9_-]{43}$/);
     const callback = new URL(request.redirectUri);
     assert.equal(callback.hostname, "127.0.0.1");
-    assert.equal(callback.pathname, "/oauth/zhiyu/callback");
+    assert.equal(callback.pathname, "/oauth/helself/callback");
     assert.ok(Number(callback.port) > 0);
     callback.search = new URLSearchParams({
       state: "bad-state",
@@ -252,7 +252,7 @@ try {
   );
   await onboarding().getByRole("textbox", { name: "主密码", exact: true }).fill(master);
   await onboarding().getByRole("textbox", { name: "确认主密码", exact: true }).fill(master);
-  await onboarding().getByRole("button", { name: "进入知屿", exact: true }).click();
+  await onboarding().getByRole("button", { name: "进入Helself", exact: true }).click();
   await onboarding().waitFor({ state: "detached" });
   await page.locator('[data-app-ready="true"]').waitFor();
   await page
@@ -447,6 +447,6 @@ try {
 } finally {
   await instance?.close();
   assert.equal(dirname(resolve(directory)), resolve(tmpdir()));
-  assert.ok(basename(directory).startsWith("zhiyu-main-identity-"));
+  assert.ok(basename(directory).startsWith("helself-main-identity-"));
   await rm(directory, { recursive: true, force: true });
 }

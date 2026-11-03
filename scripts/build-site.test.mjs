@@ -3,15 +3,15 @@ import test from "node:test";
 import { releaseDetails, renderSite } from "./build-site.mjs";
 
 function publishedRelease(version = "1.2.3") {
-  const base = `https://github.com/Songwo/zhiyu/releases`;
+  const base = `https://github.com/addxiaoyi/HEL-SEIF/releases`;
   return {
     tag_name: `v${version}`,
-    name: `知屿 Zhiyu ${version}`,
+    name: `Helself ${version}`,
     draft: false,
     prerelease: false,
     html_url: `${base}/tag/v${version}`,
     published_at: "2026-10-07T06:27:45Z",
-    body: "# 知屿\n\n修复 Windows 任务栏旧图标，保留原资料。\n\n## 修复内容\n\n- 具体说明",
+    body: "# Helself\n\n修复 Windows 任务栏旧图标，保留原资料。\n\n## 修复内容\n\n- 具体说明",
     assets: [
       `Nanpad-${version}-setup.exe`,
       `Nanpad-${version}-browser-extension.zip`,
@@ -28,20 +28,20 @@ function publishedRelease(version = "1.2.3") {
 test("统一品牌后的下载页支持新安装包名，同时兼容历史附件", () => {
   const release = publishedRelease("1.6.0");
   for (const asset of release.assets) {
-    asset.name = asset.name.replace("Nanpad-", "Zhiyu-");
-    asset.browser_download_url = asset.browser_download_url.replace("Nanpad-", "Zhiyu-");
+    asset.name = asset.name.replace("Nanpad-", "Helself-");
+    asset.browser_download_url = asset.browser_download_url.replace("Nanpad-", "Helself-");
   }
-  assert.match(releaseDetails(release).INSTALLER_URL, /Zhiyu-1\.6\.0-setup\.exe$/);
+  assert.match(releaseDetails(release).INSTALLER_URL, /Helself-1\.6\.0-setup\.exe$/);
 });
 
 test("在线安装器采用真实附件大小，拒绝异常下载地址并兼容旧版", () => {
   const release = publishedRelease("1.17.2");
-  const name = "Zhiyu-1.17.2-online-setup.exe";
+  const name = "Helself-1.17.2-online-setup.exe";
   const entry = {
     name,
     size: 70144,
     state: "uploaded",
-    browser_download_url: `https://github.com/Songwo/zhiyu/releases/download/v1.17.2/${name}`,
+    browser_download_url: `https://github.com/addxiaoyi/HEL-SEIF/releases/download/v1.17.2/${name}`,
   };
   release.assets.push(entry);
   assert.equal(releaseDetails(release).ONLINE_INSTALLER_URL, entry.browser_download_url);
@@ -69,15 +69,15 @@ test("宣传页以已发布版本为准，同步全部下载入口与更新摘�
 test("有便携版附件时，下载页直接链接便携版", () => {
   const release = publishedRelease("1.9.0");
   for (const asset of release.assets) {
-    asset.name = asset.name.replace("Nanpad-", "Zhiyu-");
-    asset.browser_download_url = asset.browser_download_url.replace("Nanpad-", "Zhiyu-");
+    asset.name = asset.name.replace("Nanpad-", "Helself-");
+    asset.browser_download_url = asset.browser_download_url.replace("Nanpad-", "Helself-");
   }
-  const name = "Zhiyu-1.9.0-portable-x64.zip";
+  const name = "Helself-1.9.0-portable-x64.zip";
   release.assets.push({
     name,
     size: 160_000_000,
     state: "uploaded",
-    browser_download_url: `https://github.com/Songwo/zhiyu/releases/download/v1.9.0/${name}`,
+    browser_download_url: `https://github.com/addxiaoyi/HEL-SEIF/releases/download/v1.9.0/${name}`,
   });
   const details = releaseDetails(release);
   assert.match(details.PORTABLE_URL, /portable-x64\.zip$/);
@@ -107,7 +107,7 @@ test("下载链接只接受当前仓库、当前版本及对应附件", () => {
   for (const url of [
     "javascript:alert(1)",
     "https://github.com.evil.test/setup.exe",
-    "https://github.com/Songwo/zhiyu/releases/download/v0.1.0/Nanpad-0.1.0-setup.exe",
+    "https://github.com/addxiaoyi/HEL-SEIF/releases/download/v0.1.0/Nanpad-0.1.0-setup.exe",
   ]) {
     const release = publishedRelease();
     release.assets[0].browser_download_url = url;
@@ -129,7 +129,7 @@ test("发布说明按文本输出，不能把脚本或模板占位符带进网�
 test("没有正文时回退到发布标题，长说明保持简短", () => {
   assert.equal(
     releaseDetails({ ...publishedRelease(), body: "" }).RELEASE_SUMMARY,
-    "知屿 Zhiyu 1.2.3",
+    "Helself 1.2.3",
   );
   assert.ok(
     releaseDetails({ ...publishedRelease(), body: "新".repeat(1000) }).RELEASE_SUMMARY.length <=

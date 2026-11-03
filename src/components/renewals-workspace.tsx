@@ -544,6 +544,6 @@ function exportTimeline(entries: RenewalEntry[]) {
       .filter(Boolean)
       .join(" · "),
   }));
-  downloadText("zhiyu-renewals.ics", createCalendar(items), "text/calendar;charset=utf-8");
+  downloadText("helself-renewals.ics", createCalendar(items), "text/calendar;charset=utf-8");
   toast(t("已导出 {0} 项提醒", items.length));
 }

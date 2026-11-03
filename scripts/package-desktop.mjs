@@ -23,9 +23,9 @@ if (missing.length)
   );
 const stage = await createPackageStage();
 const manifest = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
-if (process.env.ZHIYU_REQUIRE_SIGNING === "1" && !process.env.ZHIYU_SIGN_CERT_SHA1)
+if (process.env.HELSELF_REQUIRE_SIGNING === "1" && !process.env.HELSELF_SIGN_CERT_SHA1)
   throw new Error("签名为必选，但未配置证书指纹。");
-if (process.env.ZHIYU_SIGN_CERT_SHA1 && !/^[a-f0-9]{40}$/i.test(process.env.ZHIYU_SIGN_CERT_SHA1))
+if (process.env.HELSELF_SIGN_CERT_SHA1 && !/^[a-f0-9]{40}$/i.test(process.env.HELSELF_SIGN_CERT_SHA1))
   throw new Error("签名证书指纹格式无效。");
 const lock = JSON.parse(await readFile(join(root, "package-lock.json"), "utf8"));
 // React 界面已经被 Vite 打包，暂存区只安装主进程运行依赖及其传递依赖。
@@ -72,8 +72,8 @@ const config = {
       process.platform === "win32"
         ? [
             {
-              from: join(root, "release/native-terminal/Zhiyu.Terminal.exe"),
-              to: "native-terminal/Zhiyu.Terminal.exe",
+              from: join(root, "release/native-terminal/Helself.Terminal.exe"),
+              to: "native-terminal/Helself.Terminal.exe",
             },
           ]
         : [],
@@ -81,16 +81,16 @@ const config = {
   win: {
     ...manifest.build.win,
     icon: resolve(root, manifest.build.win.icon),
-    ...(process.env.ZHIYU_SIGN_CERT_SHA1
+    ...(process.env.HELSELF_SIGN_CERT_SHA1
       ? {
           signtoolOptions: {
-            certificateSha1: process.env.ZHIYU_SIGN_CERT_SHA1,
+            certificateSha1: process.env.HELSELF_SIGN_CERT_SHA1,
             signingHashAlgorithms: ["sha256"],
           },
         }
       : {}),
   },
-  forceCodeSigning: process.env.ZHIYU_REQUIRE_SIGNING === "1",
+  forceCodeSigning: process.env.HELSELF_REQUIRE_SIGNING === "1",
   nsis: { ...manifest.build.nsis, include: resolve(root, manifest.build.nsis.include) },
   electronDist: join(root, "node_modules", "electron", "dist"),
   electronVersion: JSON.parse(

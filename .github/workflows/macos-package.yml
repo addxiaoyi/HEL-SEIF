@@ -48,18 +48,18 @@ jobs:
           BUILD_ARCH: ${{ matrix.arch }}
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          APP=$(find "release/v$VERSION" -maxdepth 2 -type d -name Zhiyu.app -print -quit)
+          APP=$(find "release/v$VERSION" -maxdepth 2 -type d -name Helself.app -print -quit)
           test -n "$APP"
           test -f "$APP/Contents/Resources/app.asar"
-          test -x "$APP/Contents/MacOS/Zhiyu"
-          file "$APP/Contents/MacOS/Zhiyu"
+          test -x "$APP/Contents/MacOS/Helself"
+          file "$APP/Contents/MacOS/Helself"
           MACH_ARCH="$BUILD_ARCH"
           if [ "$BUILD_ARCH" = "x64" ]; then MACH_ARCH=x86_64; fi
-          lipo -archs "$APP/Contents/MacOS/Zhiyu" | grep -q "$MACH_ARCH"
-          ditto -c -k --sequesterRsrc --keepParent "$APP" "release/Zhiyu-mac-$BUILD_ARCH-unsigned.zip"
+          lipo -archs "$APP/Contents/MacOS/Helself" | grep -q "$MACH_ARCH"
+          ditto -c -k --sequesterRsrc --keepParent "$APP" "release/Helself-mac-$BUILD_ARCH-unsigned.zip"
       - uses: actions/upload-artifact@v4
         with:
-          name: Zhiyu-mac-${{ matrix.arch }}-unsigned
-          path: release/Zhiyu-mac-${{ matrix.arch }}-unsigned.zip
+          name: Helself-mac-${{ matrix.arch }}-unsigned
+          path: release/Helself-mac-${{ matrix.arch }}-unsigned.zip
           if-no-files-found: error
           retention-days: 14

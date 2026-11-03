@@ -1,10 +1,10 @@
-# Cloudflare 与知屿独立探针实施契约
+# Cloudflare 与Helself独立探针实施契约
 
-目标：提供真实可部署的知屿 Agent、常驻监控服务端，以及桌面端 Cloudflare 资源、DNS 和探针管理。用户已选择独立 Agent/服务端并授权继续实现；本轮只本地提交，不推送、不发布、不改生产部署。
+目标：提供真实可部署的Helself Agent、常驻监控服务端，以及桌面端 Cloudflare 资源、DNS 和探针管理。用户已选择独立 Agent/服务端并授权继续实现；本轮只本地提交，不推送、不发布、不改生产部署。
 
 ## 架构和范围
 
-- `services/probe/`：独立 Go 模块，HTTP API 与 gRPC 共用监听端口。命名空间 `zhiyu.probe.v1.ProbeService`。公网 TLS，显式 `--insecure` 才启用 h2c。Agent 每 3 秒报告主机状态，服务端持久化历史、判定离线并执行 HTTP/TCP 服务检查。无远程执行命令入口。
+- `services/probe/`：独立 Go 模块，HTTP API 与 gRPC 共用监听端口。命名空间 `helself.probe.v1.ProbeService`。公网 TLS，显式 `--insecure` 才启用 h2c。Agent 每 3 秒报告主机状态，服务端持久化历史、判定离线并执行 HTTP/TCP 服务检查。无远程执行命令入口。
 - `electron/services/cloudflare.mjs`：固定官方 API origin，分页、退避、资源白名单与 DNS CRUD。不保存凭据。
 - `electron/services/integrations.mjs`：OS safeStorage 加密配置（拒绝 basic_text），脱敏 DTO、缓存/单飞/请求代次、DNS 一次性预览、探针 API、资产幂等绑定。无需解锁资产密钥库即可监控。
 - `src/components/integrations/`：统一设置入口、Cloudflare 资源/DNS 管理、探针主机/历史/服务检查。复用资产卡片、选择框和 EditorDialog，懒加载图表。

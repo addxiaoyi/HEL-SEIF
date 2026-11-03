@@ -96,7 +96,7 @@ const TAB_GROUPS: Array<{ title: string; tabs: Array<{ id: Tab; label: string }>
   {
     title: "关于",
     tabs: [
-      { id: "about", label: "关于知屿" },
+      { id: "about", label: "关于Helself" },
       { id: "changelog", label: "更新日志" },
     ],
   },
@@ -728,7 +728,7 @@ function DataSection() {
         <Row
           label={t(info.web ? "服务器资料目录" : "数据目录")}
           hint={
-            info.web ? t("{0}（Docker 部署时是挂载的 ./zhiyu-data）", info.userData) : info.userData
+            info.web ? t("{0}（Docker 部署时是挂载的 ./helself-data）", info.userData) : info.userData
           }
         >
           {bridge && (
@@ -757,7 +757,7 @@ function DataSection() {
           size="sm"
           onClick={() => {
             const s = useAppStore.getState();
-            downloadJson("zhiyu-assets.json", snapshotOf(s));
+            downloadJson("helself-assets.json", snapshotOf(s));
             log(t("已导出资产快照"));
           }}
         >
@@ -810,7 +810,7 @@ function About() {
   }, []);
 
   return (
-    <Section title={t("关于")} hint={t("知屿 —— 个人数字资产指挥台。")}>
+    <Section title={t("关于")} hint={t("Helself —— 个人数字资产指挥台。")}>
       <Row label={t("当前版本")}>
         <span className="font-mono text-meta tabular-nums">{info?.version ?? "—"}</span>
       </Row>
@@ -861,7 +861,7 @@ function About() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => void openExternal("https://github.com/Songwo/zhiyu")}
+          onClick={() => void openExternal("https://github.com/addxiaoyi/HEL-SEIF")}
         >
           <ExternalLink className="size-3.5" />
           GitHub

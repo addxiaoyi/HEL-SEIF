@@ -538,7 +538,7 @@ export class IdentityAccounts {
         Connection: "close",
       });
       res.end(
-        `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>知屿 · Linux.do</title><body><h1>${message}</h1><p>请返回知屿查看结果，此页面可以关闭。</p></body></html>`,
+        `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>Helself · Linux.do</title><body><h1>${message}</h1><p>请返回Helself查看结果，此页面可以关闭。</p></body></html>`,
       );
     };
     try {
@@ -599,7 +599,7 @@ export class IdentityAccounts {
       session.tokens = tokens;
       session.preview = profile;
       session.status = "ready";
-      reply(200, "Linux.do 授权成功，请返回知屿确认导入");
+      reply(200, "Linux.do 授权成功，请返回Helself确认导入");
     } catch (error) {
       if (!claimedHere) return reply(400, "无效的登录回调");
       if (session.status !== "cancelled") {
@@ -608,7 +608,7 @@ export class IdentityAccounts {
       }
       session.tokens = null;
       session.preview = null;
-      reply(400, "登录未完成，请返回知屿查看详情");
+      reply(400, "登录未完成，请返回Helself查看详情");
     } finally {
       if (claimedHere) {
         // 成功后保留预览有效期，确认前仍可取消，过期会清除内存中的令牌。

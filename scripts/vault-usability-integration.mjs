@@ -7,7 +7,7 @@ import { completeOnboarding } from "./onboarding-helper.mjs";
 import { Vault } from "../electron/services/vault.mjs";
 
 // 合成账号和隔离数据目录；复制动作只写测试变量，不碰系统剪贴板。
-const directory = await mkdtemp(join(tmpdir(), "zhiyu-vault-usability-"));
+const directory = await mkdtemp(join(tmpdir(), "helself-vault-usability-"));
 const env = { ...process.env, NANPAD_TEST_DATA_DIR: directory };
 delete env.ELECTRON_RUN_AS_NODE;
 delete env.SINAN_DEV_URL;

@@ -74,7 +74,7 @@ test("主机监控：/proc 解析", () => {
 });
 
 test("主机监控：两次采样算出速率，容器视角与宿主机视角分得清", async (t) => {
-  const root = await mkdtemp(join(tmpdir(), "zhiyu-host-"));
+  const root = await mkdtemp(join(tmpdir(), "helself-host-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   let now = 1_000_000;
   const stats = new HostStats({

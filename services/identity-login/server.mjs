@@ -10,13 +10,13 @@ import { isIP } from "node:net";
 
 const ISSUER = "https://connect.linux.do";
 const CALLBACK = "/oauth/linuxdo/callback";
-const DESKTOP_CALLBACK = "/oauth/zhiyu/callback";
+const DESKTOP_CALLBACK = "/oauth/helself/callback";
 const AUTH_TTL = 5 * 60_000;
 const HANDOFF_TTL = 60_000;
 const SESSION_TTL = 30 * 86400_000;
 const BODY_LIMIT = 16_384;
 const PROVIDER_LIMIT = 1024 * 1024;
-const PURPOSE = "zhiyu-linuxdo-primary-identity:v1";
+const PURPOSE = "helself-linuxdo-primary-identity:v1";
 const nonce = () => randomBytes(32).toString("base64url");
 const sha256 = (value) => createHash("sha256").update(value).digest("base64url");
 const plain = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -38,7 +38,7 @@ class LoginError extends Error {
     this.code = code;
   }
 }
-const invalid = () => new LoginError(400, "invalid_request", "登录请求无效，请回到知屿重新登录。");
+const invalid = () => new LoginError(400, "invalid_request", "登录请求无效，请回到Helself重新登录。");
 const expired = () =>
   new LoginError(401, "session_expired", "登录状态已失效，请重新使用 Linux.do 登录。");
 const unavailable = () =>
@@ -217,7 +217,7 @@ function html(res, status, message) {
   // message 仅由服务端固定文案组成，不插入请求、令牌、用户资料或上游错误。
   res.writeHead(status, { "Content-Type": "text/html; charset=utf-8" });
   res.end(
-    `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>知屿 · Linux.do 登录</title><style>body{margin:0;background:#f2f6f8;color:#183c43;font:16px/1.8 system-ui,sans-serif;min-height:100vh;display:grid;place-items:center}main{max-width:520px;margin:24px;padding:40px;border:1px solid #dae4e8;border-radius:24px;background:white;box-shadow:0 16px 50px #173a4412}h1{margin:0 0 16px;font-size:28px}p{margin:0;color:#52676d}</style><main><h1>知屿 Zhiyu</h1><p>${message}</p></main></html>`,
+    `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Helself · Linux.do 登录</title><style>body{margin:0;background:#f2f6f8;color:#183c43;font:16px/1.8 system-ui,sans-serif;min-height:100vh;display:grid;place-items:center}main{max-width:520px;margin:24px;padding:40px;border:1px solid #dae4e8;border-radius:24px;background:white;box-shadow:0 16px 50px #173a4412}h1{margin:0 0 16px;font-size:28px}p{margin:0;color:#52676d}</style><main><h1>Helself</h1><p>${message}</p></main></html>`,
   );
 }
 
@@ -253,7 +253,7 @@ export function createIdentityLoginServer({
       throw new LoginError(
         503,
         "not_configured",
-        "知屿登录服务尚未配置 Linux.do 应用，请稍后重试。",
+        "Helself登录服务尚未配置 Linux.do 应用，请稍后重试。",
       );
   }
   function rate(req) {
@@ -437,7 +437,7 @@ export function createIdentityLoginServer({
     const target = new URL(session.redirectUri);
     target.search = new URLSearchParams({ ...fields, state: session.state }).toString();
     res.setHeader("Location", target.href);
-    html(res, 302, "正在返回知屿。若未自动返回，请重新打开软件继续。");
+    html(res, 302, "正在返回Helself。若未自动返回，请重新打开软件继续。");
   }
   async function completeAuthorization(url, res) {
     const params = url.searchParams;
@@ -542,7 +542,7 @@ export function createIdentityLoginServer({
       return;
     }
     if (url.pathname === "/") {
-      html(res, 200, "Linux.do 主身份登录服务。请在知屿的欢迎页面或个人资料中发起登录。");
+      html(res, 200, "Linux.do 主身份登录服务。请在Helself的欢迎页面或个人资料中发起登录。");
       return;
     }
     rate(req);
@@ -660,7 +660,7 @@ export function createIdentityLoginServer({
         if (safe.status === 429) res.setHeader("Retry-After", "60");
         if ([413, 415].includes(safe.status)) res.setHeader("Connection", "close");
         if (req.url?.startsWith(CALLBACK))
-          html(res, safe.status, "登录已过期或无法验证。请回到知屿重新发起登录。");
+          html(res, safe.status, "登录已过期或无法验证。请回到Helself重新发起登录。");
         else json(res, safe.status, { error: safe.code, message: safe.message });
       })
       .finally(() => {

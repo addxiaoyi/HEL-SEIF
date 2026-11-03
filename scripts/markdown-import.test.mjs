@@ -190,7 +190,7 @@ test("批量上限在读取文件或保存前检查", async () => {
 });
 
 test("同名 Markdown 创建独立文件且重开存储后可读取，不覆盖已有文档", async () => {
-  const directory = await mkdtemp(join(tmpdir(), "zhiyu-md-import-"));
+  const directory = await mkdtemp(join(tmpdir(), "helself-md-import-"));
   try {
     const store = new DocumentsStore(directory);
     const save = (doc) => store.save({ ...doc, id: "doc-" + crypto.randomUUID(), bindings: [] });

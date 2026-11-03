@@ -9,7 +9,7 @@ import ssh2 from "ssh2";
 import { completeOnboarding } from "./onboarding-helper.mjs";
 
 // 只连接本机临时 SSH 服务与隔离密钥库，不读取用户的服务器和凭据。
-const directory = await mkdtemp(join(tmpdir(), "zhiyu-native-e2e-"));
+const directory = await mkdtemp(join(tmpdir(), "helself-native-e2e-"));
 const clients = new Set();
 let instance,
   shells = 0;

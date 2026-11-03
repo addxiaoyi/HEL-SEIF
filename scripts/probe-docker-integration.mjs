@@ -11,18 +11,18 @@ import { setTimeout as delay } from "node:timers/promises";
 
 // 独立执行的 Docker 验收；只创建合成数据，不读取现有连接或操作用户容器。
 const docker =
-  process.env.ZHIYU_DOCKER_BINARY ??
+  process.env.HELSELF_DOCKER_BINARY ??
   (process.platform === "win32"
     ? "C:/Program Files/Docker/Docker/resources/bin/docker.exe"
     : "docker");
 const binary = resolve(
-  process.env.ZHIYU_PROBE_BINARY ??
-    `release/qa-probe/zhiyu-probe${process.platform === "win32" ? ".exe" : "-linux-amd64"}`,
+  process.env.HELSELF_PROBE_BINARY ??
+    `release/qa-probe/helself-probe${process.platform === "win32" ? ".exe" : "-linux-amd64"}`,
 );
-const image = process.env.ZHIYU_PROBE_DOCKER_IMAGE ?? "zhiyu-probe:qa";
+const image = process.env.HELSELF_PROBE_DOCKER_IMAGE ?? "helself-probe:qa";
 const helperImage = "golang:1.27.2-bookworm";
-const runId = `zhiyu-probe-qa-${Date.now()}-${randomBytes(4).toString("hex")}`;
-const directory = await mkdtemp(join(tmpdir(), "zhiyu-probe-docker-"));
+const runId = `helself-probe-qa-${Date.now()}-${randomBytes(4).toString("hex")}`;
+const directory = await mkdtemp(join(tmpdir(), "helself-probe-docker-"));
 const token = randomBytes(32).toString("base64url");
 const containers = new Set();
 const volumes = new Set();
@@ -79,7 +79,7 @@ async function agent(config, name) {
 
 try {
   await command(["info", "--format", "{{.OSType}}"]);
-  if (process.env.ZHIYU_PROBE_SKIP_DOCKER_BUILD !== "1") {
+  if (process.env.HELSELF_PROBE_SKIP_DOCKER_BUILD !== "1") {
     console.log("Building probe Dockerfile...");
     await command(["build", "-t", image, "services/probe"]);
   }
@@ -110,7 +110,7 @@ try {
     "-eu",
     "-c",
     `umask 077
-openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj /CN=Zhiyu-Docker-QA-CA -keyout /private/ca.key -out /private/ca.crt
+openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj /CN=Helself-Docker-QA-CA -keyout /private/ca.key -out /private/ca.crt
 openssl req -newkey rsa:2048 -nodes -subj /CN=localhost -keyout /private/tls.key -out /private/server.csr
 printf '%s\\n' 'subjectAltName=DNS:localhost,IP:127.0.0.1' 'extendedKeyUsage=serverAuth' > /private/server.ext
 openssl x509 -req -in /private/server.csr -CA /private/ca.crt -CAkey /private/ca.key -CAcreateserial -days 1 -extfile /private/server.ext -out /private/tls.crt
@@ -140,7 +140,7 @@ chown -R 10001:10001 /private`,
     "--network",
     runId,
     "--mount",
-    `type=volume,source=${runId}-private,target=/run/zhiyu,readonly`,
+    `type=volume,source=${runId}-private,target=/run/helself,readonly`,
   ];
   const server = `${runId}-server`;
   const target = `${runId}-target`;
@@ -178,7 +178,7 @@ chown -R 10001:10001 /private`,
     "--data",
     "/data/probe.db",
     "--admin-token-file",
-    "/run/zhiyu/admin-token",
+    "/run/helself/admin-token",
     "--insecure",
   ]);
   const [inspection] = JSON.parse(await command(["inspect", server]));

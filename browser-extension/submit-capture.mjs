@@ -1,10 +1,10 @@
-// 用户实际提交登录时短暂记住账号，只有点击“加密保存”才写入知屿。
+// 用户实际提交登录时短暂记住账号，只有点击“加密保存”才写入Helself。
 // 不读取 iframe、隐藏字段、注册/修改密码表单，也不截断超长密码。
 (() => {
   if (window.top !== window || globalThis.__nanpadSubmitCapture) return;
   globalThis.__nanpadSubmitCapture = true;
   const chrome = globalThis.chrome;
-  const fields = globalThis.__zhiyuFields;
+  const fields = globalThis.__helselfFields;
   let enabled = true,
     lastGesture = 0,
     lastSent = "",
@@ -32,7 +32,7 @@
     try {
       // 在提交回调的第一个 await 之前发送，尽量在页面导航前交给扩展后台。
       const request = chrome.runtime.sendMessage({
-        type: "zhiyu-stage",
+        type: "helself-stage",
         capture: { title: document.title, username, password },
       });
       const digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].join(".");
@@ -41,7 +41,7 @@
         lastSentAt = Date.now();
         if (digest === lastSent) return;
         lastSent = digest;
-        void globalThis.__zhiyuShowPending?.();
+        void globalThis.__helselfShowPending?.();
       }
     } catch {
       /* 浏览器休眠或扩展重载时，保留网页自身的登录行为。 */

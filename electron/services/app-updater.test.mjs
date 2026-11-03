@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { DesktopUpdater, verifyInstaller } from "./app-updater.mjs";
 
 async function fixture(t) {
-  const directory = await mkdtemp(join(tmpdir(), "zhiyu-updater-test-"));
+  const directory = await mkdtemp(join(tmpdir(), "helself-updater-test-"));
   t.after(async () => {
     assert.equal(dirname(resolve(directory)), resolve(tmpdir()));
     await rm(directory, { recursive: true, force: true });

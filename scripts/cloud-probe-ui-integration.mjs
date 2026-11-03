@@ -4,7 +4,7 @@ import { chromium } from "playwright";
 import { chooseOption } from "./select-helper.mjs";
 
 // 只挂载新工作区并注入合成 bridge；不读取本机资产、Token 或生产云资源。
-const origin = process.env.ZHIYU_UI_TEST_ORIGIN || "http://127.0.0.1:8080";
+const origin = process.env.HELSELF_UI_TEST_ORIGIN || "http://127.0.0.1:8080";
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({
   locale: "zh-CN",

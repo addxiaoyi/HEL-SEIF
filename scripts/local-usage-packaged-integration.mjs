@@ -8,7 +8,7 @@ import { completeOnboarding } from "./onboarding-helper.mjs";
 
 // 正式实例始终关闭默认采集；另用安装包内真实模块读取隔离合成文件。
 // 本脚本验证打包、迁移和 IPC/图表，生产定时器由 local-usage-integration 验证。
-const directory = await mkdtemp(join(tmpdir(), "zhiyu-packaged-local-usage-"));
+const directory = await mkdtemp(join(tmpdir(), "helself-packaged-local-usage-"));
 const collector = join(directory, "synthetic-collector");
 const logs = join(collector, "logs");
 const cache = join(collector, "usage.json");
@@ -99,7 +99,7 @@ try {
   delete env.ELECTRON_RUN_AS_NODE;
   delete env.SINAN_DEV_URL;
   instance = await electron.launch({
-    executablePath: resolve(process.argv[2] ?? "release/v1.7.0/win-unpacked/Zhiyu.exe"),
+    executablePath: resolve(process.argv[2] ?? "release/v1.7.0/win-unpacked/Helself.exe"),
     args: [`--user-data-dir=${directory}`],
     env,
     locale: "zh-CN",

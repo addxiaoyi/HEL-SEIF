@@ -306,8 +306,8 @@
    用量图表 v3：按指标配色、渐变柱、依次长出的入场动画与悬停聚焦。
    ========================================================================== */
 .usage-charts {
-  --usage-chart-primary: #6d5ce6;
-  --usage-chart-secondary: #b9aef6;
+  --usage-chart-primary: #1d7a63;
+  --usage-chart-secondary: #9fdfc4;
   --usage-chart-cursor: color-mix(in oklab, var(--usage-chart-primary) 8%, transparent);
   --usage-series-1: var(--usage-chart-primary);
   --usage-series-2: #3a8fd0;

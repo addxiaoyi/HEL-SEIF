@@ -32,7 +32,7 @@ const uri = (secret = SEED, query = {}) =>
   `otpauth://totp/Example%3Amember%40example.test?${new URLSearchParams({ secret, issuer: "Example", ...query })}`;
 
 async function fixture(t, options = {}) {
-  const directory = await mkdtemp(join(tmpdir(), "zhiyu-totp-test-"));
+  const directory = await mkdtemp(join(tmpdir(), "helself-totp-test-"));
   const file = join(directory, "vault.enc");
   const vault = new Vault(file);
   await vault.create(MASTER);

@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { _electron as electron } from "playwright";
 import { completeOnboarding } from "./onboarding-helper.mjs";
 
-const directory = await mkdtemp(join(tmpdir(), "zhiyu-sidebar-centering-"));
+const directory = await mkdtemp(join(tmpdir(), "helself-sidebar-centering-"));
 const env = { ...process.env, NANPAD_TEST_DATA_DIR: directory };
 delete env.ELECTRON_RUN_AS_NODE;
 delete env.SINAN_DEV_URL;

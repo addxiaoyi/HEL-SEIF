@@ -146,5 +146,5 @@
     pair.password.focus();
     return true;
   }
-  globalThis.__zhiyuFields = { visible, roots, forms, target, fill };
+  globalThis.__helselfFields = { visible, roots, forms, target, fill };
 })();

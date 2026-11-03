@@ -19,6 +19,7 @@ const output = (name) =>
 output("passwords");
 await mkdir(outputDirectory, { recursive: true });
 const errors = [];
+const consoleErrors = [];
 const modules = {};
 let page;
 try {
@@ -43,10 +44,15 @@ try {
   }, demoSnapshot());
   page = await context.newPage();
   page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
   // 跟随 Vite 的实际模块地址，避免 HMR 时间戳产生第二份状态实例。
   page.on("request", (request) => {
     const url = new URL(request.url());
-    const name = /^\/src\/lib\/(profile|store|documents|vault-state)\.ts$/.exec(url.pathname)?.[1];
+    const name = /^\/src\/lib\/(profile|store|documents|vault-state|settings)\.ts$/.exec(
+      url.pathname,
+    )?.[1];
     if (name) modules[name] = request.url();
   });
   await page.goto(origin, { waitUntil: "networkidle" });
@@ -54,9 +60,9 @@ try {
   await page.evaluate(async (paths) => {
     window.__siteModules = paths;
     const { useProfile } = await import(paths.profile);
-    useProfile.setState({ profile: { name: "知屿演示空间", ready: true, vaultExists: false } });
+    useProfile.setState({ profile: { name: "Helself演示空间", ready: true, vaultExists: false } });
   }, modules);
-  await page.getByText("知屿演示空间", { exact: true }).waitFor();
+  await page.getByText("Helself演示空间", { exact: true }).waitFor();
   if (!passwordsOnly) {
     await page.screenshot({ path: output("overview"), animations: "disabled" });
     await page.evaluate(async () => {
@@ -142,6 +148,211 @@ try {
     );
     await page.getByRole("region", { name: "用量图表", exact: true }).scrollIntoViewIfNeeded();
     await page.screenshot({ path: output("usage"), animations: "disabled" });
+
+    // 续费日历：月视图与右侧当日事项，日期来自演示资产的到期 / 续费日。
+    await page.evaluate(async () => {
+      const { useAppStore } = await import(window.__siteModules.store);
+      useAppStore.getState().setView("renewals");
+    });
+    await page.getByRole("region", { name: "续费日历", exact: true }).waitFor();
+    await page.waitForTimeout(250);
+    await page.screenshot({ path: output("renewals"), animations: "disabled" });
+
+    // 服务器表格：同一份演示资产换成表格布局。
+    await page.evaluate(async () => {
+      const { useSettings } = await import(window.__siteModules.settings);
+      const { useAppStore } = await import(window.__siteModules.store);
+      useSettings.getState().setAssetLayout("table");
+      useAppStore.getState().setView("servers");
+    });
+    await page.getByRole("region", { name: "资产表格", exact: true }).waitFor();
+    await page.getByRole("columnheader", { name: /主机/ }).waitFor();
+    await page.screenshot({ path: output("table"), animations: "disabled" });
+
+    // 新建资产窗口的订阅模板：滚动到「从常用订阅开始」。
+    await page.evaluate(async () => {
+      const { useAppStore } = await import(window.__siteModules.store);
+      useAppStore.getState().setCreatePickerOpen(true);
+    });
+    const picker = page.getByRole("dialog", { name: "选择资产类型", exact: true });
+    await picker.waitFor();
+    await picker.getByText("从常用订阅开始", { exact: true }).scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+    await page.screenshot({ path: output("onboarding"), animations: "disabled" });
+    await page.evaluate(async () => {
+      const { useAppStore } = await import(window.__siteModules.store);
+      useAppStore.getState().setCreatePickerOpen(false);
+    });
+
+    // 主机详情：监控概览、关联资产与凭据位置。
+    await page.evaluate(async () => {
+      const now = Date.now();
+      const samples = Array.from({ length: 97 }, (_, index) => ({
+        at: new Date(now - (96 - index) * 15 * 60_000).toISOString(),
+        cpu: Math.max(4, 38 + Math.sin(index / 6) * 9),
+        memory: Math.max(6, 62 + Math.sin(index / 9) * 5),
+        disk: 46,
+      }));
+      window.sinan = {
+        ...window.sinan,
+        win: {
+          state: async () => ({ platform: "win32", maximized: false }),
+          onMaximized: () => () => {},
+        },
+        metrics: {
+          list: async () => samples,
+          onUpdated: () => () => {},
+          onError: () => () => {},
+        },
+      };
+      const { useSettings } = await import(window.__siteModules.settings);
+      const { useAppStore } = await import(window.__siteModules.store);
+      useSettings.getState().setAssetLayout("cards");
+      useAppStore.getState().setExpanded({
+        kind: "server",
+        id: "demo-server-0",
+        origin: { x: 0, y: 0, w: 0, h: 0 },
+      });
+    });
+    await page.getByRole("button", { name: "监控概览", exact: true }).waitFor();
+    await page.screenshot({ path: output("detail"), animations: "disabled" });
+
+    // 端口与容器：给演示主机补一份只读采集结果和两个绑定服务，全部为合成数据。
+    await page.evaluate(async () => {
+      const { useAppStore } = await import(window.__siteModules.store);
+      const state = useAppStore.getState();
+      const server = state.servers.find((item) => item.id === "demo-server-0");
+      const collectedAt = new Date().toISOString();
+      state.upsertServer({
+        ...server,
+        serviceScan: {
+          collectedAt,
+          ports: [
+            { proto: "tcp", port: 22, scope: "local", address: "0.0.0.0", process: "sshd", pid: 812 },
+            { proto: "tcp", port: 80, scope: "public", address: "0.0.0.0", process: "caddy", pid: 1042 },
+            { proto: "tcp", port: 443, scope: "public", address: "0.0.0.0", process: "caddy", pid: 1042 },
+            { proto: "tcp", port: 3000, scope: "local", address: "127.0.0.1", process: "node", pid: 2210 },
+            { proto: "tcp", port: 5432, scope: "private", address: "10.0.0.12", process: "postgres", pid: 1530 },
+            { proto: "tcp", port: 6379, scope: "private", address: "10.0.0.12", process: "redis-server", pid: 1544 },
+          ],
+          docker: {
+            available: true,
+            containers: [
+              {
+                id: "demo-container-api",
+                name: "starbridge-api",
+                image: "ghcr.io/starbridge/api:2026.10",
+                state: "running",
+                status: "Up 6 days (healthy)",
+                health: "healthy",
+                restartCount: 0,
+                startedAt: collectedAt,
+                cpu: 12.4,
+                memoryPct: 38,
+                memoryUsage: "612MiB / 1.6GiB",
+                ports: [{ containerPort: 3000, proto: "tcp", hostPort: 3000, hostIp: "127.0.0.1" }],
+              },
+              {
+                id: "demo-container-web",
+                name: "starbridge-web",
+                image: "ghcr.io/starbridge/web:2026.10",
+                state: "running",
+                status: "Up 6 days (healthy)",
+                health: "healthy",
+                restartCount: 0,
+                startedAt: collectedAt,
+                cpu: 3.1,
+                memoryPct: 14,
+                memoryUsage: "210MiB / 1.5GiB",
+                ports: [{ containerPort: 80, proto: "tcp", hostPort: 8080, hostIp: "0.0.0.0" }],
+              },
+              {
+                id: "demo-container-worker",
+                name: "starbridge-worker",
+                image: "ghcr.io/starbridge/worker:2026.10",
+                state: "exited",
+                status: "Exited (137) 2 hours ago",
+                restartCount: 3,
+                exitCode: 137,
+                oomKilled: true,
+                startedAt: collectedAt,
+                ports: [],
+              },
+            ],
+          },
+        },
+      });
+      const base = { status: "online", notes: "演示服务，不连接真实基础设施。", tags: ["演示", "星桥商城"] };
+      state.upsertService({
+        ...base,
+        id: "demo-service-api",
+        name: "星桥商城 API",
+        category: "custom",
+        url: "https://api.starbridge.example",
+        provider: "自建",
+        endpoint: {
+          serverId: "demo-server-0",
+          port: 3000,
+          proto: "tcp",
+          container: "starbridge-api",
+          domainId: "demo-domain-1",
+        },
+      });
+      state.upsertService({
+        ...base,
+        id: "demo-service-web",
+        name: "星桥商城前台",
+        category: "custom",
+        url: "https://starbridge.example",
+        provider: "自建",
+        endpoint: {
+          serverId: "demo-server-0",
+          port: 80,
+          proto: "tcp",
+          container: "starbridge-web",
+          domainId: "demo-domain-0",
+        },
+      });
+    });
+    await page.getByRole("button", { name: /端口与容器/ }).click();
+    await page.getByRole("heading", { name: "端口与容器", exact: true }).waitFor();
+    await page.screenshot({ path: output("services"), animations: "disabled" });
+
+    // 密钥库分组：只把界面切到已解锁状态，不读写任何真实凭据。
+    await page.evaluate(async () => {
+      window.sinan = {
+        ...window.sinan,
+        win: {
+          state: async () => ({ platform: "win32", maximized: false }),
+          onMaximized: () => () => {},
+        },
+        vault: { status: async () => ({ exists: true, unlocked: true }) },
+        onVaultChanged: () => () => {},
+      };
+      const { useVault } = await import(window.__siteModules["vault-state"]);
+      useVault.setState({ checked: true, exists: true, unlocked: true });
+      const { useAppStore } = await import(window.__siteModules.store);
+      useAppStore.getState().setExpanded(null);
+      useAppStore.getState().setView("vault");
+    });
+    await page.getByRole("region", { name: "密钥分组", exact: true }).waitFor();
+    await page.screenshot({ path: output("vault"), animations: "disabled" });
+
+    // 深色主题的总览。
+    await page.evaluate(async () => {
+      const { useSettings } = await import(window.__siteModules.settings);
+      const { useAppStore } = await import(window.__siteModules.store);
+      useSettings.getState().setTheme("dark");
+      useAppStore.getState().setView("overview");
+    });
+    await page.waitForFunction(() => document.documentElement.dataset.theme === "dark");
+    await page.getByText("Helself演示空间", { exact: true }).waitFor();
+    await page.screenshot({ path: output("overview-dark"), animations: "disabled" });
+    await page.evaluate(async () => {
+      const { useSettings } = await import(window.__siteModules.settings);
+      useSettings.getState().setTheme("light");
+    });
+    await page.waitForFunction(() => document.documentElement.dataset.theme === "light");
   }
   await page.evaluate(async () => {
     // 仅模拟系统文件选择后的无密码预览，实际界面仍由应用组件渲染。
@@ -218,10 +429,25 @@ try {
   console.log(
     JSON.stringify({
       ok: true,
-      screenshots: passwordsOnly ? ["passwords"] : ["overview", "documents", "usage", "passwords"],
+      screenshots: passwordsOnly
+        ? ["passwords"]
+        : [
+            "overview",
+            "documents",
+            "usage",
+            "renewals",
+            "table",
+            "onboarding",
+            "detail",
+            "services",
+            "vault",
+            "overview-dark",
+            "passwords",
+          ],
       synthetic: true,
       privateData: false,
       pageErrors: errors,
+      consoleErrors,
     }),
   );
 } catch (error) {

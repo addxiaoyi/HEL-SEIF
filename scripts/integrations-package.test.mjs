@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { pathToFileURL } from "node:url";
 
 test("云服务主进程可从仅含 electron 目录的安装包布局加载，不依赖未打包 src", async (t) => {
-  const directory = await mkdtemp(join(tmpdir(), "zhiyu-package-import-"));
+  const directory = await mkdtemp(join(tmpdir(), "helself-package-import-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   await cp(resolve("electron"), join(directory, "electron"), {
     recursive: true,

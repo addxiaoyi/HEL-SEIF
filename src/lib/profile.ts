@@ -20,7 +20,7 @@ export const useProfile = create<{
       set({
         error: "",
         profile: (await hostBridge()?.profile.get()) ?? {
-          name: "知屿",
+          name: "Helself",
           ready: true,
           vaultExists: false,
         },

@@ -3,15 +3,16 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>同步协议动画 · 知屿 Zhiyu</title>
+    <title>同步协议动画 · Helself</title>
     <meta
       name="description"
-      content="知屿桌面版与网页版同步（ZSP）的配对、握手与同步过程动画：一次性配对码、PAKE、设备密钥互相认证、AES-256-GCM 加密、三方合并，以及重放、篡改、冒充、回滚时会发生什么。"
+      content="Helself桌面版与网页版同步（ZSP）的配对、握手与同步过程动画：一次性配对码、PAKE、设备密钥互相认证、AES-256-GCM 加密、三方合并，以及重放、篡改、冒充、回滚时会发生什么。"
     />
-    <link rel="canonical" href="https://songwo.github.io/zhiyu/sync.html" />
+    <link rel="canonical" href="https://addxiaoyi.github.io/HEL-SEIF/sync.html" />
     <link rel="icon" href="./favicon.svg?v={{ASSET_REVISION}}" type="image/svg+xml" />
-    <meta name="theme-color" content="#f7f6f2" />
-    <meta property="og:title" content="知屿同步协议动画：配对、认证与同步" />
+    <meta name="theme-color" content="#f6f3ea" />
+    <meta name="theme-color" content="#111315" media="(prefers-color-scheme: dark)" />
+    <meta property="og:title" content="Helself同步协议动画：配对、认证与同步" />
     <meta
       property="og:description"
       content="一步一步看桌面版和你自己的服务器如何配对、互相认证并加密同步。"
@@ -25,23 +26,23 @@
     <header class="site-header">
       <div class="wrap header-row">
         <a class="brand" href="./"
-          ><img src="./favicon.svg?v={{ASSET_REVISION}}" width="34" height="34" alt="" />知屿
-          <span>Zhiyu</span></a
+          ><img src="./favicon.svg?v={{ASSET_REVISION}}" width="34" height="34" alt="" />Helself
+          <span>个人数字资产指挥台</span></a
         >
         <nav aria-label="网站导航">
           <a href="./#features">功能</a><a href="./guide.html">使用指南</a
           ><a href="./#download">下载</a
-          ><a class="nav-github" href="https://github.com/Songwo/zhiyu">GitHub ↗</a>
+          ><a class="nav-github" href="https://github.com/addxiaoyi/HEL-SEIF">GitHub ↗</a>
         </nav>
       </div>
     </header>
 
     <main id="main" data-app-ready="true">
       <div class="wrap zsp-hero">
-        <p class="eyebrow">ZSP · ZHIYU SYNC PROTOCOL</p>
+        <p class="eyebrow">ZSP · HELSELF SYNC PROTOCOL</p>
         <h1>桌面版和你的服务器，<br />是怎么互相认出对方的。</h1>
         <p class="intro">
-          知屿 {{VERSION}} 起，桌面版可以和你自己 VPS
+          Helself {{VERSION}} 起，桌面版可以和你自己 VPS
           上的网页版同步。这里把配对、握手和同步的过程拆成 {{STEP_COUNT}}
           步：每一步发生了什么、为什么安全、旁观者能看到什么，以及有人捣乱时会怎样。
         </p>
@@ -180,7 +181,7 @@
         </ul>
         <p>
           完整设计、威胁模型和已知限制见
-          <a href="https://github.com/Songwo/zhiyu/blob/main/docs/SYNC.md">docs/SYNC.md ↗</a
+          <a href="https://github.com/addxiaoyi/HEL-SEIF/blob/main/docs/SYNC.md">docs/SYNC.md ↗</a
           >。这是自研的协议组合（构件均为标准算法和通用库），
           <strong>没有经过第三方审计</strong>，欢迎审阅。
         </p>
@@ -191,9 +192,9 @@
       </section>
     </main>
     <footer class="wrap site-footer">
-      <span>知屿 Zhiyu · Made by Songwo · MIT</span
-      ><a href="https://github.com/Songwo/zhiyu/blob/main/CHANGELOG.md">更新日志 ↗</a
-      ><a href="https://github.com/Songwo/zhiyu">查看源码 ↗</a>
+      <span>Helself · Made by addxiaoyi · MIT</span
+      ><a href="https://github.com/addxiaoyi/HEL-SEIF/blob/main/CHANGELOG.md">更新日志 ↗</a
+      ><a href="https://github.com/addxiaoyi/HEL-SEIF">查看源码 ↗</a>
     </footer>
     <script src="./sync.js?v={{ASSET_REVISION}}" defer></script>
   </body>

@@ -231,7 +231,7 @@ try {
   assert.equal(await page.evaluate(() => window.__migrationCalls.export), 1);
   assert.equal(await exportButton.isDisabled(), true);
 
-  await dialog.getByRole("button", { name: "导入到知屿" }).click();
+  await dialog.getByRole("button", { name: "导入到Helself" }).click();
   await dialog.getByRole("button", { name: "选择 CSV 文件" }).click();
   await dialog.getByRole("button", { name: "导入 2 个账号" }).waitFor();
   await page.evaluate(() => {

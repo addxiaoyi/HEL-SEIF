@@ -8,7 +8,7 @@ import { completeOnboarding } from "./onboarding-helper.mjs";
 // 浏览器使用全新上下文，桌面使用独立 userData；只导入合成文档。
 const web = process.argv.includes("--web");
 const packaged = process.argv.slice(2).find((arg) => arg.endsWith(".exe"));
-const directory = await mkdtemp(join(tmpdir(), "zhiyu-markdown-qa-"));
+const directory = await mkdtemp(join(tmpdir(), "helself-markdown-qa-"));
 const env = { ...process.env, NANPAD_TEST_DATA_DIR: directory };
 delete env.ELECTRON_RUN_AS_NODE;
 delete env.SINAN_DEV_URL;
@@ -249,6 +249,6 @@ try {
   await instance?.close();
   await browser?.close();
   assert.equal(dirname(resolve(directory)), resolve(tmpdir()));
-  assert.ok(basename(directory).startsWith("zhiyu-markdown-qa-"));
+  assert.ok(basename(directory).startsWith("helself-markdown-qa-"));
   await rm(directory, { recursive: true, force: true });
 }

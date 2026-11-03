@@ -7,7 +7,7 @@ Add-Type -AssemblyName System.Drawing
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;
-public class ZhiyuShellIcon {
+public class HelselfShellIcon {
   [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Unicode)]
   public struct Info {
     public IntPtr Icon;
@@ -25,8 +25,8 @@ public class ZhiyuShellIcon {
 
 # 直接查询 Windows Shell 的文件图标，避免 Electron 接口返回通用文件类型图标。
 $resolvedIcon = (Resolve-Path -LiteralPath $IconPath).Path
-$info = New-Object ZhiyuShellIcon+Info
-$result = [ZhiyuShellIcon]::SHGetFileInfo($resolvedIcon, 0, [ref]$info, [System.Runtime.InteropServices.Marshal]::SizeOf($info), 0x100)
+$info = New-Object HelselfShellIcon+Info
+$result = [HelselfShellIcon]::SHGetFileInfo($resolvedIcon, 0, [ref]$info, [System.Runtime.InteropServices.Marshal]::SizeOf($info), 0x100)
 if ($result -eq [IntPtr]::Zero -or $info.Icon -eq [IntPtr]::Zero) { throw 'Windows returned no icon' }
 $icon = $null
 $bitmap = $null
@@ -51,5 +51,5 @@ try {
 } finally {
   if ($bitmap) { $bitmap.Dispose() }
   if ($icon) { $icon.Dispose() }
-  [ZhiyuShellIcon]::DestroyIcon($info.Icon) | Out-Null
+  [HelselfShellIcon]::DestroyIcon($info.Icon) | Out-Null
 }

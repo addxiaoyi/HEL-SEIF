@@ -63,34 +63,34 @@ try {
       {
         name: "fresh-folder",
         input: join(directory, "fresh"),
-        expected: join(directory, "fresh", "Zhiyu"),
+        expected: join(directory, "fresh", "Helself"),
       },
       {
         name: "drive-root",
         input: parse(directory).root,
-        expected: join(parse(directory).root, "Zhiyu"),
+        expected: join(parse(directory).root, "Helself"),
       },
       {
         name: "already-named",
-        input: join(directory, "Zhiyu"),
-        expected: join(directory, "Zhiyu"),
+        input: join(directory, "Helself"),
+        expected: join(directory, "Helself"),
       },
       {
         name: "different-legacy-folder",
         input: join(directory, "other-nanpad"),
-        expected: join(directory, "other-nanpad", "Zhiyu"),
+        expected: join(directory, "other-nanpad", "Helself"),
       },
     ];
     const lines = [
       "Unicode true",
-      'Name "Zhiyu isolated installer directory regression"',
+      'Name "Helself isolated installer directory regression"',
       `OutFile ${quote(executable)}`,
       "RequestExecutionLevel user",
       "SilentInstall silent",
       "AutoCloseWindow true",
       '!include "LogicLib.nsh"',
       `!include ${quote(join(root, "node_modules/app-builder-lib/templates/nsis/include/StrContains.nsh"))}`,
-      '!define APP_FILENAME "Zhiyu"',
+      '!define APP_FILENAME "Helself"',
       ...(mode !== "per-user" ? ["!define INSTALL_MODE_PER_ALL_USERS_REQUIRED"] : []),
       ...(mode === "per-machine" ? ["!define INSTALL_MODE_PER_ALL_USERS"] : []),
       ...(mode !== "per-machine" ? ["Var perUserInstallationFolder"] : []),
@@ -140,7 +140,7 @@ try {
     );
     assert.equal(
       actual["original-template"],
-      join(mode === "per-machine" ? legacyMachine : legacyUser, "Zhiyu"),
+      join(mode === "per-machine" ? legacyMachine : legacyUser, "Helself"),
       "必须先重现未修复模板向旧目录追加应用名的行为",
     );
     for (const { name, expected } of scenarios) {

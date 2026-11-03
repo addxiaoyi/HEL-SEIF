@@ -10,7 +10,7 @@ export const INTEGRATIONS_EN: Record<string, string> = {
     "Latency shows successful checks only; failures and uncovered periods are not shown as zero.",
   检查记录: "Check history",
   云资源与探针状态: "Cloud resource and probe status",
-  知屿独立探针: "Zhiyu monitoring probe",
+  Helself独立探针: "Helself monitoring probe",
   管理连接: "Manage connections",
   解除绑定: "Unlink",
   "延迟 {0} ms · 24 小时可用率 {1} · 检查时间 {2}": "Latency {0} ms · 24h uptime {1} · Checked {2}",
@@ -58,8 +58,8 @@ export const INTEGRATIONS_EN: Record<string, string> = {
   已配置连接: "Configured connections",
   编辑连接: "Edit connection",
   移除连接: "Remove connection",
-  "添加 Cloudflare API Token 或知屿监控服务端，开始管理资源。":
-    "Add a Cloudflare API Token or Zhiyu monitoring server to start managing resources.",
+  "添加 Cloudflare API Token 或Helself监控服务端，开始管理资源。":
+    "Add a Cloudflare API Token or Helself monitoring server to start managing resources.",
   "将移除本机保存的连接凭据。已导入资产保留，远端资源不会删除。":
     "This removes credentials saved on this device. Imported assets and remote resources will be kept.",
   连接类型: "Connection type",
@@ -119,8 +119,8 @@ export const INTEGRATIONS_EN: Record<string, string> = {
   主机名称: "Host name",
   生成主机凭据: "Generate host credentials",
   编辑服务检查: "Edit service check",
-  "检查由常驻监控服务端执行，关闭知屿后仍持续运行。":
-    "Checks run on the monitoring server and continue when Zhiyu is closed.",
+  "检查由常驻监控服务端执行，关闭Helself后仍持续运行。":
+    "Checks run on the monitoring server and continue when Helself is closed.",
   检查名称: "Check name",
   检查协议: "Check protocol",
   检查目标: "Check target",
@@ -157,8 +157,8 @@ export const INTEGRATIONS_EN: Record<string, string> = {
   "先在 Cloudflare 创建一个 API Token": "First create an API token in Cloudflare",
   "区域 · 区域 · 读取：必需，用来列出账户下的全部域名。":
     "Zone · Zone · Read: required, lists every domain in the account.",
-  "区域 · DNS · 编辑：需要在知屿里修改 DNS 时授予；只看可只给读取。":
-    "Zone · DNS · Edit: grant it to change DNS in Zhiyu; read-only is enough for viewing.",
+  "区域 · DNS · 编辑：需要在Helself里修改 DNS 时授予；只看可只给读取。":
+    "Zone · DNS · Edit: grant it to change DNS in Helself; read-only is enough for viewing.",
   "账户 · 域名注册（Registrar）· 读取：可选，用来读取在 Cloudflare 注册的域名到期日。":
     "Account · Registrar · Read: optional, reads expiry dates of domains registered at Cloudflare.",
   "资源范围请限定到你的账户和域名。不要使用 Global API Key。":

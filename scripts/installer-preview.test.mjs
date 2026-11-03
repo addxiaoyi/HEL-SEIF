@@ -25,7 +25,7 @@ test("安装设计预览：设置、权限、异常恢复和完成流程", async
   await page.goto(`http://127.0.0.1:${server.address().port}/installer-preview/`);
 
   await t.test("默认目录、快捷方式、自启和实际页面渲染", async () => {
-    assert.equal(await page.locator("#directory").inputValue(), "D:\\Apps\\Zhiyu");
+    assert.equal(await page.locator("#directory").inputValue(), "D:\\Apps\\Helself");
     assert.equal(await page.locator("#desktop").isChecked(), true);
     assert.equal(await page.locator("#startup").isChecked(), false);
     assert.equal(await page.locator("#setup").isVisible(), true);
@@ -44,11 +44,11 @@ test("安装设计预览：设置、权限、异常恢复和完成流程", async
       assert.equal(await page.locator("#start").isDisabled(), true, invalid);
     }
     await page.locator("#browse").click();
-    await page.locator("#custom-path").fill("E:\\My Apps\\知屿");
+    await page.locator("#custom-path").fill("E:\\My Apps\\Helself");
     await page.getByRole("button", { name: "使用此位置" }).click();
     // dialog 的 close 事件异步触发，等待页面完成路径提交后再核对按钮状态。
     await page.waitForFunction(
-      () => document.querySelector("#directory").value === "E:\\My Apps\\知屿",
+      () => document.querySelector("#directory").value === "E:\\My Apps\\Helself",
     );
     assert.equal(await page.locator("#start").isEnabled(), true);
     await page.locator('input[value="all"]').check();
@@ -90,7 +90,7 @@ test("安装设计预览：设置、权限、异常恢复和完成流程", async
     await page.locator("#done").waitFor({ state: "visible", timeout: 20000 });
     assert.equal(await page.locator("#result-desktop").textContent(), "不创建");
     assert.equal(await page.locator("#result-startup").textContent(), "开启");
-    assert.equal(await page.locator("#result-path").textContent(), "D:\\Apps\\Zhiyu");
+    assert.equal(await page.locator("#result-path").textContent(), "D:\\Apps\\Helself");
     const centers = await page.evaluate(() =>
       ["launch", "restart"].map((id) => {
         const button = document.getElementById(id);
@@ -124,7 +124,7 @@ test("安装设计预览：设置、权限、异常恢复和完成流程", async
     );
   });
   await t.test("独立 HTML 可直接打开，图标与交互无外部依赖", async () => {
-    const destination = resolve(screenshots, "知屿安装体验.html");
+    const destination = resolve(screenshots, "Helself安装体验.html");
     await exportPreview(destination);
     await page.goto(pathToFileURL(destination).href);
     await page.locator("#skip").click();

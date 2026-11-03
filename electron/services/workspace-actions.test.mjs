@@ -7,7 +7,7 @@ import { WorkspaceActions } from "./workspace-actions.mjs";
 import { DocumentsStore } from "./documents.mjs";
 
 async function fixture(t) {
-  const directory = await mkdtemp(join(tmpdir(), "zhiyu-actions-"));
+  const directory = await mkdtemp(join(tmpdir(), "helself-actions-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const documents = new DocumentsStore(directory);
   let snapshot = {

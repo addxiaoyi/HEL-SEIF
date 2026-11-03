@@ -1,17 +1,18 @@
 :root {
   color-scheme: light dark;
-  --bg: #f7f9f8;
+  --bg: #f6f3ea;
   --surface: #ffffff;
-  --fg: #202a29;
-  --muted: #66736e;
-  --border: #dce3df;
-  --primary: #1d7160;
-  --primary-hover: #155a4c;
-  --soft: #e8f2ed;
+  --fg: #111315;
+  --muted: #6b6b64;
+  --border: #e0dcd0;
+  --primary: #1d5b4a;
+  --primary-hover: #14453a;
+  --soft: #eaf2ed;
+  --lime: #c8f169;
   --danger: #b43838;
-  --focus: #439780;
+  --focus: #1d5b4a;
   --radius: 6px;
-  font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+  font-family: "Inter", "Segoe UI", "Microsoft YaHei", sans-serif;
   color: var(--fg);
   background: var(--bg);
   letter-spacing: 0;
@@ -70,6 +71,7 @@ summary img,
   gap: 10px;
   padding: 16px 20px;
   background: var(--surface);
+  border-top: 3px solid var(--lime);
   border-bottom: 1px solid var(--border);
 }
 .brand {
@@ -353,16 +355,16 @@ footer {
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #191f1d;
-    --surface: #222b27;
-    --fg: #e7eeea;
-    --muted: #a0afa7;
-    --border: #39463e;
-    --primary: #80cfb1;
-    --primary-hover: #a0e0c7;
-    --soft: #2c3d33;
-    --danger: #f19999;
-    --focus: #80cfb1;
+    --bg: #111315;
+    --surface: #1a1c1e;
+    --fg: #f6f3ea;
+    --muted: #a3a39b;
+    --border: #2e3134;
+    --primary: #7fe0bf;
+    --primary-hover: #a5efd5;
+    --soft: #232c29;
+    --danger: #f0a3a3;
+    --focus: #7fe0bf;
   }
   button img,
   a img,
@@ -371,7 +373,7 @@ footer {
     filter: invert(1);
   }
   .primary-button {
-    color: #10251b;
+    color: #111315;
   }
   .primary-button img {
     filter: none;

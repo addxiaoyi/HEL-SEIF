@@ -1,30 +1,32 @@
 <p align="center">
-  <img src="public/brand/zhiyu.svg" width="96" height="96" alt="知屿标志" />
+  <img src="public/brand/helself.svg" width="96" height="96" alt="Helself标志" />
 </p>
 
-<h1 align="center">知屿 Zhiyu</h1>
+<h1 align="center">Helself</h1>
 
 <p align="center">连接文档、账号与数字资产的个人工作空间。<br />主机、域名、证书、邮箱、AI 订阅、号码、密钥和运维文档，彼此相连，有处安放。</p>
 
 <p align="center">
-  <a href="https://github.com/Songwo/zhiyu/releases/latest"><img alt="最新版本" src="https://img.shields.io/github/v/release/Songwo/zhiyu?label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC&color=3b6fe0" /></a>
-  <a href="https://github.com/Songwo/zhiyu/releases"><img alt="下载量" src="https://img.shields.io/github/downloads/Songwo/zhiyu/total?label=%E4%B8%8B%E8%BD%BD&color=2bb3c0" /></a>
-  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/github/license/Songwo/zhiyu?color=ffb23f" /></a>
-  <a href="https://github.com/Songwo/zhiyu/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/Songwo/zhiyu?style=social" /></a>
+  <a href="https://github.com/addxiaoyi/HEL-SEIF/releases/latest"><img alt="最新版本" src="https://img.shields.io/github/v/release/addxiaoyi/HEL-SEIF?label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC&color=1d5b4a" /></a>
+  <a href="https://github.com/addxiaoyi/HEL-SEIF/releases"><img alt="下载量" src="https://img.shields.io/github/downloads/addxiaoyi/HEL-SEIF/total?label=%E4%B8%8B%E8%BD%BD&color=7fe0bf" /></a>
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/github/license/addxiaoyi/HEL-SEIF?color=c8f169" /></a>
+  <a href="https://github.com/addxiaoyi/HEL-SEIF/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/addxiaoyi/HEL-SEIF?style=social" /></a>
 </p>
 
 <p align="center">
-  <a href="https://songwo.github.io/zhiyu/">产品主页</a> ·
-  <a href="https://github.com/Songwo/zhiyu/releases/latest">下载安装包</a> ·
-  <a href="https://songwo.github.io/zhiyu/#video">2 分钟宣传片</a> ·
+  <a href="https://addxiaoyi.github.io/HEL-SEIF/">产品主页</a> ·
+  <a href="https://github.com/addxiaoyi/HEL-SEIF/releases/latest">下载安装包</a> ·
+  <a href="https://addxiaoyi.github.io/HEL-SEIF/#video">2 分钟宣传片</a> ·
   <a href="docs/USER-GUIDE.md">使用教程</a> ·
   <a href="docs/SECURITY.md">安全与备份</a> ·
   <a href="CHANGELOG.md">更新日志</a>
 </p>
 
-![知屿资产总览](site/overview.png)
+标志「核心 H」由两根立柱与一道横梁构成，横梁正中嵌一颗亮绿核心，寓意自持与连接；配色、字体与图标生成规则见 [品牌规范](docs/BRAND.md)。
 
-资料保存在本机；通过 SSH、DNS、TLS 和服务商 API 读取实际状态，通过你配置的模型进行有来源的问答。喜欢知屿的话，欢迎 [Star 本项目](https://github.com/Songwo/zhiyu)、提交 Issue 或贡献改进。
+![Helself资产总览](site/overview.png)
+
+资料保存在本机；通过 SSH、DNS、TLS 和服务商 API 读取实际状态，通过你配置的模型进行有来源的问答。喜欢Helself的话，欢迎 [Star 本项目](https://github.com/addxiaoyi/HEL-SEIF)、提交 Issue 或贡献改进。
 
 [社区友链 · LINUX DO](https://linux.do/) · 真诚、友善、团结、专业。
 
@@ -37,14 +39,14 @@
 
 ### 1.17.2
 
-- **Windows 原生在线安装器**：新增轻量独立入口，使用知屿自己的安装界面和动画；联网下载完整程序，校验大小与 SHA256 后安装。可以选择目录、桌面快捷方式、安装范围和开机自启；全新安装优先 D 盘，升级沿用原位置。仍提供离线安装包与便携版，应用内更新保持使用离线包。
+- **Windows 原生在线安装器**：新增轻量独立入口，使用Helself自己的安装界面和动画；联网下载完整程序，校验大小与 SHA256 后安装。可以选择目录、桌面快捷方式、安装范围和开机自启；全新安装优先 D 盘，升级沿用原位置。仍提供离线安装包与便携版，应用内更新保持使用离线包。
 - **安装偏好与权限**：开机自启默认关闭，卸载时移除本程序的自启项；需要提升权限时由 Windows 显示系统授权窗口。当前版本未签名，下载请核对校验文件。
 
 具体调整与验证范围见 [1.17.2 发布说明](docs/releases/v1.17.2.md)。
 
 ### 1.17.1
 
-- **网页版安全加固**：网页版放在公网上，端口扫描或直接输入网址就能找到登录页，这一版把入口守紧：可选的**两步验证**（TOTP，附 8 个一次性恢复码）、**来源限制**（`ZHIYU_ALLOWED_NETS`，名单外的连接直接断开）、更严的**登录限流**、**登录设备与登录记录**（可随时退出可疑设备，新地址登录推送到手机）、一键**自动 HTTPS**（`docker-compose.https.yml` + Caddy，知屿不直接暴露端口）。部署清单、威胁模型和做不到的事见 [WEB.md](docs/WEB.md) 的「安全加固」。
+- **网页版安全加固**：网页版放在公网上，端口扫描或直接输入网址就能找到登录页，这一版把入口守紧：可选的**两步验证**（TOTP，附 8 个一次性恢复码）、**来源限制**（`HELSELF_ALLOWED_NETS`，名单外的连接直接断开）、更严的**登录限流**、**登录设备与登录记录**（可随时退出可疑设备，新地址登录推送到手机）、一键**自动 HTTPS**（`docker-compose.https.yml` + Caddy，Helself不直接暴露端口）。部署清单、威胁模型和做不到的事见 [WEB.md](docs/WEB.md) 的「安全加固」。
 - 修复网页版登录页多显示「设置口令」「再次输入密码」两项的问题。
 - 同步设置里新增「看动画」按钮，直接打开配对与同步协议的逐步动画。
 
@@ -66,7 +68,7 @@
 
 ### 1.16.1
 
-- **网页版升级后旧页面自动恢复**：换了新镜像后，已经打开的标签页进入某些页面不再报错，会自动刷新一次载入新版本；仍失败时显示「知屿已更新」和刷新按钮。
+- **网页版升级后旧页面自动恢复**：换了新镜像后，已经打开的标签页进入某些页面不再报错，会自动刷新一次载入新版本；仍失败时显示「Helself已更新」和刷新按钮。
 
 具体调整见 [1.16.1 发布说明](docs/releases/v1.16.1.md)。
 
@@ -75,7 +77,7 @@
 - **网页版全新布局**：顶部悬浮导航条取代左侧栏，首页是宽屏仪表盘——上方是这台服务器的实时状态，下面是资产、待处理、近期续费与每日活动；手机上有整屏菜单和底部快捷栏。桌面版布局不变。
 - **主机监控**：网页版直接显示部署它的 VPS 的 CPU、内存、磁盘、负载、网络与磁盘读写曲线、进程和容器配额，每 5 秒刷新；`docker-compose.yml` 已带上只读挂载 `/proc:/host/proc`。
 - **桌面版功能搬上网页**：SSH 终端与 SFTP、主机采集、Cloudflare 直连与 DNS、AI 助手、用量记录、邮箱收发、图床都由服务器完成；SSH 与邮箱密码在浏览器里解密后随请求发送，服务器不保存。
-- **网页版个人资料与账号**：可以改名字、头像和网页登录密码，二次验证码在浏览器里生成，「关于知屿」可以检查新版本。
+- **网页版个人资料与账号**：可以改名字、头像和网页登录密码，二次验证码在浏览器里生成，「关于Helself」可以检查新版本。
 
 具体调整见 [1.16.0 发布说明](docs/releases/v1.16.0.md)。
 
@@ -92,8 +94,8 @@
 
 - **服务器采集开关**：每台服务器卡片上都有「采集」开关。本机连不上（没有代理、只在内网）的主机关掉后不再连接、不再告警，资料照常保留。
 - **网页版提醒推送**：服务器每小时检查续费与备忘提醒，推送到 Telegram、微信或企业微信，浏览器关着也能收到。
-- **网页版 Docker 镜像**：`ghcr.io/songwo/zhiyu-web`，下载一个 `docker-compose.yml` 就能部署，支持 amd64 与 arm64。
-- **修复**：网页版用 `http://局域网地址` 打开时新建文档报错、自建节点白屏（[#4](https://github.com/Songwo/zhiyu/issues/4)）。
+- **网页版 Docker 镜像**：`ghcr.io/addxiaoyi/helself-web`，下载一个 `docker-compose.yml` 就能部署，支持 amd64 与 arm64。
+- **修复**：网页版用 `http://局域网地址` 打开时新建文档报错、自建节点白屏（[#4](https://github.com/addxiaoyi/HEL-SEIF/issues/4)）。
 
 具体调整见 [1.14.0 发布说明](docs/releases/v1.14.0.md)。
 
@@ -107,7 +109,7 @@
 
 ### 1.12.2
 
-- **全新 2 分钟宣传片**：产品主页的[宣传片](https://songwo.github.io/zhiyu/#video)重制为代码动画，每一帧都由代码画出，原创配乐 120 BPM 卡点，小蟹带你从资产总览一路看到 AI 助手、加密备份和便携版。本版没有应用功能变化。
+- **全新 2 分钟宣传片**：产品主页的[宣传片](https://addxiaoyi.github.io/HEL-SEIF/#video)重制为代码动画，每一帧都由代码画出，原创配乐 120 BPM 卡点，小蟹带你从资产总览一路看到 AI 助手、加密备份和便携版。本版没有应用功能变化。
 
 具体调整见 [1.12.2 发布说明](docs/releases/v1.12.2.md)。
 
@@ -138,7 +140,7 @@
 - **首页快速开始**：五步清单按已有资料自动打勾，带新用户依次用上续费日历、文档、关联与标签；「近期续费」列出未来 14 天要处理的事项。
 - **常用订阅模板**：ChatGPT、Claude、Cursor、Cloudflare、Vercel、iCloud、Netflix、Spotify 等，一键预填金额、周期与下次续费日，个人订阅也能一起管。
 - **键盘快捷键与命令面板操作**：按 `?` 查看全部快捷键；`Ctrl K` 新增「操作」分组，可直接切换主题、打开订阅模板、续费日历和系统设置。
-- **使用指南与 2 分钟宣传片**：产品主页新增可搜索的[使用指南](https://songwo.github.io/zhiyu/guide.html)，宣传片按 1.9 新界面重录，完整展示详情页、续费日历、用量与快速上手。
+- **使用指南与 2 分钟宣传片**：产品主页新增可搜索的[使用指南](https://addxiaoyi.github.io/HEL-SEIF/guide.html)，宣传片按 1.9 新界面重录，完整展示详情页、续费日历、用量与快速上手。
 
 具体调整见 [1.10.0 发布说明](docs/releases/v1.10.0.md)。
 
@@ -149,7 +151,7 @@
 - **续费日历**：费用与续费页新增月视图，列出到期日并按月付、年付推算后续续费日，点日期查看当天事项。
 - **更有层次的表格与用量**：表格视图改为白卡与对称的悬停高亮；用量图表按指标配色、柱子依次长出；来源卡片显示连接状态与失败原因，订阅账号额度取不到时会说明原因而不是一片空白。
 
-具体调整见 [1.9.0 发布说明](docs/releases/v1.9.0.md)。已有资料沿用原数据目录，可在「设置 → 关于知屿」直接更新。
+具体调整见 [1.9.0 发布说明](docs/releases/v1.9.0.md)。已有资料沿用原数据目录，可在「设置 → 关于Helself」直接更新。
 
 ## 界面一览
 
@@ -163,32 +165,32 @@
 | **快速上手与订阅模板**           | **密钥库**                          |
 | ![订阅模板](site/onboarding.png) | ![密钥库](site/vault.png)           |
 
-界面截图使用独立演示数据，不含私人账号和资产。宣传片见 [产品主页](https://songwo.github.io/zhiyu/#video)，从安装到每个功能的用法见 [使用指南](https://songwo.github.io/zhiyu/guide.html)。
+界面截图使用独立演示数据，不含私人账号和资产。宣传片见 [产品主页](https://addxiaoyi.github.io/HEL-SEIF/#video)，从安装到每个功能的用法见 [使用指南](https://addxiaoyi.github.io/HEL-SEIF/guide.html)。
 
 ## 安装与首次使用
 
-1. 在 GitHub Releases 下载当前正式版 `Zhiyu-1.17.1-setup.exe`，适用于 Windows x64；不想安装可下载便携版 `Zhiyu-1.17.1-portable-x64.zip`。
+1. 在 GitHub Releases 下载当前正式版 `Helself-1.17.1-setup.exe`，适用于 Windows x64；不想安装可下载便携版 `Helself-1.17.1-portable-x64.zip`。
 2. 运行安装程序，选择安装位置。当前安装包未做代码签名，请核对发布者、下载地址和 Release 中的 SHA256 校验文件。
 3. 首次启动可选择「使用 Linux.do 登录」绑定主身份，也可直接使用默认工作区名称。创建 10 至 256 位本地主密码并再次确认，头像可稍后设置；Linux.do 登录不代替主密码，也不能找回主密码。
 4. 已有密钥库的用户确认工作区名称及原主密码即可继续，升级不会自动删除资产或演示记录。
 5. 添加资产，然后在「设置 → 模型与知识库」配置模型或连接 AI 服务账号。
 
-不想安装？Releases 同时提供 Windows 便携版 `Zhiyu-x.y.z-portable-x64.zip`：解压即用，资料保存在程序旁的 `data` 文件夹，详见 [使用教程 · 便携版](docs/USER-GUIDE.md#便携版免安装)。
+不想安装？Releases 同时提供 Windows 便携版 `Helself-x.y.z-portable-x64.zip`：解压即用，资料保存在程序旁的 `data` 文件夹，详见 [使用教程 · 便携版](docs/USER-GUIDE.md#便携版免安装)。
 
 安装软件无需 Node.js。正式安装包面向 Windows x64；macOS 的源码构建与未签名 CI 测试程序见 [macOS 构建说明](docs/MAC-BUILD.md)，不等同于已签名、公证的正式发行版。Linux 有构建配置，发布验证范围以 Release 记录为准。
 
 ## 网页版（自托管）
 
-不想在公司电脑上安装，又想在家和公司都能用？把知屿部署在自己的服务器上：
+不想在公司电脑上安装，又想在家和公司都能用？把Helself部署在自己的服务器上：
 
 ```bash
-mkdir zhiyu && cd zhiyu
-curl -fsSLO https://raw.githubusercontent.com/Songwo/zhiyu/main/docker-compose.yml
+mkdir helself && cd helself
+curl -fsSLO https://raw.githubusercontent.com/addxiaoyi/HEL-SEIF/main/docker-compose.yml
 docker compose up -d
-docker compose logs zhiyu   # 找「设置口令」，打开 http://服务器:8848 创建账号
+docker compose logs helself   # 找「设置口令」，打开 http://服务器:8848 创建账号
 ```
 
-镜像为 `ghcr.io/songwo/zhiyu-web`（amd64 / arm64），升级用 `docker compose pull && docker compose up -d`。资料存在你的服务器上，整站登录保护；密钥库在浏览器里用主密码解密，服务器只保存密文。续费与备忘提醒可以由服务器推送到手机。网页版有自己的顶部导航与仪表盘首页，「主机监控」显示这台服务器的 CPU、内存、磁盘与网络；SSH 终端、主机采集、Cloudflare、AI 助手和邮箱收发由服务器执行，浏览器插件配对、浏览器密码迁移和 OAuth 网页登录仍只在桌面版。放到公网的防护——自动 HTTPS 的 `docker-compose.https.yml`、两步验证（TOTP）与恢复码、来源 IP 限制、登录限流、登录设备管理和异常登录推送——见 [网页版部署说明](docs/WEB.md) 的「安全加固」，反向代理与备份互通也在其中。桌面版还可以与网页版加密同步，见下一节。
+镜像为 `ghcr.io/addxiaoyi/helself-web`（amd64 / arm64），升级用 `docker compose pull && docker compose up -d`。资料存在你的服务器上，整站登录保护；密钥库在浏览器里用主密码解密，服务器只保存密文。续费与备忘提醒可以由服务器推送到手机。网页版有自己的顶部导航与仪表盘首页，「主机监控」显示这台服务器的 CPU、内存、磁盘与网络；SSH 终端、主机采集、Cloudflare、AI 助手和邮箱收发由服务器执行，浏览器插件配对、浏览器密码迁移和 OAuth 网页登录仍只在桌面版。放到公网的防护——自动 HTTPS 的 `docker-compose.https.yml`、两步验证（TOTP）与恢复码、来源 IP 限制、登录限流、登录设备管理和异常登录推送——见 [网页版部署说明](docs/WEB.md) 的「安全加固」，反向代理与备份互通也在其中。桌面版还可以与网页版加密同步，见下一节。
 
 ## 桌面版与网页版同步
 
@@ -196,7 +198,7 @@ docker compose logs zhiyu   # 找「设置口令」，打开 http://服务器:88
 
 ![ZSP 同步协议：配对、握手、同步，以及重放、冒充、回滚被拒绝](site/zsp-flow.svg)
 
-> 上图每个循环展示一次配对和同步；[打开可逐步播放的完整动画](https://songwo.github.io/zhiyu/sync.html)，每一步都有「为什么安全」和「旁观者能看到什么」。
+> 上图每个循环展示一次配对和同步；[打开可逐步播放的完整动画](https://addxiaoyi.github.io/HEL-SEIF/sync.html)，每一步都有「为什么安全」和「旁观者能看到什么」。
 
 1. 登录网页版，在「设置 → 同步」点「生成配对码」（5 分钟有效，只能用一次）。
 2. 在桌面版「设置 → 同步」填入网页版地址和配对码。只需配对一次，之后每 2 分钟和每次修改后自动同步。
@@ -242,7 +244,7 @@ Cloudflare Token、模型 API Key 等系统加密保存的凭据永远不参与�
 
 **模型调用**：选择 OpenAI、Grok、Gemini、DeepSeek、通义千问、火山方舟等 API 预设，或者填写自定义 Base URL。输入该服务的 API Key 和准确模型名，保存后读取模型列表并测试连接。支持已有的 `https://znck.zle.ee/v1` 兼容服务。
 
-**订阅账号**：进入「AI 订阅 → 添加资产 → 订阅账号」，选择服务商并点击「网页登录授权」。等待授权时直接显示「回调链接或授权码」输入框。OpenAI、Grok、Gemini 通常通过本机回调返回；没有自动返回时，在输入框中提交本次登录产生的完整回调链接。Claude 可以粘贴完整回调链接或网页给出的 `code#state`。界面分别显示等待回调、验证授权和同步额度；自动回调已处理时无需再粘贴。登录成功后自动关联订阅并查询一次用量，后续在详情中刷新。模型设置中也保留授权入口。密码由你在服务商网页输入，知屿不读取浏览器 Cookie。
+**订阅账号**：进入「AI 订阅 → 添加资产 → 订阅账号」，选择服务商并点击「网页登录授权」。等待授权时直接显示「回调链接或授权码」输入框。OpenAI、Grok、Gemini 通常通过本机回调返回；没有自动返回时，在输入框中提交本次登录产生的完整回调链接。Claude 可以粘贴完整回调链接或网页给出的 `code#state`。界面分别显示等待回调、验证授权和同步额度；自动回调已处理时无需再粘贴。登录成功后自动关联订阅并查询一次用量，后续在详情中刷新。模型设置中也保留授权入口。密码由你在服务商网页输入，Helself不读取浏览器 Cookie。
 
 这两种连接使用不同凭据。订阅 OAuth 目前用于账号信息和额度查询，不会自动替换问答的 API Key，也不承诺把 ChatGPT、Claude 或 Google One 订阅转换成通用 API 余额。详细范围见 [AI 服务账号文档](docs/AI-ACCOUNTS.md)。
 
@@ -288,7 +290,7 @@ flowchart LR
 
 默认执行本机全文检索。开启向量模式后，可连接本机 OpenAI 兼容 Embedding 服务；向量地址仅允许回环地址。Agent 可以检索知识、读取资产元信息、统计资产、定位凭据入口。询问某个账号的密码时，模型只得到资产详情的位置；点击「打开凭据位置」并在本机解锁后查看，模型不会读取加密库中的密码，也不能据位置引用判断密码是否已保存。
 
-可以直接问「我有哪些邮箱分组」「工作邮箱里有哪些账号」。Agent 通过本地分组目录和账号工具查询空组、未分组及账号归属，结果区分别名和演示记录。这里的分组是知屿里的账号收纳文件夹，与邮件服务器上的收件箱、已发送等 IMAP 目录不同；查询分组不需要开启实时邮箱许可。改名或移动账号后，下一次问答会读取更新后的记录。
+可以直接问「我有哪些邮箱分组」「工作邮箱里有哪些账号」。Agent 通过本地分组目录和账号工具查询空组、未分组及账号归属，结果区分别名和演示记录。这里的分组是Helself里的账号收纳文件夹，与邮件服务器上的收件箱、已发送等 IMAP 目录不同；查询分组不需要开启实时邮箱许可。改名或移动账号后，下一次问答会读取更新后的记录。
 
 查询实时邮件数量时，在发送前勾选「本次允许查询邮箱」。该许可只对本次问答生效；邮箱服务在本机从已解锁的密钥库读取凭据，直接连接已保存的 IMAP 服务器，模型只收到收件箱数量、未读数量、新增数量和检查时间，不接触邮件标题或正文。Agent 不执行 SSH 命令、不发送推送。服务器错误、缺少配置或流中断均显示实际错误，不使用规则答案伪装模型响应。
 
@@ -396,28 +398,28 @@ npm run desktop:dist -- --win --x64 --publish never
 
 ## 社区与交流
 
-知屿认可并支持 [LINUX DO](https://linux.do/) 社区倡导的「真诚、友善、团结、专业」。欢迎佬友交流账号、订阅和服务器的管理经验，也欢迎通过 [GitHub Issues](https://github.com/Songwo/zhiyu/issues) 反馈使用问题和改进建议。
+Helself认可并支持 [LINUX DO](https://linux.do/) 社区倡导的「真诚、友善、团结、专业」。欢迎佬友交流账号、订阅和服务器的管理经验，也欢迎通过 [GitHub Issues](https://github.com/addxiaoyi/HEL-SEIF/issues) 反馈使用问题和改进建议。
 
 社区友链：[LINUX DO](https://linux.do/)。社区开源推广的声明与发帖要求见 [新推广方式：开源推广](https://linux.do/t/topic/1776670)；友链表示对社区的认可，不代表官方认证或合作背书。
 
 ## 开源许可
 
-知屿自有源码采用 [MIT License](LICENSE)，允许在保留版权与许可声明的前提下使用、修改、分发和商用。依赖和随仓库分发的第三方内容保留各自的许可证与版权声明。
+本项目源码采用 [MIT License](LICENSE)，允许在保留版权与许可声明的前提下使用、修改、分发和商用。依赖和随仓库分发的第三方内容保留各自的许可证与版权声明。
 
 ## 已知边界
 
 SSH 指标采集面向提供 `/proc` 的 Linux 主机。WHOIS 可能因注册局限制无法返回到期日。AI 订阅 OAuth 使用供应商公开客户端及兼容接口，可能因供应商调整失效；账号连接失败会显示错误，不会读取其他应用已有登录数据补救。Gemini 额度查询要求账号已经开通 Code Assist 并能返回项目。服务商订阅结束日期目前没有统一可查询来源，软件不会据令牌有效期推算订阅到期。
 
-问题反馈请提交 [GitHub Issue](https://github.com/Songwo/zhiyu/issues)，包含版本、操作步骤与去除敏感信息后的错误。不要提交 API Key、Token、主密码或完整个人数据文件。
+问题反馈请提交 [GitHub Issue](https://github.com/addxiaoyi/HEL-SEIF/issues)，包含版本、操作步骤与去除敏感信息后的错误。不要提交 API Key、Token、主密码或完整个人数据文件。
 
 ## Star 趋势
 
 点击图表可查看交互式 Star 增长曲线，数据由 Star History 更新。
 
-<a href="https://www.star-history.com/?repos=Songwo%2Fzhiyu&amp;type=date&amp;legend=top-left">
+<a href="https://www.star-history.com/?repos=addxiaoyi%2FHEL-SEIF&amp;type=date&amp;legend=top-left">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Songwo/zhiyu&amp;type=date&amp;theme=dark&amp;legend=top-left" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Songwo/zhiyu&amp;type=date&amp;legend=top-left" />
-    <img alt="知屿 Zhiyu 的 GitHub Star 增长曲线" src="https://api.star-history.com/chart?repos=Songwo/zhiyu&amp;type=date&amp;legend=top-left" width="800" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=addxiaoyi/HEL-SEIF&amp;type=date&amp;theme=dark&amp;legend=top-left" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=addxiaoyi/HEL-SEIF&amp;type=date&amp;legend=top-left" />
+    <img alt="Helself 的 GitHub Star 增长曲线" src="https://api.star-history.com/chart?repos=addxiaoyi/HEL-SEIF&amp;type=date&amp;legend=top-left" width="800" />
   </picture>
 </a>

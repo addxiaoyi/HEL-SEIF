@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, win32 } from "node:path";
 
 export function windowsAppId(packaged) {
-  return packaged ? "dev.songwo.zhiyu" : "dev.songwo.zhiyu.development";
+  return packaged ? "dev.helself.app" : "dev.helself.app.development";
 }
 
 /** 程序目录中存在此文件时以便携模式运行，资料保存在同目录的 data 文件夹。 */
@@ -46,7 +46,7 @@ export function initializeAppIdentity(
   for (const directory of new Set([userData, sessionData]))
     mkdirSync(directory, { recursive: true });
   // macOS/Linux 的系统密钥存储依赖原应用名，Windows Shell 改名仅作用于 Windows。
-  if (platform === "win32") app.setName("知屿 Zhiyu");
+  if (platform === "win32") app.setName("Helself");
   app.setPath("userData", userData);
   app.setPath("sessionData", sessionData);
   return { portable: Boolean(portable) };
@@ -67,7 +67,7 @@ export async function migrateLegacyWindowsShortcut({
   }
   const entry = readShortcut(source);
   if (
-    entry.appUserModelId !== "dev.songwo.nanpad" ||
+    entry.appUserModelId !== "dev.helself.nanpad" ||
     win32.basename(entry.target).toLowerCase() !== "electron.exe"
   )
     return null;

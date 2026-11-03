@@ -1,5 +1,5 @@
 /**
- * ZSP（Zhiyu Sync Protocol）v1 的密码学部分，桌面端与网页版服务器共用。
+ * ZSP（Helself Sync Protocol）v1 的密码学部分，桌面端与网页版服务器共用。
  * 协议说明、威胁模型和参数见 docs/SYNC.md；这里只做原语的组合，不接触网络与文件。
  *
  * 构件：ristretto255 上的 CPace 风格 PAKE（配对）、Ed25519 签名（身份）、X25519（会话临时密钥）、

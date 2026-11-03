@@ -3,7 +3,7 @@ import { join, resolve } from "node:path";
 import { _electron as electron, chromium } from "playwright";
 
 // 手工测试使用固定目录；自动集成测试继续使用独立临时目录。
-const directory = join(process.env.LOCALAPPDATA, "ZhiyuTerminalPreview");
+const directory = join(process.env.LOCALAPPDATA, "HelselfTerminalPreview");
 // 已打开时更新原窗口，避免同一数据目录的多个实例争用文件锁。
 try {
   const port = (await readFile(join(directory, "DevToolsActivePort"), "utf8")).split(/\r?\n/)[0];
@@ -18,7 +18,7 @@ try {
 try {
   await access(join(directory, "assets.json"));
 } catch {
-  const backups = join(process.env.LOCALAPPDATA, "ZhiyuTerminalPreviewBackups");
+  const backups = join(process.env.LOCALAPPDATA, "HelselfTerminalPreviewBackups");
   const candidates = await Promise.all((await readdir(backups)).map(async (name) => {
     const path = join(backups, name);
     return { path, modified: (await stat(join(path, "assets.json"))).mtimeMs };

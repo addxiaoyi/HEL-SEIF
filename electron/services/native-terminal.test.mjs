@@ -426,13 +426,13 @@ test(
   {
     skip:
       process.platform !== "win32" ||
-      !existsSync(resolve("release/native-terminal/Zhiyu.Terminal.exe")),
+      !existsSync(resolve("release/native-terminal/Helself.Terminal.exe")),
     timeout: 15000,
   },
   async () => {
     let child;
     const manager = new NativeTerminalManager({
-      executable: resolve("release/native-terminal/Zhiyu.Terminal.exe"),
+      executable: resolve("release/native-terminal/Helself.Terminal.exe"),
       spawnProcess: (...args) => {
         child = spawn(...args);
         return child;

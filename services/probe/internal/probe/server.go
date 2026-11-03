@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	pb "github.com/Songwo/zhiyu/services/probe/proto"
+	pb "github.com/addxiaoyi/HEL-SEIF/services/probe/proto"
 	"golang.org/x/net/netutil"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

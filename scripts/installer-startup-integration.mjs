@@ -22,8 +22,8 @@ async function compilerAt(directory, depth = 0) {
 }
 const compiler = await compilerAt(cache);
 assert.ok(compiler, "未找到 NSIS 编译器");
-const directory = await mkdtemp(join(tmpdir(), "zhiyu-startup-test-"));
-const testKey = `Software\\ZhiyuInstallerTests\\${randomUUID()}`;
+const directory = await mkdtemp(join(tmpdir(), "helself-startup-test-"));
+const testKey = `Software\\HelselfInstallerTests\\${randomUUID()}`;
 const quote = (value) => `"${value.replaceAll("$", "$$").replaceAll('"', '$\\"')}"`;
 try {
   const executable = join(directory, "test.exe");
@@ -31,7 +31,7 @@ try {
   const script = join(directory, "test.nsi");
   const source = [
     "Unicode true",
-    'Name "Zhiyu startup isolated regression"',
+    'Name "Helself startup isolated regression"',
     `OutFile ${quote(executable)}`,
     "RequestExecutionLevel user",
     "SilentInstall silent",
@@ -42,20 +42,20 @@ try {
     'Section "Isolated registry assertions"',
     "SetShellVarContext current",
     `StrCpy $INSTDIR ${quote(directory)}`,
-    'StrCpy $appExe "$INSTDIR\\Zhiyu.exe"',
-    `!insertmacro zhiyuApplyStartup "${testKey}"`,
+    'StrCpy $appExe "$INSTDIR\\Helself.exe"',
+    `!insertmacro helselfApplyStartup "${testKey}"`,
     `FileOpen $9 ${quote(result)} w`,
-    `ReadRegStr $R0 HKCU "${testKey}" "Zhiyu"`,
+    `ReadRegStr $R0 HKCU "${testKey}" "Helself"`,
     'FileWrite $9 "$R0$\\r$\\n"',
     "FileClose $9",
-    `!insertmacro zhiyuRemoveStartup "${testKey}"`,
-    `ReadRegStr $R0 HKCU "${testKey}" "Zhiyu"`,
+    `!insertmacro helselfRemoveStartup "${testKey}"`,
+    `ReadRegStr $R0 HKCU "${testKey}" "Helself"`,
     '${If} $R0 != ""',
     "SetErrorLevel 3",
     "${EndIf}",
-    `WriteRegStr HKCU "${testKey}" "Zhiyu" "other-program"`,
-    `!insertmacro zhiyuRemoveStartup "${testKey}"`,
-    `ReadRegStr $R0 HKCU "${testKey}" "Zhiyu"`,
+    `WriteRegStr HKCU "${testKey}" "Helself" "other-program"`,
+    `!insertmacro helselfRemoveStartup "${testKey}"`,
+    `ReadRegStr $R0 HKCU "${testKey}" "Helself"`,
     '${If} $R0 != "other-program"',
     "SetErrorLevel 4",
     "${EndIf}",
@@ -66,7 +66,7 @@ try {
   await run(compiler, ["/V2", "/INPUTCHARSET", "UTF8", script], { windowsHide: true });
   for (const [args, expected] of [
     [[], ""],
-    [["/ZH_STARTUP=1"], `"${join(directory, "Zhiyu.exe")}"`],
+    [["/ZH_STARTUP=1"], `"${join(directory, "Helself.exe")}"`],
     [["/ZH_STARTUP=0"], ""],
   ]) {
     await run(executable, args, { windowsHide: true });

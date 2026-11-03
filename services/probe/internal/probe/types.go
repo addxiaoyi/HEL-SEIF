@@ -5,7 +5,7 @@ import (
 	"math"
 	"time"
 
-	pb "github.com/Songwo/zhiyu/services/probe/proto"
+	pb "github.com/addxiaoyi/HEL-SEIF/services/probe/proto"
 )
 
 type Sample struct {

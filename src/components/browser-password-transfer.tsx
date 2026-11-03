@@ -226,7 +226,7 @@ export function BrowserPasswordTransfer({ close }: { close: () => void }) {
           </div>
           <div className="editor-scroll space-y-5">
             <Dialog.Description className="text-meta leading-relaxed text-muted">
-              {t("在 Chrome、Edge 与知屿之间迁移账号，让同一网站的每个账号各归其位。")}
+              {t("在 Chrome、Edge 与Helself之间迁移账号，让同一网站的每个账号各归其位。")}
             </Dialog.Description>
             <div
               className="grid grid-cols-2 gap-2 rounded-lg bg-canvas p-1.5"
@@ -240,7 +240,7 @@ export function BrowserPasswordTransfer({ close }: { close: () => void }) {
                 disabled={busy}
               >
                 <ArrowDownToLine />
-                {t("导入到知屿")}
+                {t("导入到Helself")}
               </Button>
               <Button
                 variant={direction === "export" ? "solid" : "ghost"}

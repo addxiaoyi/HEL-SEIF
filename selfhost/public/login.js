@@ -10,7 +10,7 @@ function fail(message) {
 async function post(path, body) {
   const res = await fetch(path, {
     method: "POST",
-    headers: { "content-type": "application/json", "x-zhiyu": "1" },
+    headers: { "content-type": "application/json", "x-helself": "1" },
     credentials: "same-origin",
     body: JSON.stringify(body),
   });

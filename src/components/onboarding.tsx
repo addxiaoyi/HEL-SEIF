@@ -158,7 +158,7 @@ export function ProfileForm({ initial = false }: { initial?: boolean }) {
       )}
       <Button type="submit" disabled={busy || imageBusy || !name.trim()}>
         {initial ? <KeyRound className="size-4" /> : <UserRound className="size-4" />}
-        {t(busy ? "处理中…" : initial ? "进入知屿" : "保存")}
+        {t(busy ? "处理中…" : initial ? "进入Helself" : "保存")}
       </Button>
     </form>
   );
@@ -184,7 +184,7 @@ export function Onboarding() {
       className="m-auto max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg border border-line bg-card p-6 text-ink shadow-float backdrop:bg-ink/40"
     >
       <LogoMark className="mb-4 size-10" />
-      <h1 className="mb-2 text-xl font-semibold">{t("欢迎使用知屿")}</h1>
+      <h1 className="mb-2 text-xl font-semibold">{t("欢迎使用Helself")}</h1>
       <p className="mb-5 text-meta leading-relaxed text-muted">
         {t("无需注册，资产保存在本机。主密码用于保护账号与密钥。")}
       </p>

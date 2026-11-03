@@ -33,7 +33,7 @@ export const TERMINAL_DEFAULTS = {
 export function legacyTerminalAppearance(storage) {
   try {
     return migrateTerminalAppearance(
-      JSON.parse(storage?.getItem("zhiyu-terminal-appearance-v1") || "null"),
+      JSON.parse(storage?.getItem("helself-terminal-appearance-v1") || "null"),
     );
   } catch {
     return normalizeTerminalAppearance(null);

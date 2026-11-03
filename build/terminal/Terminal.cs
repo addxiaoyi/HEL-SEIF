@@ -14,7 +14,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
 
-namespace Zhiyu.Terminal {
+namespace Helself.Terminal {
     public sealed class TerminalView : FrameworkElement {
         public readonly Screen Screen = new Screen(100, 30);
         public Action<string> Send;
@@ -107,7 +107,7 @@ namespace Zhiyu.Terminal {
             try {
                 if (!Clipboard.ContainsText()) return;
                 string text = Clipboard.GetText().Replace("\r\n", "\n").Replace('\r', '\n');
-                if (text.Length > 1000000) { MessageBox.Show("粘贴内容过大，请缩短后再试。", "知屿终端"); return; }
+                if (text.Length > 1000000) { MessageBox.Show("粘贴内容过大，请缩短后再试。", "Helself终端"); return; }
                 if (text.Contains("\n") && MessageBox.Show("内容包含多行，粘贴后可能执行多条命令。继续粘贴？", "确认粘贴", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
                 text = text.Replace("\x1b", "");
                 Input(Screen.BracketedPaste ? "\x1b[200~" + text + "\x1b[201~" : text.Replace('\n', '\r'));
@@ -313,14 +313,14 @@ namespace Zhiyu.Terminal {
         public TerminalWindow(bool preview) : this(preview, IntPtr.Zero) { }
         public TerminalWindow(bool preview, IntPtr parent) {
             parentHandle = parent;
-            demo = preview; Title = "知屿 · 原生终端"; Width = 1100; Height = 720; MinWidth = 600; MinHeight = 360;
+            demo = preview; Title = "Helself · 原生终端"; Width = 1100; Height = 720; MinWidth = 600; MinHeight = 360;
             WindowStartupLocation = WindowStartupLocation.CenterScreen; Background = Brush("#151A22"); Foreground = Brush("#D7DDE7"); FontFamily = new FontFamily("Segoe UI"); FontSize = 12;
             var grid = new Grid(); grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(76) }); grid.RowDefinitions.Add(new RowDefinition()); grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(34) }); Content = grid;
             var header = new DockPanel { Margin = new Thickness(24, 16, 20, 12) };
             var actions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-            reconnect = Button("重新连接", () => { if (connected && MessageBox.Show("重新连接会结束当前会话，继续？", "知屿终端", MessageBoxButton.OKCancel) != MessageBoxResult.OK) return; Start(); });
+            reconnect = Button("重新连接", () => { if (connected && MessageBox.Show("重新连接会结束当前会话，继续？", "Helself终端", MessageBoxButton.OKCancel) != MessageBoxResult.OK) return; Start(); });
             actions.Children.Add(Button("复制", () => terminal.Copy())); actions.Children.Add(Button("粘贴", () => terminal.Paste())); actions.Children.Add(reconnect); DockPanel.SetDock(actions, Dock.Right); header.Children.Add(actions);
-            var labels = new StackPanel(); labels.Children.Add(new TextBlock { Text = "知屿  /  SSH 工作台", FontSize = 15, FontWeight = FontWeights.SemiBold }); destination.Margin = new Thickness(0, 6, 0, 0); destination.Foreground = Brush("#98A5B7"); destination.Text = "正在准备安全连接…"; destination.TextTrimming = TextTrimming.CharacterEllipsis; labels.Children.Add(destination); header.Children.Add(labels); grid.Children.Add(header);
+            var labels = new StackPanel(); labels.Children.Add(new TextBlock { Text = "Helself  /  SSH 工作台", FontSize = 15, FontWeight = FontWeights.SemiBold }); destination.Margin = new Thickness(0, 6, 0, 0); destination.Foreground = Brush("#98A5B7"); destination.Text = "正在准备安全连接…"; destination.TextTrimming = TextTrimming.CharacterEllipsis; labels.Children.Add(destination); header.Children.Add(labels); grid.Children.Add(header);
             frame = new Border { Margin = new Thickness(12, 0, 12, 0), Background = Brush("#0E1219"), BorderBrush = Brush("#2A3341"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8), Child = terminal }; Grid.SetRow(frame, 1); grid.Children.Add(frame);
             var footer = new DockPanel { Margin = new Thickness(24, 0, 24, 0), LastChildFill = true };
             dimensions.VerticalAlignment = VerticalAlignment.Center; dimensions.Foreground = Brush("#98A5B7"); DockPanel.SetDock(dimensions, Dock.Right); footer.Children.Add(dimensions);
@@ -366,7 +366,7 @@ namespace Zhiyu.Terminal {
             SetWindowLongPtr(parentHandle, -16, new IntPtr(parentStyle | 0x02000000L));
             SetWindowPos(parentHandle, IntPtr.Zero, 0, 0, 0, 0, 0x0037);
             var root = (Visual)Content; Content = null;
-            var parameters = new HwndSourceParameters("Zhiyu.EmbeddedTerminal") {
+            var parameters = new HwndSourceParameters("Helself.EmbeddedTerminal") {
                 ParentWindow = parentHandle, WindowStyle = 0x56000000, TreatAsInputRoot = true,
                 PositionX = 0, PositionY = 0, Width = 1, Height = 1,
             };
@@ -430,7 +430,7 @@ namespace Zhiyu.Terminal {
             foreach (var message in batch) {
                 string type = Convert.ToString(message["type"]);
                 if (type == "data") terminal.Feed(Convert.ToString(message["data"]));
-                else if (type == "init") { destination.Text = Convert.ToString(message["label"]); Title = destination.Text + " · 知屿终端"; status.Text = "●  正在连接…"; reconnect.IsEnabled = false; }
+                else if (type == "init") { destination.Text = Convert.ToString(message["label"]); Title = destination.Text + " · Helself终端"; status.Text = "●  正在连接…"; reconnect.IsEnabled = false; }
                 else if (type == "focus") { if (parentHandle == IntPtr.Zero) { if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal; Activate(); SetForegroundWindow(new WindowInteropHelper(this).Handle); } FocusTerminal(); }
                 else if (type == "bounds" && parentHandle != IntPtr.Zero) {
                     var handle = Handle;
@@ -481,7 +481,7 @@ namespace Zhiyu.Terminal {
             destination.Text = "界面预览 · 未连接服务器"; status.Text = "●  原生 C# / WPF  ·  界面预览"; reconnect.Content = "刷新预览";
             terminal.Feed("\x1b[2J\x1b[H\x1b[90m~/workspace  $ cat deployment.ts\x1b[0m\r\n\r\n");
             terminal.Feed("\x1b[90m// 部署配置示例\x1b[0m\r\n");
-            terminal.Feed("\x1b[35mconst\x1b[0m service = {\r\n  name: \x1b[32m\"zhiyu-api\"\x1b[0m,\r\n  port: \x1b[33m8080\x1b[0m,\r\n  healthy: \x1b[35mtrue\x1b[0m,\r\n};\r\n\r\n\x1b[35mawait\x1b[0m \x1b[34mdeploy\x1b[0m(service);\r\n\r\n");
+            terminal.Feed("\x1b[35mconst\x1b[0m service = {\r\n  name: \x1b[32m\"helself-api\"\x1b[0m,\r\n  port: \x1b[33m8080\x1b[0m,\r\n  healthy: \x1b[35mtrue\x1b[0m,\r\n};\r\n\r\n\x1b[35mawait\x1b[0m \x1b[34mdeploy\x1b[0m(service);\r\n\r\n");
             terminal.Feed("\x1b[90m// 此处只预览外观，不执行命令或连接服务器。\x1b[0m\r\n");
         }
     }

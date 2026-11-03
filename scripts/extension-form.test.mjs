@@ -135,7 +135,7 @@ async function withAutoCapture(t, html, stored) {
     readFileSync(new URL("../browser-extension/companion-fields.js", import.meta.url), "utf8"),
   );
   await page.evaluate(() => {
-    globalThis.__zhiyuShowPending = () => {
+    globalThis.__helselfShowPending = () => {
       const host = document.createElement("div");
       host.style.position = "fixed";
       document.documentElement.append(host);
@@ -172,7 +172,7 @@ test("自动采集默认开启：真实提交含密码表单时临时记住账�
   );
   assert.deepEqual(await submitForm(page, "form"), [
     {
-      type: "zhiyu-stage",
+      type: "helself-stage",
       capture: {
         title: "示例站",
         username: "alice@example.test",
@@ -197,7 +197,7 @@ test("无密码与验证码表单不采集，关闭开关即时生效", async (t
   );
   assert.deepEqual(await submitForm(page, "#login"), [
     {
-      type: "zhiyu-stage",
+      type: "helself-stage",
       capture: { title: "", username: "real", password: "pw" },
     },
   ]);
@@ -223,7 +223,7 @@ test("无表单的脚本登录：点击登录按钮捕获就近的账号密码",
   );
   assert.deepEqual(await clickButton(page, "#go"), [
     {
-      type: "zhiyu-stage",
+      type: "helself-stage",
       capture: {
         title: "脚本站",
         username: "spa-user",
@@ -272,5 +272,5 @@ test("自动采集不截断超长密码且不读取隐藏和改密字段", async
   await page.locator('#long input[type="password"]').fill("a".repeat(4097));
   assert.deepEqual(await submitForm(page, "#long"), []);
   assert.deepEqual(await submitForm(page, "#change-password"), []);
-  assert.equal(await page.evaluate(() => globalThis.__zhiyuFields.forms().length), 1);
+  assert.equal(await page.evaluate(() => globalThis.__helselfFields.forms().length), 1);
 });

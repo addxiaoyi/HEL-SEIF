@@ -7,7 +7,7 @@ import { _electron as electron } from "playwright";
 import { completeOnboarding } from "./onboarding-helper.mjs";
 
 // 使用真正的打包程序，防止仅检查 PNG 文件却遗漏界面灰度和 Electron 默认图标。
-const directory = await mkdtemp(join(tmpdir(), "zhiyu-brand-"));
+const directory = await mkdtemp(join(tmpdir(), "helself-brand-"));
 // 明确关闭隔离样本的真实日志扫描；监控功能另用合成日志测试。
 await writeFile(
   join(directory, "local-usage.json"),
@@ -28,7 +28,7 @@ try {
   });
   assert.equal(await instance.evaluate(({ app }) => app.getPath("userData")), directory);
   assert.equal(await instance.evaluate(({ app }) => app.getPath("sessionData")), directory);
-  assert.equal(await instance.evaluate(({ app }) => app.getName()), "知屿 Zhiyu");
+  assert.equal(await instance.evaluate(({ app }) => app.getName()), "Helself");
   const page = await instance.firstWindow();
   const pageErrors = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
@@ -41,11 +41,11 @@ try {
     if ((await page.locator("html").getAttribute("data-theme")) !== theme)
       await page.getByRole("button", { name: "切换主题外观", exact: true }).click();
     await page.waitForFunction((value) => document.documentElement.dataset.theme === value, theme);
-    // 标记透明背景，只取图形所在区域（见 src/lib/brand-mark.mjs）。
-    const logo = page.locator('.app-titlebar svg[viewBox="8 8 48 48"]');
+    // 透明标记：立柱跟随文字颜色，核心是固定品牌亮绿（见 src/lib/brand-mark.mjs）。
+    const logo = page.locator("[data-brand-mark]").first();
     const fills = await logo
-      .locator("path")
-      .evaluateAll((paths) => paths.map((path) => getComputedStyle(path).fill));
+      .locator("rect, circle")
+      .evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).fill));
     const chromatic = fills.some((fill) => {
       const channels =
         fill
@@ -54,9 +54,20 @@ try {
           .map(Number) ?? [];
       return channels.length === 3 && Math.max(...channels) - Math.min(...channels) >= 35;
     });
-    assert.ok(chromatic, `${theme} 主题 Logo 应保留品牌色，实际为 ${fills.join(", ")}`);
+    assert.ok(chromatic, `${theme} 主题 Logo 应保留品牌亮绿核心，实际为 ${fills.join(", ")}`);
+    const frame = fills[0];
+    const frameChannels =
+      frame
+        .match(/[\d.]+/g)
+        ?.slice(0, 3)
+        .map(Number) ?? [];
+    const frameLuma = frameChannels.reduce((sum, value) => sum + value, 0) / frameChannels.length;
+    assert.ok(
+      theme === "light" ? frameLuma < 110 : frameLuma > 150,
+      `${theme} 主题立柱应跟随主题文字颜色，实际为 ${frame}`,
+    );
     colors.push({ theme, fills });
-    await page.screenshot({ path: `screenshots/zhiyu-brand-${theme}.png`, animations: "disabled" });
+    await page.screenshot({ path: `screenshots/helself-brand-${theme}.png`, animations: "disabled" });
   }
   assert.equal(process.platform, "win32", "此检查针对 Windows 正式安装包");
   const executable = await instance.evaluate(() => process.execPath);
@@ -70,7 +81,7 @@ try {
         "-IconPath",
         executable,
         "-OutputPng",
-        resolve("screenshots/zhiyu-executable-icon.png"),
+        resolve("screenshots/helself-executable-icon.png"),
       ],
       { encoding: "utf8", windowsHide: true },
     ),
@@ -90,9 +101,9 @@ try {
         "-WindowHandle",
         windowIdentity.handle,
         "-ExpectedAppId",
-        "dev.songwo.zhiyu",
+        "dev.helself.app",
         "-ExpectedIconPath",
-        join(windowIdentity.resources, "zhiyu.ico"),
+        join(windowIdentity.resources, "helself.ico"),
         "-ExpectedExecutable",
         executable,
       ],

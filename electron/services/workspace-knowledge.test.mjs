@@ -54,7 +54,7 @@ const response = (value) => {
   });
 };
 async function fixture(t, next, options = {}) {
-  const directory = await mkdtemp(join(tmpdir(), "zhiyu-workspace-tools-"));
+  const directory = await mkdtemp(join(tmpdir(), "helself-workspace-tools-"));
   const requests = [],
     events = [];
   let reads = 0;

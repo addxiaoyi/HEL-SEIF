@@ -59,7 +59,7 @@ Access Token 和 Refresh Token 均存入主密码加密库。普通 IPC 账号�
 
 本版的问答链路仍使用单独配置的 OpenAI 兼容 API Key。网页登录授权用于查询订阅账号，不自动将这些 Token 作为第三方网关 API Key。ChatGPT、Claude、Grok、Google One 或 Code Assist 的订阅权限不能直接等同于同厂商的开发者 API 余额。
 
-DeepSeek、通义千问、火山方舟等提供 API 地址预设；目前没有在知屿中实现它们的订阅网页登录授权。Claude 原生 Messages API 不属于当前问答的 Chat Completions 协议，使用兼容网关时填写网关地址。
+DeepSeek、通义千问、火山方舟等提供 API 地址预设；目前没有在Helself中实现它们的订阅网页登录授权。Claude 原生 Messages API 不属于当前问答的 Chat Completions 协议，使用兼容网关时填写网关地址。
 
 ## Gemini 客户端说明
 

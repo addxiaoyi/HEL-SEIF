@@ -1,13 +1,13 @@
 services:
   probe:
     build: .
-    image: zhiyu-probe:local
+    image: helself-probe:local
     restart: unless-stopped
     ports:
       - "8008:8008"
     volumes:
       - ./data:/data
-      - ./private:/run/zhiyu:ro
+      - ./private:/run/helself:ro
     read_only: true
     cap_drop: [ALL]
     security_opt:

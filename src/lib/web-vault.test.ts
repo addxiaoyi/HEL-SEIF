@@ -15,7 +15,7 @@ const DESKTOP_VAULT = "../../electron/services/vault.mjs";
 test("网页版密钥库与桌面版同一文件格式，双向可读", async (t) => {
   const { createWebServer } = await import(SERVER);
   const { Vault } = await import(DESKTOP_VAULT);
-  const root = await mkdtemp(join(tmpdir(), "zhiyu-web-vault-"));
+  const root = await mkdtemp(join(tmpdir(), "helself-web-vault-"));
   const web = await createWebServer({ root, staticDir: root, log: { log() {}, error() {} } });
   await new Promise<void>((r) => web.server.listen(0, "127.0.0.1", () => r()));
   const base = `http://127.0.0.1:${(web.server.address() as { port: number }).port}`;
@@ -27,7 +27,7 @@ test("网页版密钥库与桌面版同一文件格式，双向可读", async (t
   });
   const setup = await realFetch(`${base}/api/web/setup`, {
     method: "POST",
-    headers: { "content-type": "application/json", "x-zhiyu": "1" },
+    headers: { "content-type": "application/json", "x-helself": "1" },
     body: JSON.stringify({
       token: web.setupToken,
       username: "song",
@@ -80,7 +80,7 @@ test("网页版密钥库与桌面版同一文件格式，双向可读", async (t
 test("经 http:// 局域网地址访问（没有 WebCrypto）时密钥库仍可用，与桌面版互通", async (t) => {
   const { createWebServer } = await import(SERVER);
   const { Vault } = await import(DESKTOP_VAULT);
-  const root = await mkdtemp(join(tmpdir(), "zhiyu-web-vault-http-"));
+  const root = await mkdtemp(join(tmpdir(), "helself-web-vault-http-"));
   const web = await createWebServer({
     root,
     staticDir: root,
@@ -105,7 +105,7 @@ test("经 http:// 局域网地址访问（没有 WebCrypto）时密钥库仍可�
   });
   const setup = await realFetch(`${base}/api/web/setup`, {
     method: "POST",
-    headers: { "content-type": "application/json", "x-zhiyu": "1" },
+    headers: { "content-type": "application/json", "x-helself": "1" },
     body: JSON.stringify({
       token: web.setupToken,
       username: "song",

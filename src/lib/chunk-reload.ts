@@ -2,7 +2,7 @@
  * 升级后的旧页面：网页版换了镜像（或重新构建）后，已打开的标签页仍按旧文件名按需加载页面，
  * 服务器上已经没有这些文件，页面就会报错。此时刷新一次即可载入新版本。
  */
-const KEY = "zhiyu-chunk-reload";
+const KEY = "helself-chunk-reload";
 
 export function isChunkLoadError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error ?? "");

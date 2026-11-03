@@ -184,7 +184,7 @@ export function createCalendar(items: CalendarItem[], now = new Date()): string 
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Zhiyu//Asset reminders//EN",
+    "PRODID:-//Helself//Asset reminders//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
   ];

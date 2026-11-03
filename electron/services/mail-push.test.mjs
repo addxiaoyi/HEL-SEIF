@@ -672,7 +672,7 @@ test("真实邮箱与推送服务：游标与待发消息一起持久化，发�
 test("续费与备忘提醒：开启「提醒也推送」才发送，不需要勾选邮箱", async (t) => {
   const rig = setup(t);
   await rig.service.save({ ...rig.config, enabled: false, mailboxIds: [] });
-  assert.equal(await rig.service.remind("知屿提醒\n宽带续费: 3 天后"), false);
+  assert.equal(await rig.service.remind("Helself提醒\n宽带续费: 3 天后"), false);
   assert.equal(rig.requests.length, 0);
   const saved = await rig.service.save({
     ...rig.config,
@@ -681,7 +681,7 @@ test("续费与备忘提醒：开启「提醒也推送」才发送，不需要�
     reminders: true,
   });
   assert.equal(saved.reminders, true);
-  assert.equal(await rig.service.remind("知屿提醒\n宽带续费: 3 天后"), true);
+  assert.equal(await rig.service.remind("Helself提醒\n宽带续费: 3 天后"), true);
   assert.equal(rig.requests.length, 1);
   assert.match(rig.requests[0].body.text, /宽带续费: 3 天后/);
   rig.vault.unlocked = false;
