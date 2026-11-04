@@ -17,8 +17,8 @@ export interface IntakeField {
   field: string;
   label: string;
   value: string;
-  /** 由模型补充或修正的字段标出来，审阅时能分清哪部分是模型猜的。 */
-  source?: "model";
+  /** 由模型补充或用户手动改过的字段标出来，审阅时能分清哪部分是原文自带的。 */
+  source?: "model" | "manual";
 }
 
 export interface IntakeEntry {
@@ -677,6 +677,57 @@ export function setEntryIgnored(
 ): IntakeBundle {
   if (!bundle.entries[index]) return bundle;
   const entries = bundle.entries.map((entry, at) => (at === index ? { ...entry, ignored } : entry));
+  return summarize(bundle.raw, entries);
+}
+
+/** 需要按年月日规范化的字段。 */
+const DATE_FIELDS = new Set(["expiresAt", "renewsAt"]);
+
+/**
+ * 用户直接改一条记录里的某个字段：日期会先规范化，非法值整体拒绝。
+ *
+ * 返回 undefined 表示这次修改不成立（日期认不出、空值、太长）；值没变时返回原对象。
+ * 改完之后缺口、待确认问题和资料库对照一起重算。
+ */
+export function editField(
+  bundle: IntakeBundle,
+  index: number,
+  fieldName: string,
+  value: string,
+  snapshot: Partial<Snapshot> = {},
+  now = new Date(),
+): IntakeBundle | undefined {
+  const entry = bundle.entries[index];
+  if (!entry) return undefined;
+  const at = entry.known.findIndex((item) => item.field === fieldName);
+  if (at < 0) return undefined;
+  const current = entry.known[at];
+  const raw = value.trim();
+  if (!raw || raw.length > 200) return undefined;
+  const normalized = DATE_FIELDS.has(fieldName) ? readDate(raw, now) : raw;
+  if (!normalized) return undefined;
+  if (normalized === current.value) return bundle;
+  const known = entry.known.map((item, i) =>
+    i === at ? { ...item, value: normalized, source: "manual" as const } : item,
+  );
+  const missing = missingOf(entry.kind, known);
+  const saved = findSaved(snapshot, entry.kind, identityOf(known));
+  const questions = entry.questions.filter(
+    (question) =>
+      !question.startsWith("资料里已经有") &&
+      !(question.startsWith("没有到期日") && !missing.includes("到期日")) &&
+      !(
+        question.startsWith("费用没写清楚") &&
+        !missing.includes("费用") &&
+        !missing.includes("月费")
+      ),
+  );
+  if (saved) questions.unshift(`资料里已经有「${saved.name}」，这次是更新它，还是另存一条？`);
+  // 标题通常就取自被改的那个值，改了就跟着走。
+  const title = entry.title === current.value ? normalized : entry.title;
+  const entries = bundle.entries.map((item, i) =>
+    i === index ? { ...entry, known, missing, questions, title, saved } : item,
+  );
   return summarize(bundle.raw, entries);
 }
 

@@ -1,5 +1,5 @@
 import { hostBridge } from "@/lib/web-bridge";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import {
   ArrowUpRight,
@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import {
   INTAKE_KINDS,
   INTAKE_KIND_NAMES,
+  editField,
   intakeList,
   intakePreset,
   parseMessyText,
@@ -32,9 +33,12 @@ import type { AssetKind } from "@/lib/types";
 import { copyText } from "@/lib/utils";
 import { t } from "@/lib/i18n";
 import { Button } from "./ui/button";
-import { Textarea } from "./ui/input";
+import { Input, Textarea } from "./ui/input";
 import { Select } from "./ui/select";
 import "./intake-panel.css";
+
+/** 费用和美元月费是拼好的展示值，就地改会丢掉币种与周期，只能去录入里改。 */
+const LOCKED_FIELDS = new Set(["billing", "monthlyUsd"]);
 
 /**
  * 粘贴一堆杂乱资料，先在本机拆成条目，再按配置的模型补齐字段。
@@ -92,6 +96,22 @@ export function IntakePanel({
   /** 忽略 / 恢复一条记录：只改 bundle，忽略的条目不计数、不复制、不发给模型。 */
   function setIgnored(index: number, ignored: boolean) {
     updateBundle((bundle) => setEntryIgnored(bundle, index, ignored));
+  }
+
+  /** 就地改一个字段：日期会规范化，值不合法就保留原样并说明原因。 */
+  function editAt(index: number, field: string, value: string) {
+    if (!result) return;
+    const bundle = editField(result.bundle, index, field, value, snapshot);
+    if (!bundle) {
+      setError(
+        field === "expiresAt" || field === "renewsAt"
+          ? t("日期没认出来，写成 2026-05-01 这样再试。")
+          : t("这个值没有改：不能为空，最多 200 字。"),
+      );
+      return;
+    }
+    setError("");
+    setResult({ ...result, bundle });
   }
 
   async function run(useModel: boolean) {
@@ -261,6 +281,7 @@ export function IntakePanel({
                 onOpen={() => openEntry(entry)}
                 onReclassify={(kind) => reclassify(index, kind)}
                 onIgnore={() => setIgnored(index, !entry.ignored)}
+                onEdit={(field, value) => editAt(index, field, value)}
               />
             ))}
           </ol>
@@ -313,18 +334,50 @@ function EntryCard({
   onOpen,
   onReclassify,
   onIgnore,
+  onEdit,
 }: {
   index: number;
   entry: IntakeEntry;
   onOpen: () => void;
   onReclassify: (kind: IntakeAssetKind) => void;
   onIgnore: () => void;
+  onEdit: (field: string, value: string) => void;
 }) {
   const titleId = `intake-entry-title-${index}`;
+  const [editing, setEditing] = useState<{ field: string; value: string } | null>(null);
+  const cancelled = useRef(false);
   const kindOptions = INTAKE_KINDS.map((kind) => ({
     value: kind,
     label: t(INTAKE_KIND_NAMES[kind]),
   }));
+
+  // Esc 取消编辑。Radix 对话框在 document 的捕获阶段监听 Esc，比输入框自己早，
+  // 所以在 window 的捕获阶段先拦下来，否则取消编辑会把整块面板一起关掉。
+  useEffect(() => {
+    if (!editing) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      cancelled.current = true;
+      setEditing(null);
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [editing]);
+
+  /** 回车或失焦保存；Esc 先标记取消，避免失焦时又提交一次。 */
+  function commit() {
+    if (!editing) return;
+    const next = editing;
+    setEditing(null);
+    if (cancelled.current) {
+      cancelled.current = false;
+      return;
+    }
+    onEdit(next.field, next.value);
+  }
+
   return (
     <li className={entry.ignored ? "intake-entry intake-entry-ignored" : "intake-entry"}>
       <div className="intake-entry-head">
@@ -348,8 +401,43 @@ function EntryCard({
             <div key={item.field}>
               <dt>{t(item.label)}</dt>
               <dd>
-                {item.value}
+                {editing?.field === item.field ? (
+                  <Input
+                    autoFocus
+                    className="intake-field-input"
+                    aria-label={t("修改{0}", t(item.label))}
+                    value={editing.value}
+                    onChange={(event) =>
+                      setEditing({ field: item.field, value: event.target.value })
+                    }
+                    onBlur={commit}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        commit();
+                      }
+                    }}
+                  />
+                ) : LOCKED_FIELDS.has(item.field) ? (
+                  <span>{item.value}</span>
+                ) : (
+                  <button
+                    type="button"
+                    className="intake-field-value"
+                    aria-label={t("修改{0}", t(item.label))}
+                    title={t("修改{0}", t(item.label))}
+                    onClick={() => {
+                      cancelled.current = false;
+                      setEditing({ field: item.field, value: item.value });
+                    }}
+                  >
+                    {item.value}
+                  </button>
+                )}
                 {item.source === "model" && <em className="intake-field-model">{t("模型补充")}</em>}
+                {item.source === "manual" && (
+                  <em className="intake-field-model">{t("手动修改")}</em>
+                )}
               </dd>
             </div>
           ))}

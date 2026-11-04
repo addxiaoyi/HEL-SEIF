@@ -173,6 +173,31 @@
   overflow-wrap: anywhere;
 }
 
+/* 字段值本身是按钮：点一下就地改，平时看起来还是文字。 */
+.intake-field-value {
+  padding: 0;
+  border: 0;
+  border-bottom: 1px dashed transparent;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: text;
+}
+
+.intake-field-value:hover,
+.intake-field-value:focus-visible {
+  border-bottom-color: var(--line);
+  outline: none;
+}
+
+.intake-field-input {
+  height: 28px;
+  padding: 0 6px;
+  font-size: var(--text-meta);
+}
+
 .intake-fields-inferred dd {
   color: var(--text-muted);
 }

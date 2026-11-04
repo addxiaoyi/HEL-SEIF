@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   applyCorrections,
+  editField,
   groupLines,
   intakeList,
   intakePreset,
@@ -402,4 +403,71 @@ test("已忽略的条目也能刷新已有资料对照", () => {
   assert.equal(found.entries[0].ignored, true);
   assert.deepEqual(found.counts, hidden.counts);
   assert.deepEqual(found.gaps, hidden.gaps);
+});
+
+test("就地改字段：标成手动修改，标题跟着换，计数与缺口不动", () => {
+  const bundle = parseMessyText(
+    ["47.100.1.2 root 密码 abc", "example.com 注册商 阿里云 到期 2026-08-12"].join("\n"),
+    {},
+    NOW,
+  );
+  const before = bundle.entries[0];
+  const host = before.known.find((item) => item.field === "host");
+  assert.equal(host?.value, "47.100.1.2");
+  assert.equal(before.title, "47.100.1.2");
+
+  const next = editField(bundle, 0, "host", " 10.0.0.8 ", {}, NOW);
+  assert.ok(next);
+  const entry = next!.entries[0];
+  assert.equal(entry.known.find((item) => item.field === "host")?.value, "10.0.0.8");
+  assert.equal(entry.known.find((item) => item.field === "host")?.source, "manual");
+  assert.equal(entry.title, "10.0.0.8");
+  assert.deepEqual(next!.counts, bundle.counts);
+  assert.deepEqual(next!.gaps, bundle.gaps);
+  // 其他条目和原来的字段对象都不受影响。
+  assert.equal(next!.entries[1], bundle.entries[1]);
+  assert.equal(before.known.find((item) => item.field === "host")?.value, "47.100.1.2");
+});
+
+test("就地改日期会规范化，认不出的日期整体拒绝", () => {
+  const bundle = parseMessyText("47.100.1.2 root 密码 abc 到期 2026-05-01", {}, NOW);
+  assert.equal(
+    bundle.entries[0].known.find((item) => item.field === "expiresAt")?.value,
+    "2026-05-01",
+  );
+
+  const next = editField(bundle, 0, "expiresAt", "2026/6/9", {}, NOW);
+  assert.ok(next);
+  assert.equal(
+    next!.entries[0].known.find((item) => item.field === "expiresAt")?.value,
+    "2026-06-09",
+  );
+  assert.equal(next!.entries[0].known.find((item) => item.field === "expiresAt")?.source, "manual");
+
+  assert.equal(editField(bundle, 0, "expiresAt", "2026-02-30", {}, NOW), undefined);
+  assert.equal(editField(bundle, 0, "expiresAt", "不是日期", {}, NOW), undefined);
+  assert.equal(
+    bundle.entries[0].known.find((item) => item.field === "expiresAt")?.value,
+    "2026-05-01",
+  );
+});
+
+test("就地改字段：空值、超长、找不到字段和值没变时的行为", () => {
+  const bundle = parseMessyText("47.100.1.2 root 密码 abc", {}, NOW);
+  assert.equal(editField(bundle, 0, "host", "", {}, NOW), undefined);
+  assert.equal(editField(bundle, 0, "host", "x".repeat(201), {}, NOW), undefined);
+  assert.equal(editField(bundle, 0, "nope", "10.0.0.8", {}, NOW), undefined);
+  assert.equal(editField(bundle, 9, "host", "10.0.0.8", {}, NOW), undefined);
+  assert.equal(editField(bundle, 0, "host", "47.100.1.2", {}, NOW), bundle);
+});
+
+test("就地改字段会重新对照资料库，已忽略的条目也能改", () => {
+  const bundle = setEntryIgnored(parseMessyText("47.100.1.2 root 密码 abc", {}, NOW), 0, true);
+  const next = editField(bundle, 0, "host", "10.0.0.8", {
+    servers: [{ id: "srv-9", name: "样例", host: "10.0.0.8" }],
+  } as never);
+  assert.ok(next);
+  assert.deepEqual(next!.entries[0].saved, { kind: "server", id: "srv-9", name: "样例" });
+  assert.equal(next!.entries[0].ignored, true);
+  assert.equal(next!.entries[0].questions[0], "资料里已经有「样例」，这次是更新它，还是另存一条？");
 });

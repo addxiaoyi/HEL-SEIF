@@ -3137,6 +3137,12 @@ export const EN: Record<string, string> = {
   忽略这条: "Ignore this one",
   恢复这条: "Restore this one",
   "已忽略 {0} 条": "{0} dismissed",
+  "修改{0}": "Edit {0}",
+  手动修改: "Edited by you",
+  "日期没认出来，写成 2026-05-01 这样再试。":
+    "That date didn't parse — try a form like 2026-05-01.",
+  "这个值没有改：不能为空，最多 200 字。":
+    "Not changed: keep it non-empty and under 200 characters.",
   打开已有资料: "Open saved asset",
   去号码页添加: "Add on the phone page",
   去录入: "Create asset",
