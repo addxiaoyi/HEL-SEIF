@@ -13,6 +13,7 @@ import {
   reclassifyEntry,
   redactBundle,
   redactText,
+  refreshSaved,
   setEntryIgnored,
   unredactCorrections,
   unredactText,
@@ -353,4 +354,52 @@ test("模型修正的美元费用按币种显示", () => {
   const billing = next.entries[0].known.find((item) => item.field === "billing");
   assert.equal(billing?.value, "$20 · 每月");
   assert.equal(billing?.source, "model");
+});
+
+test("资料库变化后刷新对照：新增、稳定与清空", () => {
+  const bundle = parseMessyText("47.100.1.2 root 密码 abc", {}, NOW);
+  assert.equal(bundle.entries[0].saved, undefined);
+  assert.equal(
+    bundle.entries[0].questions.some((question) => question.includes("资料里已经有")),
+    false,
+  );
+
+  const snapshot = {
+    servers: [{ id: "srv-1", name: "阿里云", host: "47.100.1.2" }],
+  } as never;
+  const found = refreshSaved(bundle, snapshot);
+  assert.notEqual(found, bundle);
+  assert.deepEqual(found.entries[0].saved, { kind: "server", id: "srv-1", name: "阿里云" });
+  assert.equal(
+    found.entries[0].questions[0],
+    "资料里已经有「阿里云」，这次是更新它，还是另存一条？",
+  );
+
+  // 资料库没变时返回同一个对象，调用方可以按引用跳过刷新。
+  const stable = refreshSaved(found, snapshot);
+  assert.equal(stable, found);
+  assert.equal(stable.entries, found.entries);
+
+  const cleared = refreshSaved(stable, {});
+  assert.notEqual(cleared, stable);
+  assert.equal(cleared.entries[0].saved, undefined);
+  assert.equal(
+    cleared.entries[0].questions.some((question) => question.includes("资料里已经有")),
+    false,
+  );
+  assert.equal(cleared.entries[0].questions[0], "没有到期日：是长期有效，还是忘了写？");
+});
+
+test("已忽略的条目也能刷新已有资料对照", () => {
+  const bundle = parseMessyText("47.100.1.2 root 密码 abc", {}, NOW);
+  const hidden = setEntryIgnored(bundle, 0, true);
+  const found = refreshSaved(hidden, {
+    servers: [{ id: "srv-1", name: "阿里云", host: "47.100.1.2" }],
+  } as never);
+
+  assert.notEqual(found, hidden);
+  assert.deepEqual(found.entries[0].saved, { kind: "server", id: "srv-1", name: "阿里云" });
+  assert.equal(found.entries[0].ignored, true);
+  assert.deepEqual(found.counts, hidden.counts);
+  assert.deepEqual(found.gaps, hidden.gaps);
 });

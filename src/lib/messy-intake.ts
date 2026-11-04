@@ -536,6 +536,14 @@ function inferredOf(
 const DATE_ANY =
   /(?:\d{4}\s*[-/.年]\s*\d{1,2}\s*[-/.月]\s*\d{1,2}\s*日?|\d{1,2}\s*[-/.]\s*\d{1,2})/;
 
+/** 拿条目里最能代表这条资产的值去资料库对照。 */
+function identityOf(known: IntakeField[]): string {
+  return (
+    known.find((item) => ["address", "name", "cn", "host", "number"].includes(item.field))?.value ??
+    ""
+  );
+}
+
 /** 把一条记录变成可审阅的条目；kindOverride 用于用户手动改类型后重新抽字段。 */
 export function readEntry(
   group: string[],
@@ -555,9 +563,7 @@ export function readEntry(
   const title = titleOf(kind, text, known);
   const missing = missingOf(kind, known);
   const inferred = inferredOf(kind, text, known, now);
-  const identity =
-    known.find((item) => ["address", "name", "cn", "host", "number"].includes(item.field))?.value ??
-    "";
+  const identity = identityOf(known);
   const saved = findSaved(snapshot, kind, identity);
   const sensitive = SECRET_PATTERNS.some(({ re }) =>
     new RegExp(re.source, re.flags.replace("g", "")).test(text),
@@ -672,6 +678,29 @@ export function setEntryIgnored(
   if (!bundle.entries[index]) return bundle;
   const entries = bundle.entries.map((entry, at) => (at === index ? { ...entry, ignored } : entry));
   return summarize(bundle.raw, entries);
+}
+
+/**
+ * 资料库变了以后重算每条对上的已有资产。
+ *
+ * 整理结果会留在面板里跨视图复用，期间用户可能已经把某条存进去了；
+ * 回来时按钮该从「去录入」变成「打开已有资料」，不能再提示重复录入。
+ * 没有任何变化时返回原对象，方便调用方按引用判断要不要更新。
+ */
+export function refreshSaved(bundle: IntakeBundle, snapshot: Partial<Snapshot> = {}): IntakeBundle {
+  let changed = false;
+  const entries = bundle.entries.map((entry) => {
+    const saved = findSaved(snapshot, entry.kind, identityOf(entry.known));
+    const same =
+      saved === entry.saved ||
+      (saved && entry.saved && saved.id === entry.saved.id && saved.kind === entry.saved.kind);
+    if (same) return entry;
+    changed = true;
+    const questions = entry.questions.filter((question) => !question.startsWith("资料里已经有"));
+    if (saved) questions.unshift(`资料里已经有「${saved.name}」，这次是更新它，还是另存一条？`);
+    return { ...entry, saved, questions };
+  });
+  return changed ? { ...bundle, entries } : bundle;
 }
 
 /** 模型只能改已有条目，不能新增或删除：避免凭空造出资产。 */

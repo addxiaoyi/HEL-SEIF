@@ -1,5 +1,5 @@
 import { hostBridge } from "@/lib/web-bridge";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import {
   ArrowUpRight,
@@ -20,11 +20,12 @@ import {
   intakePreset,
   parseMessyText,
   reclassifyEntry,
+  refreshSaved,
   setEntryIgnored,
   type IntakeAssetKind,
-  type IntakeBundle,
   type IntakeEntry,
 } from "@/lib/messy-intake";
+import { useIntakeSession } from "@/lib/intake-session";
 import { parsePaste } from "@/lib/parse-paste";
 import { useAppStore } from "@/lib/store";
 import type { AssetKind } from "@/lib/types";
@@ -38,6 +39,7 @@ import "./intake-panel.css";
 /**
  * 粘贴一堆杂乱资料，先在本机拆成条目，再按配置的模型补齐字段。
  * 结果可在面板里逐条改类型、忽略噪音；不会自动写入任何资产，用户确认后再决定下一步。
+ * 粘贴的内容和结果留在内存里的会话草稿中，关掉面板再打开还在。
  */
 export function IntakePanel({
   onAsk,
@@ -47,15 +49,16 @@ export function IntakePanel({
   onClose: () => void;
 }) {
   const api = hostBridge()?.agent;
-  const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<{
-    bundle: IntakeBundle;
-    mode: string;
-    model: string;
-    error: string;
-    redacted: number;
-  } | null>(null);
+  const { text, result, setText, setResult, updateBundle } = useIntakeSession(
+    useShallow((s) => ({
+      text: s.text,
+      result: s.result,
+      setText: s.setText,
+      setResult: s.setResult,
+      updateBundle: s.updateBundle,
+    })),
+  );
   const [error, setError] = useState("");
   const snapshot = useAppStore(
     useShallow((s) => ({
@@ -69,6 +72,11 @@ export function IntakePanel({
     })),
   );
 
+  // 结果留着跨视图复用时，资料库可能已经多了一条：把「去录入」换成「打开已有资料」。
+  useEffect(() => {
+    updateBundle((bundle) => refreshSaved(bundle, snapshot));
+  }, [snapshot, updateBundle]);
+
   const kinds = useMemo(() => {
     if (!result) return [];
     return Object.entries(result.bundle.counts).filter(([, count]) => count > 0);
@@ -78,18 +86,12 @@ export function IntakePanel({
 
   /** 手动改类型：按新类型重抽这一条的字段，其他条目原样保留。 */
   function reclassify(index: number, kind: IntakeAssetKind) {
-    setResult((current) =>
-      current
-        ? { ...current, bundle: reclassifyEntry(current.bundle, index, kind, snapshot) }
-        : current,
-    );
+    updateBundle((bundle) => reclassifyEntry(bundle, index, kind, snapshot));
   }
 
   /** 忽略 / 恢复一条记录：只改 bundle，忽略的条目不计数、不复制、不发给模型。 */
   function setIgnored(index: number, ignored: boolean) {
-    setResult((current) =>
-      current ? { ...current, bundle: setEntryIgnored(current.bundle, index, ignored) } : current,
-    );
+    updateBundle((bundle) => setEntryIgnored(bundle, index, ignored));
   }
 
   async function run(useModel: boolean) {
