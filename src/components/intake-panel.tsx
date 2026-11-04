@@ -6,6 +6,7 @@ import {
   ClipboardPaste,
   Copy,
   EyeOff,
+  Filter,
   Loader2,
   RotateCcw,
   Sparkles,
@@ -17,6 +18,7 @@ import {
   INTAKE_KINDS,
   INTAKE_KIND_NAMES,
   editField,
+  filterEntries,
   intakeList,
   intakePreset,
   parseMessyText,
@@ -54,12 +56,26 @@ export function IntakePanel({
 }) {
   const api = hostBridge()?.agent;
   const [busy, setBusy] = useState(false);
-  const { text, result, setText, setResult, updateBundle } = useIntakeSession(
+  const {
+    text,
+    result,
+    filterKind,
+    onlyProblems,
+    setText,
+    setResult,
+    setFilterKind,
+    setOnlyProblems,
+    updateBundle,
+  } = useIntakeSession(
     useShallow((s) => ({
       text: s.text,
       result: s.result,
+      filterKind: s.filterKind,
+      onlyProblems: s.onlyProblems,
       setText: s.setText,
       setResult: s.setResult,
+      setFilterKind: s.setFilterKind,
+      setOnlyProblems: s.setOnlyProblems,
       updateBundle: s.updateBundle,
     })),
   );
@@ -87,6 +103,15 @@ export function IntakePanel({
   }, [result]);
   const ignoredCount = result ? result.bundle.entries.filter((entry) => entry.ignored).length : 0;
   const keptCount = result ? result.bundle.entries.length - ignoredCount : 0;
+  const rows = useMemo(
+    () => (result ? filterEntries(result.bundle, filterKind, onlyProblems) : []),
+    [result, filterKind, onlyProblems],
+  );
+  const problemCount = result
+    ? result.bundle.entries.filter(
+        (entry) => !entry.ignored && (entry.missing.length > 0 || entry.questions.length > 0),
+      ).length
+    : 0;
 
   /** 手动改类型：按新类型重抽这一条的字段，其他条目原样保留。 */
   function reclassify(index: number, kind: IntakeAssetKind) {
@@ -272,19 +297,53 @@ export function IntakePanel({
               </span>
             ))}
           </div>
-          <ol className="intake-list">
-            {result.bundle.entries.map((entry, index) => (
-              <EntryCard
-                key={entry.id}
-                index={index}
-                entry={entry}
-                onOpen={() => openEntry(entry)}
-                onReclassify={(kind) => reclassify(index, kind)}
-                onIgnore={() => setIgnored(index, !entry.ignored)}
-                onEdit={(field, value) => editAt(index, field, value)}
-              />
-            ))}
-          </ol>
+          <div className="intake-filters">
+            <Select
+              aria-label={t("按类型筛选")}
+              className="intake-filter-select"
+              value={filterKind}
+              onValueChange={(value) => setFilterKind(value as IntakeAssetKind | "all")}
+              options={[
+                { value: "all", label: t("全部类型") },
+                ...kinds.map(([kind]) => ({
+                  value: kind,
+                  label: t(INTAKE_KIND_NAMES[kind as IntakeAssetKind]),
+                })),
+              ]}
+            />
+            <Button
+              size="sm"
+              variant={onlyProblems ? "secondary" : "ghost"}
+              aria-pressed={onlyProblems}
+              onClick={() => setOnlyProblems(!onlyProblems)}
+            >
+              <Filter className="size-4" aria-hidden="true" />
+              {t("只看需要处理的")}
+              {problemCount > 0 && <b className="intake-filter-count">{problemCount}</b>}
+            </Button>
+            {(filterKind !== "all" || onlyProblems) && (
+              <span className="intake-filter-hint">
+                {t("显示 {0} / {1} 条", rows.length, keptCount)}
+              </span>
+            )}
+          </div>
+          {rows.length > 0 ? (
+            <ol className="intake-list">
+              {rows.map(({ index, entry }) => (
+                <EntryCard
+                  key={entry.id}
+                  index={index}
+                  entry={entry}
+                  onOpen={() => openEntry(entry)}
+                  onReclassify={(kind) => reclassify(index, kind)}
+                  onIgnore={() => setIgnored(index, !entry.ignored)}
+                  onEdit={(field, value) => editAt(index, field, value)}
+                />
+              ))}
+            </ol>
+          ) : (
+            <p className="intake-empty">{t("没有符合筛选的记录。")}</p>
+          )}
           <div className="intake-actions">
             <Button size="sm" onClick={ask}>
               <Sparkles className="size-4" />

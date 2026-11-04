@@ -87,6 +87,39 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* 条目多时按类型或「需要处理」收窄列表，筛选只影响显示。 */
+.intake-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.intake-filter-select {
+  width: auto;
+  min-width: 132px;
+  min-height: 32px;
+  padding: 2px 8px;
+  font-size: var(--text-2xs);
+}
+
+.intake-filter-count {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.intake-filter-hint {
+  color: var(--text-subtle);
+  font-size: var(--text-2xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.intake-empty {
+  margin: 0;
+  color: var(--text-subtle);
+  font-size: var(--text-2xs);
+}
+
 .intake-list {
   display: flex;
   flex-direction: column;

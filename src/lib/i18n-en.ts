@@ -3143,6 +3143,10 @@ export const EN: Record<string, string> = {
     "That date didn't parse — try a form like 2026-05-01.",
   "这个值没有改：不能为空，最多 200 字。":
     "Not changed: keep it non-empty and under 200 characters.",
+  按类型筛选: "Filter by type",
+  只看需要处理的: "Only what needs work",
+  "显示 {0} / {1} 条": "Showing {0} of {1}",
+  "没有符合筛选的记录。": "No records match this filter.",
   打开已有资料: "Open saved asset",
   去号码页添加: "Add on the phone page",
   去录入: "Create asset",

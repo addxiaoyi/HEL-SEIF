@@ -881,6 +881,25 @@ export function applyCorrections(
   return summarize(bundle.raw, entries);
 }
 
+/**
+ * 按类型或「需要处理」筛选条目，返回原始下标。
+ *
+ * 面板用它决定显示哪几条，但改类型、改字段仍然按原始下标操作，筛选不会让操作错位。
+ * 已忽略的条目不进「需要处理」，忽略之后就从待办里消失。
+ */
+export function filterEntries(
+  bundle: IntakeBundle,
+  kind: IntakeAssetKind | "all" = "all",
+  onlyProblems = false,
+): Array<{ index: number; entry: IntakeEntry }> {
+  return bundle.entries.flatMap((entry, index) => {
+    if (kind !== "all" && entry.kind !== kind) return [];
+    if (onlyProblems && (entry.ignored || (!entry.missing.length && !entry.questions.length)))
+      return [];
+    return [{ index, entry }];
+  });
+}
+
 /** 交给模型的整理指令：只输出 JSON 修正，不新增条目。 */
 export function intakePrompt(bundle: IntakeBundle): string {
   const lines = bundle.entries.flatMap((entry, index) => {

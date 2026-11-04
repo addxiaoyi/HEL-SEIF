@@ -3,6 +3,7 @@ import { test } from "node:test";
 import {
   applyCorrections,
   editField,
+  filterEntries,
   groupLines,
   intakeList,
   intakePreset,
@@ -470,4 +471,48 @@ test("就地改字段会重新对照资料库，已忽略的条目也能改", ()
   assert.deepEqual(next!.entries[0].saved, { kind: "server", id: "srv-9", name: "样例" });
   assert.equal(next!.entries[0].ignored, true);
   assert.equal(next!.entries[0].questions[0], "资料里已经有「样例」，这次是更新它，还是另存一条？");
+});
+
+test("筛选按类型与需要处理收窄，但保留原始下标", () => {
+  const bundle = parseMessyText(
+    [
+      "阿里云 47.100.1.2 root 密码 abc 到期 2026-05-01 ¥99/月",
+      "example.com 注册商 阿里云",
+      "ChatGPT Plus $20 每月 到期 2026-12-01",
+    ].join("\n"),
+    {},
+    NOW,
+  );
+  assert.equal(bundle.entries.length, 3);
+
+  const all = filterEntries(bundle);
+  assert.deepEqual(
+    all.map((row) => row.index),
+    [0, 1, 2],
+  );
+
+  const domains = filterEntries(bundle, "domain");
+  assert.deepEqual(
+    domains.map((row) => row.index),
+    [1],
+  );
+  assert.equal(domains[0].entry.kind, "domain");
+
+  // 第 0、2 条字段齐全，只有域名缺到期日与费用。
+  const problems = filterEntries(bundle, "all", true);
+  assert.deepEqual(
+    problems.map((row) => row.index),
+    [1],
+  );
+  assert.deepEqual(filterEntries(bundle, "server", true), []);
+
+  // 忽略之后从待办里消失，但「全部」里仍然看得到。
+  const hidden = setEntryIgnored(bundle, 1, true);
+  assert.deepEqual(filterEntries(hidden, "all", true), []);
+  assert.deepEqual(
+    filterEntries(hidden, "all").map((row) => row.index),
+    [0, 1, 2],
+  );
+  // 筛选只读，不改动原 bundle。
+  assert.equal(bundle.entries[1].ignored, undefined);
 });
