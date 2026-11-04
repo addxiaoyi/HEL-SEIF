@@ -46,7 +46,7 @@ const lines = [
   "",
 ];
 for (const release of releases) {
-  lines.push(`## ${release.version} — ${release.title}`, "", `*${release.date}*`, "");
+  lines.push(`## ${release.version} — ${release.title}`, "", `_${release.date}_`, "");
   for (const change of release.changes) lines.push(`- ${change}`);
   lines.push("");
 }

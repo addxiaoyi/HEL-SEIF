@@ -3132,6 +3132,11 @@ export const EN: Record<string, string> = {
   "一次最多整理 20000 字符，请分段粘贴。":
     "Tidy at most 20000 characters at a time; paste it in parts.",
   "已脱敏 {0} 处": "{0} secrets redacted",
+  记录类型: "Record type",
+  模型补充: "Added by model",
+  忽略这条: "Ignore this one",
+  恢复这条: "Restore this one",
+  "已忽略 {0} 条": "{0} dismissed",
   打开已有资料: "Open saved asset",
   去号码页添加: "Add on the phone page",
   去录入: "Create asset",

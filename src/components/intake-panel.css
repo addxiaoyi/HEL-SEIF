@@ -82,6 +82,11 @@
   color: var(--text-warn, var(--text-muted));
 }
 
+.intake-chip-ignored {
+  color: var(--text-subtle);
+  font-variant-numeric: tabular-nums;
+}
+
 .intake-list {
   display: flex;
   flex-direction: column;
@@ -100,6 +105,16 @@
   padding: 10px 12px;
 }
 
+/* 忽略的条目留在原位、降低强调，改完类型还能恢复。 */
+.intake-entry-ignored {
+  opacity: 0.55;
+}
+
+.intake-entry-ignored:hover,
+.intake-entry-ignored:focus-within {
+  opacity: 1;
+}
+
 .intake-entry-head {
   display: flex;
   flex-wrap: wrap;
@@ -108,11 +123,14 @@
   font-size: var(--text-meta);
 }
 
-.intake-kind {
-  border-radius: 4px;
-  background: var(--surface-2, var(--line));
-  padding: 1px 6px;
-  color: var(--text-muted);
+/* 弹层宽度跟随触发器，所以收窄要有下限，否则中文标签会一字一行。 */
+.intake-kind-select {
+  width: fit-content;
+  min-width: 132px;
+  max-width: 100%;
+  min-height: 32px;
+  padding: 2px 8px;
+  gap: 6px;
   font-size: var(--text-2xs);
 }
 
@@ -159,6 +177,13 @@
   color: var(--text-muted);
 }
 
+.intake-field-model {
+  margin-left: 6px;
+  color: var(--text-subtle);
+  font-size: var(--text-2xs);
+  font-style: normal;
+}
+
 .intake-missing {
   margin: 0;
   color: var(--text-warn, var(--text-muted));
@@ -175,7 +200,10 @@
 
 .intake-entry-actions {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
+  gap: 8px;
   margin-top: 2px;
 }
 

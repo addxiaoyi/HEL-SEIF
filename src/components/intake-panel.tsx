@@ -1,13 +1,27 @@
 import { hostBridge } from "@/lib/web-bridge";
 import { useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { ArrowUpRight, ClipboardPaste, Copy, Loader2, Sparkles, Trash2, Wand2 } from "lucide-react";
+import {
+  ArrowUpRight,
+  ClipboardPaste,
+  Copy,
+  EyeOff,
+  Loader2,
+  RotateCcw,
+  Sparkles,
+  Trash2,
+  Wand2,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
+  INTAKE_KINDS,
   INTAKE_KIND_NAMES,
   intakeList,
   intakePreset,
   parseMessyText,
+  reclassifyEntry,
+  setEntryIgnored,
+  type IntakeAssetKind,
   type IntakeBundle,
   type IntakeEntry,
 } from "@/lib/messy-intake";
@@ -18,11 +32,12 @@ import { copyText } from "@/lib/utils";
 import { t } from "@/lib/i18n";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/input";
+import { Select } from "./ui/select";
 import "./intake-panel.css";
 
 /**
  * 粘贴一堆杂乱资料，先在本机拆成条目，再按配置的模型补齐字段。
- * 结果只读展示：不写入任何资产，用户确认后再自己决定下一步。
+ * 结果可在面板里逐条改类型、忽略噪音；不会自动写入任何资产，用户确认后再决定下一步。
  */
 export function IntakePanel({
   onAsk,
@@ -58,6 +73,24 @@ export function IntakePanel({
     if (!result) return [];
     return Object.entries(result.bundle.counts).filter(([, count]) => count > 0);
   }, [result]);
+  const ignoredCount = result ? result.bundle.entries.filter((entry) => entry.ignored).length : 0;
+  const keptCount = result ? result.bundle.entries.length - ignoredCount : 0;
+
+  /** 手动改类型：按新类型重抽这一条的字段，其他条目原样保留。 */
+  function reclassify(index: number, kind: IntakeAssetKind) {
+    setResult((current) =>
+      current
+        ? { ...current, bundle: reclassifyEntry(current.bundle, index, kind, snapshot) }
+        : current,
+    );
+  }
+
+  /** 忽略 / 恢复一条记录：只改 bundle，忽略的条目不计数、不复制、不发给模型。 */
+  function setIgnored(index: number, ignored: boolean) {
+    setResult((current) =>
+      current ? { ...current, bundle: setEntryIgnored(current.bundle, index, ignored) } : current,
+    );
+  }
 
   async function run(useModel: boolean) {
     if (!text.trim()) {
@@ -198,13 +231,18 @@ export function IntakePanel({
       {result && (
         <div className="intake-result">
           <div className="intake-summary">
-            <strong>{t("{0} 条记录", result.bundle.entries.length)}</strong>
+            <strong>{t("{0} 条记录", keptCount)}</strong>
             {kinds.map(([kind, count]) => (
               <span key={kind} className="intake-chip">
                 {t(INTAKE_KIND_NAMES[kind as keyof typeof INTAKE_KIND_NAMES])}
                 <b>{count}</b>
               </span>
             ))}
+            {ignoredCount > 0 && (
+              <span className="intake-chip intake-chip-ignored">
+                {t("已忽略 {0} 条", ignoredCount)}
+              </span>
+            )}
             {result.bundle.gaps.map((gap) => (
               <span key={gap.label} className="intake-chip intake-chip-gap">
                 {t("缺{0}", t(gap.label))}
@@ -213,8 +251,15 @@ export function IntakePanel({
             ))}
           </div>
           <ol className="intake-list">
-            {result.bundle.entries.map((entry) => (
-              <EntryCard key={entry.id} entry={entry} onOpen={() => openEntry(entry)} />
+            {result.bundle.entries.map((entry, index) => (
+              <EntryCard
+                key={entry.id}
+                index={index}
+                entry={entry}
+                onOpen={() => openEntry(entry)}
+                onReclassify={(kind) => reclassify(index, kind)}
+                onIgnore={() => setIgnored(index, !entry.ignored)}
+              />
             ))}
           </ol>
           <div className="intake-actions">
@@ -260,14 +305,37 @@ export function IntakePanel({
   );
 }
 
-function EntryCard({ entry, onOpen }: { entry: IntakeEntry; onOpen: () => void }) {
+function EntryCard({
+  index,
+  entry,
+  onOpen,
+  onReclassify,
+  onIgnore,
+}: {
+  index: number;
+  entry: IntakeEntry;
+  onOpen: () => void;
+  onReclassify: (kind: IntakeAssetKind) => void;
+  onIgnore: () => void;
+}) {
+  const titleId = `intake-entry-title-${index}`;
+  const kindOptions = INTAKE_KINDS.map((kind) => ({
+    value: kind,
+    label: t(INTAKE_KIND_NAMES[kind]),
+  }));
   return (
-    <li className="intake-entry">
+    <li className={entry.ignored ? "intake-entry intake-entry-ignored" : "intake-entry"}>
       <div className="intake-entry-head">
-        <span className={`intake-kind intake-kind-${entry.kind}`}>
-          {t(INTAKE_KIND_NAMES[entry.kind])}
-        </span>
-        <strong>{entry.title}</strong>
+        <Select
+          aria-label={t("记录类型")}
+          aria-describedby={titleId}
+          className="intake-kind-select"
+          value={entry.kind}
+          onValueChange={(value) => onReclassify(value as IntakeAssetKind)}
+          options={kindOptions}
+        />
+        <strong id={titleId}>{entry.title}</strong>
+        {entry.ignored && <span className="intake-chip">{t("已忽略")}</span>}
         {entry.saved && <span className="intake-saved">{t("资料里已有")}</span>}
         {entry.sensitive && <span className="intake-secret">{t("含凭据")}</span>}
       </div>
@@ -277,7 +345,10 @@ function EntryCard({ entry, onOpen }: { entry: IntakeEntry; onOpen: () => void }
           {entry.known.map((item) => (
             <div key={item.field}>
               <dt>{t(item.label)}</dt>
-              <dd>{item.value}</dd>
+              <dd>
+                {item.value}
+                {item.source === "model" && <em className="intake-field-model">{t("模型补充")}</em>}
+              </dd>
             </div>
           ))}
         </dl>
@@ -305,14 +376,27 @@ function EntryCard({ entry, onOpen }: { entry: IntakeEntry; onOpen: () => void }
         </ul>
       )}
       <div className="intake-entry-actions">
-        <Button size="sm" variant="outline" onClick={onOpen}>
-          <ArrowUpRight className="size-4" />
-          {entry.saved
-            ? t("打开已有资料")
-            : entry.kind === "phone"
-              ? t("去号码页添加")
-              : t("去录入")}
-        </Button>
+        {entry.ignored ? (
+          <Button size="sm" variant="ghost" aria-label={t("恢复这条")} onClick={onIgnore}>
+            <RotateCcw className="size-4" aria-hidden="true" />
+            {t("恢复这条")}
+          </Button>
+        ) : (
+          <>
+            <Button size="sm" variant="outline" onClick={onOpen}>
+              <ArrowUpRight className="size-4" aria-hidden="true" />
+              {entry.saved
+                ? t("打开已有资料")
+                : entry.kind === "phone"
+                  ? t("去号码页添加")
+                  : t("去录入")}
+            </Button>
+            <Button size="sm" variant="ghost" aria-label={t("忽略这条")} onClick={onIgnore}>
+              <EyeOff className="size-4" aria-hidden="true" />
+              {t("忽略这条")}
+            </Button>
+          </>
+        )}
       </div>
     </li>
   );

@@ -3,14 +3,17 @@ import { test } from "node:test";
 import {
   applyCorrections,
   groupLines,
+  intakeList,
   intakePreset,
   intakePrompt,
   parseIntakeResponse,
   parseMessyText,
   readDate,
   readMoney,
+  reclassifyEntry,
   redactBundle,
   redactText,
+  setEntryIgnored,
   unredactCorrections,
   unredactText,
 } from "./messy-intake.ts";
@@ -212,4 +215,142 @@ test("去录入预填：币种、周期、域名与 AI 月费各就各位", () =
   const [phone] = parseMessyText("13800138000 移动 卡 到期 2026-09-01", {}, NOW).entries;
   assert.equal(intakePreset(phone).number, "13800138000");
   assert.equal(intakePreset(phone).provider, "移动");
+});
+
+test("手动改类型：按新类型重抽字段，id 与顺序不变，计数重算", () => {
+  const bundle = parseMessyText(
+    [
+      "服务器 47.100.1.2 绑 example.com 到期 2026-05-01 ¥99/月",
+      "13800138000 移动 卡 到期 2026-09-01",
+    ].join("\n"),
+    {},
+    NOW,
+  );
+  const before = bundle.entries[0];
+  assert.equal(before.kind, "server");
+  assert.equal(before.title, "47.100.1.2");
+  assert.equal(bundle.counts.server, 1);
+  assert.equal(bundle.counts.domain, 0);
+
+  const next = reclassifyEntry(bundle, 0, "domain", {}, NOW);
+  const entry = next.entries[0];
+  assert.equal(entry.kind, "domain");
+  assert.equal(entry.id, before.id);
+  assert.equal(entry.title, "example.com");
+  assert.equal(entry.reason, "手动改为域名，字段按这一类重新识别");
+  assert.ok(entry.known.some((item) => item.field === "name" && item.value === "example.com"));
+  assert.equal(next.counts.server, 0);
+  assert.equal(next.counts.domain, 1);
+  assert.equal(next.counts.phone, 1);
+  assert.deepEqual(
+    next.entries.map((item) => item.id),
+    bundle.entries.map((item) => item.id),
+  );
+  assert.deepEqual(
+    next.entries.map((item) => item.kind),
+    ["domain", "phone"],
+  );
+});
+
+test("改类型时保留新类型也接受的模型字段，不接受就丢掉", () => {
+  const base = parseMessyText("47.100.1.2 root 密码 abc", {}, NOW);
+  const corrected = applyCorrections(base, [{ index: 0, fields: { expiresAt: "2026年5月1日" } }]);
+  assert.equal(
+    corrected.entries[0].known.find((item) => item.field === "expiresAt")?.source,
+    "model",
+  );
+
+  const asDomain = reclassifyEntry(corrected, 0, "domain", {}, NOW);
+  const kept = asDomain.entries[0].known.find((item) => item.field === "expiresAt");
+  assert.equal(kept?.value, "2026-05-01");
+  assert.equal(kept?.source, "model");
+  assert.equal(asDomain.entries[0].id, corrected.entries[0].id);
+
+  const asSecret = reclassifyEntry(asDomain, 0, "secret", {}, NOW);
+  assert.equal(asSecret.entries[0].kind, "secret");
+  assert.equal(
+    asSecret.entries[0].known.some((item) => item.field === "expiresAt"),
+    false,
+  );
+});
+
+test("模型补充的字段都标出来源", () => {
+  const bundle = parseMessyText("47.100.1.2 root 密码 abc", {}, NOW);
+  const next = applyCorrections(bundle, [
+    {
+      index: 0,
+      fields: {
+        expiresAt: "2026-05-01",
+        billing: { amount: 20, currency: "USD", cycle: "month" },
+      },
+    },
+  ]);
+  const known = next.entries[0].known;
+  const added = known.filter((item) => item.field !== "host");
+  assert.deepEqual(
+    added.map((item) => item.field),
+    ["expiresAt", "billing"],
+  );
+  for (const item of added) assert.equal(item.source, "model");
+  assert.equal(known.find((item) => item.field === "host")?.source, undefined);
+});
+
+test("忽略一条记录：不计数、不进缺口，条目本身还在", () => {
+  const bundle = parseMessyText("47.100.1.2 root 密码 abc", {}, NOW);
+  assert.ok(bundle.gaps.length > 0);
+
+  const next = setEntryIgnored(bundle, 0, true);
+  assert.equal(next.entries.length, 1);
+  assert.equal(next.entries[0].ignored, true);
+  assert.equal(next.entries[0].id, bundle.entries[0].id);
+  assert.equal(next.entries[0].title, bundle.entries[0].title);
+  for (const count of Object.values(next.counts)) assert.equal(count, 0);
+  assert.deepEqual(next.gaps, []);
+});
+
+test("复制结果不列出被忽略的记录，恢复后回到列表", () => {
+  const bundle = parseMessyText(
+    ["47.100.1.2 root 密码 abc", "example.com 注册商 阿里云 到期 2026-08-12"].join("\n"),
+    {},
+    NOW,
+  );
+  const hidden = setEntryIgnored(bundle, 0, true);
+  const list = intakeList(hidden);
+  assert.equal(list.includes("47.100.1.2"), false);
+  assert.ok(list.startsWith("Helself 粘贴整理 · 1 条记录"));
+  assert.ok(list.includes("example.com"));
+  assert.ok(list.includes("另有 1 条已忽略。"));
+
+  const restored = intakeList(setEntryIgnored(hidden, 0, false));
+  assert.equal(restored.includes("另有"), false);
+  assert.ok(restored.startsWith("Helself 粘贴整理 · 2 条记录"));
+  assert.ok(restored.includes("47.100.1.2"));
+});
+
+test("整理指令跳过被忽略的记录，index 仍用原始位置", () => {
+  const bundle = parseMessyText(
+    ["47.100.1.2 root 密码 abc", "example.com 注册商 阿里云 到期 2026-08-12"].join("\n"),
+    {},
+    NOW,
+  );
+  const hidden = setEntryIgnored(bundle, 0, true);
+  const prompt = intakePrompt(hidden);
+  assert.equal(prompt.includes("47.100.1.2"), false);
+  assert.match(prompt, /^1\. \[domain\] example\.com/m);
+
+  const all = setEntryIgnored(hidden, 1, true);
+  assert.ok(intakePrompt(all).includes("（没有需要整理的记录。）"));
+});
+
+test("模型修正的美元费用按币种显示", () => {
+  const bundle = parseMessyText("47.100.1.2 root 密码 abc", {}, NOW);
+  const next = applyCorrections(bundle, [
+    {
+      index: 0,
+      fields: { billing: { amount: 20, currency: "USD", cycle: "month" } },
+    },
+  ]);
+  const billing = next.entries[0].known.find((item) => item.field === "billing");
+  assert.equal(billing?.value, "$20 · 每月");
+  assert.equal(billing?.source, "model");
 });

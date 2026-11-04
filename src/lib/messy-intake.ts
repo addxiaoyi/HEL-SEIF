@@ -17,6 +17,8 @@ export interface IntakeField {
   field: string;
   label: string;
   value: string;
+  /** 由模型补充或修正的字段标出来，审阅时能分清哪部分是模型猜的。 */
+  source?: "model";
 }
 
 export interface IntakeEntry {
@@ -42,6 +44,8 @@ export interface IntakeEntry {
   saved?: { kind: string; id: string; name: string };
   /** 含凭据类内容，默认不出现在发给云端模型的文本里。 */
   sensitive: boolean;
+  /** 用户认为这条是噪音：不计入汇总，也不复制或交给模型。 */
+  ignored?: boolean;
 }
 
 export interface IntakeBundle {
@@ -532,15 +536,21 @@ function inferredOf(
 const DATE_ANY =
   /(?:\d{4}\s*[-/.年]\s*\d{1,2}\s*[-/.月]\s*\d{1,2}\s*日?|\d{1,2}\s*[-/.]\s*\d{1,2})/;
 
-/** 把一条记录变成可审阅的条目。 */
+/** 把一条记录变成可审阅的条目；kindOverride 用于用户手动改类型后重新抽字段。 */
 export function readEntry(
   group: string[],
   snapshot: Partial<Snapshot>,
   now: Date,
   index: number,
+  kindOverride?: IntakeAssetKind,
 ): IntakeEntry {
   const text = group.join(LINE_BREAK);
-  const { kind, reason } = classifyGroup(group);
+  const classified = classifyGroup(group);
+  const kind = kindOverride ?? classified.kind;
+  const reason =
+    kindOverride === undefined
+      ? classified.reason
+      : `手动改为${INTAKE_KIND_NAMES[kindOverride]}，字段按这一类重新识别`;
   const known = knownFields(kind, text, now);
   const title = titleOf(kind, text, known);
   const missing = missingOf(kind, known);
@@ -582,6 +592,26 @@ export function readEntry(
   };
 }
 
+/** 按未被忽略的条目重算分类计数与缺口汇总。 */
+function summarize(raw: string, entries: IntakeEntry[]): IntakeBundle {
+  const counts = Object.fromEntries(INTAKE_KINDS.map((kind) => [kind, 0])) as Record<
+    IntakeAssetKind,
+    number
+  >;
+  const gaps = new Map<string, number>();
+  for (const entry of entries) {
+    if (entry.ignored) continue;
+    counts[entry.kind] += 1;
+    for (const gap of entry.missing) gaps.set(gap, (gaps.get(gap) ?? 0) + 1);
+  }
+  return {
+    raw,
+    entries,
+    counts,
+    gaps: [...gaps].map(([label, count]) => ({ label, count })),
+  };
+}
+
 /** 把整份粘贴文本整理成条目、各类计数与缺口汇总。 */
 export function parseMessyText(
   raw: string,
@@ -590,20 +620,58 @@ export function parseMessyText(
 ): IntakeBundle {
   const groups = groupLines(raw);
   const entries = groups.map((group, index) => readEntry(group, snapshot, now, index));
-  const counts = Object.fromEntries(INTAKE_KINDS.map((kind) => [kind, 0])) as Record<
-    IntakeAssetKind,
-    number
-  >;
-  for (const entry of entries) counts[entry.kind] += 1;
-  const gapCounts = new Map<string, number>();
-  for (const entry of entries)
-    for (const gap of entry.missing) gapCounts.set(gap, (gapCounts.get(gap) ?? 0) + 1);
-  return {
-    raw: String(raw ?? ""),
-    entries,
-    counts,
-    gaps: [...gapCounts].map(([label, count]) => ({ label, count })),
-  };
+  return summarize(String(raw ?? ""), entries);
+}
+
+/**
+ * 用户手动改一条记录的类型：按新类型重新抽字段，条目位置与 id 不变。
+ * 模型先前补的字段，只要新类型也接受，就继续保留。
+ */
+export function reclassifyEntry(
+  bundle: IntakeBundle,
+  index: number,
+  kind: IntakeAssetKind,
+  snapshot: Partial<Snapshot> = {},
+  now = new Date(),
+): IntakeBundle {
+  const previous = bundle.entries[index];
+  if (!previous || previous.kind === kind) return bundle;
+  const next = readEntry([previous.line], snapshot, now, index, kind);
+  const carried = previous.known.filter(
+    (item) =>
+      item.source === "model" &&
+      CORRECTABLE[kind].includes(item.field) &&
+      !next.known.some((known) => known.field === item.field),
+  );
+  const known = [...next.known, ...carried];
+  // 保留下来的模型字段也要算进「已知」，缺口与相应的问题跟着重算。
+  const missing = missingOf(kind, known);
+  const questions = next.questions.filter(
+    (question) =>
+      !(question.startsWith("没有到期日") && !missing.includes("到期日")) &&
+      !(
+        question.startsWith("费用没写清楚") &&
+        !missing.includes("费用") &&
+        !missing.includes("月费")
+      ),
+  );
+  const entries = bundle.entries.map((entry, at) =>
+    at === index
+      ? { ...next, id: previous.id, ignored: previous.ignored, known, missing, questions }
+      : entry,
+  );
+  return summarize(bundle.raw, entries);
+}
+
+/** 忽略或恢复一条记录：忽略的条目不计数、不复制，也不交给模型。 */
+export function setEntryIgnored(
+  bundle: IntakeBundle,
+  index: number,
+  ignored: boolean,
+): IntakeBundle {
+  if (!bundle.entries[index]) return bundle;
+  const entries = bundle.entries.map((entry, at) => (at === index ? { ...entry, ignored } : entry));
+  return summarize(bundle.raw, entries);
 }
 
 /** 模型只能改已有条目，不能新增或删除：避免凭空造出资产。 */
@@ -664,7 +732,9 @@ function cleanFields(kind: IntakeAssetKind, fields: Record<string, unknown>): In
           field(
             "billing",
             "费用",
-            `¥${billing.amount} · ${billing.cycle === "month" ? "每月" : billing.cycle === "year" ? "每年" : "一次性"}`,
+            `${moneyText(billing.amount, billing.currency)} · ${
+              billing.cycle === "month" ? "每月" : billing.cycle === "year" ? "每年" : "一次性"
+            }`,
           ),
         );
       continue;
@@ -680,13 +750,14 @@ function cleanFields(kind: IntakeAssetKind, fields: Record<string, unknown>): In
         field(name, name === "host" ? "主机地址" : name === "url" ? "网址" : name, raw.trim()),
       );
   }
+  for (const item of out) item.source = "model";
   return out;
 }
 
 /** 只接受金额、币种与周期都合法的费用。 */
 function normalizeBillingValue(
   raw: unknown,
-): { amount: number; currency: string; cycle: string } | undefined {
+): { amount: number; currency: "CNY" | "USD"; cycle: "month" | "year" | "once" } | undefined {
   if (!raw || typeof raw !== "object") return undefined;
   const item = raw as Record<string, unknown>;
   const amount = typeof item.amount === "string" ? Number(item.amount) : item.amount;
@@ -708,7 +779,7 @@ export function applyCorrections(
   const entries = bundle.entries.map((entry) => ({ ...entry }));
   for (const item of corrections) {
     const entry = entries[item.index];
-    if (!entry) continue;
+    if (!entry || entry.ignored) continue;
     const kind = INTAKE_KINDS.includes(item.kind as IntakeAssetKind)
       ? (item.kind as IntakeAssetKind)
       : entry.kind;
@@ -727,27 +798,17 @@ export function applyCorrections(
       reason: `${entry.reason}；模型补充`,
     };
   }
-  const counts = Object.fromEntries(INTAKE_KINDS.map((kind) => [kind, 0])) as Record<
-    IntakeAssetKind,
-    number
-  >;
-  for (const entry of entries) counts[entry.kind] += 1;
-  const gaps = new Map<string, number>();
-  for (const entry of entries)
-    for (const gap of entry.missing) gaps.set(gap, (gaps.get(gap) ?? 0) + 1);
-  return {
-    ...bundle,
-    entries,
-    counts,
-    gaps: [...gaps].map(([label, count]) => ({ label, count })),
-  };
+  return summarize(bundle.raw, entries);
 }
 
 /** 交给模型的整理指令：只输出 JSON 修正，不新增条目。 */
 export function intakePrompt(bundle: IntakeBundle): string {
-  const lines = bundle.entries.map((entry, index) => {
+  const lines = bundle.entries.flatMap((entry, index) => {
+    if (entry.ignored) return [];
     const known = entry.known.map((item) => `${item.field}=${item.value}`).join("；") || "无";
-    return `${index}. [${entry.kind}] ${entry.line.replace(/\s+/g, " ").slice(0, 300)}\n   已识别：${known}`;
+    return [
+      `${index}. [${entry.kind}] ${entry.line.replace(/\s+/g, " ").slice(0, 300)}\n   已识别：${known}`,
+    ];
   });
   return [
     "下面是从用户粘贴的杂乱资料里切出的记录，已按行拆分。请逐条核对类型和字段。",
@@ -757,7 +818,7 @@ export function intakePrompt(bundle: IntakeBundle): string {
     "只能补用户原文里已经写明、或能由原文直接算出的字段，不要猜测；原文没写的不要填；",
     "日期统一 YYYY-MM-DD；费用必须同时有 amount、currency（CNY 或 USD）和 cycle（month/year/once）。",
     "",
-    ...lines,
+    ...(lines.length ? lines : ["（没有需要整理的记录。）"]),
   ].join("\n");
 }
 
@@ -781,8 +842,10 @@ export function unredactCorrections(
 
 /** 复制给用户或贴进对话的纯文本整理结果。 */
 export function intakeList(bundle: IntakeBundle): string {
-  const lines = [`Helself 粘贴整理 · ${bundle.entries.length} 条记录`];
-  for (const entry of bundle.entries) {
+  const kept = bundle.entries.filter((entry) => !entry.ignored);
+  const hidden = bundle.entries.length - kept.length;
+  const lines = [`Helself 粘贴整理 · ${kept.length} 条记录`];
+  for (const entry of kept) {
     lines.push("", `[${INTAKE_KIND_NAMES[entry.kind]}] ${entry.title}`);
     if (entry.known.length)
       lines.push(`  已知：${entry.known.map((item) => `${item.label} ${item.value}`).join("；")}`);
@@ -794,6 +857,7 @@ export function intakeList(bundle: IntakeBundle): string {
     if (entry.saved) lines.push(`  资料里已有：${entry.saved.name}`);
     if (entry.questions.length) lines.push(`  待确认：${entry.questions.join(" ")}`);
   }
+  if (hidden) lines.push("", `另有 ${hidden} 条已忽略。`);
   return lines.join("\n");
 }
 
