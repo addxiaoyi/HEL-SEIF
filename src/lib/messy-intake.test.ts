@@ -4,10 +4,12 @@ import {
   applyCorrections,
   editField,
   filterEntries,
+  findDuplicates,
   groupLines,
   intakeList,
   intakePreset,
   intakePrompt,
+  mergeEntries,
   parseIntakeResponse,
   parseMessyText,
   readDate,
@@ -515,4 +517,60 @@ test("筛选按类型与需要处理收窄，但保留原始下标", () => {
   );
   // 筛选只读，不改动原 bundle。
   assert.equal(bundle.entries[1].ignored, undefined);
+});
+
+test("同一资产的重复条目能找出来，忽略的不算", () => {
+  const bundle = parseMessyText(
+    [
+      "example.com 注册商 阿里云 到期 2026-08-12 ¥55/年",
+      "example.com 注册商 Cloudflare",
+      "47.100.1.2 root 密码 abc",
+    ].join("\n"),
+    {},
+    NOW,
+  );
+  const duplicates = findDuplicates(bundle);
+  assert.equal(duplicates.get(0), undefined);
+  assert.equal(duplicates.get(1), 0);
+  assert.equal(duplicates.size, 1);
+
+  // 第一条被忽略后，第二条成了第一个出现的，不再算重复。
+  assert.equal(findDuplicates(setEntryIgnored(bundle, 0, true)).size, 0);
+});
+
+test("合并重复条目：字段取并集，冲突留给用户确认", () => {
+  const bundle = parseMessyText(
+    ["example.com 注册商 阿里云 到期 2026-08-12", "example.com 注册商 Cloudflare ¥55/年"].join(
+      "\n",
+    ),
+    {},
+    NOW,
+  );
+  assert.equal(bundle.entries[0].missing.includes("费用"), true);
+  assert.equal(bundle.entries[1].missing.includes("到期日"), true);
+
+  const merged = mergeEntries(bundle, 0, 1);
+  assert.equal(merged.entries.length, 1);
+  assert.equal(merged.counts.domain, 1);
+
+  const entry = merged.entries[0];
+  assert.equal(entry.title, "example.com");
+  assert.ok(entry.known.some((item) => item.field === "expiresAt" && item.value === "2026-08-12"));
+  assert.ok(entry.known.some((item) => item.field === "billing"));
+  // 注册商两边写法不同：保留原来那条，冲突写进待确认。
+  assert.ok(entry.known.some((item) => item.field === "registrar" && item.value === "阿里云"));
+  assert.ok(entry.questions.some((question) => question.includes("另一条写的是")));
+  assert.ok(entry.reason.includes("合并了同一资产的另一条记录"));
+  assert.equal(entry.missing.length, 0);
+});
+
+test("合并不跨类型，也不合并同一条", () => {
+  const bundle = parseMessyText(
+    ["47.100.1.2 root 密码 abc", "ChatGPT Plus $20 每月"].join("\n"),
+    {},
+    NOW,
+  );
+  assert.equal(mergeEntries(bundle, 0, 1), bundle);
+  assert.equal(mergeEntries(bundle, 0, 0), bundle);
+  assert.equal(mergeEntries(bundle, 0, 9), bundle);
 });

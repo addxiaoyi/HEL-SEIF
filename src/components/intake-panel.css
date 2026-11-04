@@ -176,6 +176,15 @@
   font-size: var(--text-2xs);
 }
 
+/* 疑似重复：只用虚线提示，合并由用户点一下决定。 */
+.intake-duplicate {
+  border: 1px dashed var(--line);
+  border-radius: 4px;
+  padding: 0 6px;
+  color: var(--text-warn, var(--text-muted));
+  font-size: var(--text-2xs);
+}
+
 .intake-reason {
   margin: 0;
   color: var(--text-subtle);

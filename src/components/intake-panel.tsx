@@ -4,6 +4,7 @@ import { useShallow } from "zustand/react/shallow";
 import {
   ArrowUpRight,
   ClipboardPaste,
+  Combine,
   Copy,
   EyeOff,
   Filter,
@@ -19,8 +20,10 @@ import {
   INTAKE_KIND_NAMES,
   editField,
   filterEntries,
+  findDuplicates,
   intakeList,
   intakePreset,
+  mergeEntries,
   parseMessyText,
   reclassifyEntry,
   refreshSaved,
@@ -112,6 +115,10 @@ export function IntakePanel({
         (entry) => !entry.ignored && (entry.missing.length > 0 || entry.questions.length > 0),
       ).length
     : 0;
+  const duplicates = useMemo(
+    () => (result ? findDuplicates(result.bundle) : new Map<number, number>()),
+    [result],
+  );
 
   /** 手动改类型：按新类型重抽这一条的字段，其他条目原样保留。 */
   function reclassify(index: number, kind: IntakeAssetKind) {
@@ -121,6 +128,11 @@ export function IntakePanel({
   /** 忽略 / 恢复一条记录：只改 bundle，忽略的条目不计数、不复制、不发给模型。 */
   function setIgnored(index: number, ignored: boolean) {
     updateBundle((bundle) => setEntryIgnored(bundle, index, ignored));
+  }
+
+  /** 把重复的一条并进最早那条：字段取并集，冲突留给用户确认。 */
+  function merge(into: number, index: number) {
+    updateBundle((bundle) => mergeEntries(bundle, into, index, snapshot));
   }
 
   /** 就地改一个字段：日期会规范化，值不合法就保留原样并说明原因。 */
@@ -136,7 +148,7 @@ export function IntakePanel({
       return;
     }
     setError("");
-    setResult({ ...result, bundle });
+    updateBundle(() => bundle);
   }
 
   async function run(useModel: boolean) {
@@ -334,10 +346,15 @@ export function IntakePanel({
                   key={entry.id}
                   index={index}
                   entry={entry}
+                  duplicateOf={duplicates.get(index)}
                   onOpen={() => openEntry(entry)}
                   onReclassify={(kind) => reclassify(index, kind)}
                   onIgnore={() => setIgnored(index, !entry.ignored)}
                   onEdit={(field, value) => editAt(index, field, value)}
+                  onMerge={() => {
+                    const into = duplicates.get(index);
+                    if (into !== undefined) merge(into, index);
+                  }}
                 />
               ))}
             </ol>
@@ -390,17 +407,21 @@ export function IntakePanel({
 function EntryCard({
   index,
   entry,
+  duplicateOf,
   onOpen,
   onReclassify,
   onIgnore,
   onEdit,
+  onMerge,
 }: {
   index: number;
   entry: IntakeEntry;
+  duplicateOf?: number;
   onOpen: () => void;
   onReclassify: (kind: IntakeAssetKind) => void;
   onIgnore: () => void;
   onEdit: (field: string, value: string) => void;
+  onMerge: () => void;
 }) {
   const titleId = `intake-entry-title-${index}`;
   const [editing, setEditing] = useState<{ field: string; value: string } | null>(null);
@@ -450,6 +471,9 @@ function EntryCard({
         />
         <strong id={titleId}>{entry.title}</strong>
         {entry.ignored && <span className="intake-chip">{t("已忽略")}</span>}
+        {duplicateOf !== undefined && (
+          <span className="intake-duplicate">{t("与第 {0} 条重复", duplicateOf + 1)}</span>
+        )}
         {entry.saved && <span className="intake-saved">{t("资料里已有")}</span>}
         {entry.sensitive && <span className="intake-secret">{t("含凭据")}</span>}
       </div>
@@ -540,6 +564,12 @@ function EntryCard({
                   ? t("去号码页添加")
                   : t("去录入")}
             </Button>
+            {duplicateOf !== undefined && (
+              <Button size="sm" variant="secondary" onClick={onMerge}>
+                <Combine className="size-4" aria-hidden="true" />
+                {t("并到第 {0} 条", duplicateOf + 1)}
+              </Button>
+            )}
             <Button size="sm" variant="ghost" aria-label={t("忽略这条")} onClick={onIgnore}>
               <EyeOff className="size-4" aria-hidden="true" />
               {t("忽略这条")}

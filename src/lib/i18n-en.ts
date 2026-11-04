@@ -3147,6 +3147,8 @@ export const EN: Record<string, string> = {
   只看需要处理的: "Only what needs work",
   "显示 {0} / {1} 条": "Showing {0} of {1}",
   "没有符合筛选的记录。": "No records match this filter.",
+  "与第 {0} 条重复": "Duplicate of #{0}",
+  "并到第 {0} 条": "Merge into #{0}",
   打开已有资料: "Open saved asset",
   去号码页添加: "Add on the phone page",
   去录入: "Create asset",

@@ -900,6 +900,84 @@ export function filterEntries(
   });
 }
 
+/**
+ * 找出同一类、同一个标识的重复条目（同一域名粘了两次之类）。
+ *
+ * 返回「重复的那条下标 → 最早那条下标」。只提示，不自动合并：
+ * 合并会丢掉哪一条由用户决定。已忽略的条目不参与比较。
+ */
+export function findDuplicates(bundle: IntakeBundle): Map<number, number> {
+  const seen = new Map<string, number>();
+  const duplicates = new Map<number, number>();
+  bundle.entries.forEach((entry, index) => {
+    if (entry.ignored) return;
+    const identity = identityOf(entry.known).toLowerCase();
+    if (!identity) return;
+    const key = `${entry.kind}:${identity}`;
+    const first = seen.get(key);
+    if (first === undefined) seen.set(key, index);
+    else duplicates.set(index, first);
+  });
+  return duplicates;
+}
+
+/**
+ * 把 index 合并进 into：字段取并集，两边都有值时保留 into 的，
+ * 并把冲突写进待确认问题，删掉被合并的那条。
+ */
+export function mergeEntries(
+  bundle: IntakeBundle,
+  into: number,
+  index: number,
+  snapshot: Partial<Snapshot> = {},
+): IntakeBundle {
+  const target = bundle.entries[into];
+  const source = bundle.entries[index];
+  if (!target || !source || into === index || target.kind !== source.kind) return bundle;
+  const known = [...target.known];
+  const conflicts: string[] = [];
+  for (const item of source.known) {
+    const existing = known.find((other) => other.field === item.field);
+    if (!existing) {
+      known.push(item);
+      continue;
+    }
+    if (existing.value !== item.value)
+      conflicts.push(
+        `合并时保留了${existing.label} ${existing.value}，另一条写的是 ${item.value}；需要的话可以手动改。`,
+      );
+  }
+  const missing = missingOf(target.kind, known);
+  const saved = findSaved(snapshot, target.kind, identityOf(known));
+  const questions = [
+    ...target.questions.filter(
+      (question) =>
+        !question.startsWith("资料里已经有") &&
+        !(question.startsWith("没有到期日") && !missing.includes("到期日")) &&
+        !(
+          question.startsWith("费用没写清楚") &&
+          !missing.includes("费用") &&
+          !missing.includes("月费")
+        ),
+    ),
+    ...conflicts,
+  ];
+  if (saved) questions.unshift(`资料里已经有「${saved.name}」，这次是更新它，还是另存一条？`);
+  const merged: IntakeEntry = {
+    ...target,
+    known,
+    missing,
+    questions,
+    saved,
+    sensitive: target.sensitive || source.sensitive,
+    reason: `${target.reason}；合并了同一资产的另一条记录`,
+  };
+  const entries = bundle.entries
+    .map((entry, at) => (at === into ? merged : entry))
+    .filter((_, at) => at !== index);
+  return summarize(bundle.raw, entries);
+}
+
 /** 交给模型的整理指令：只输出 JSON 修正，不新增条目。 */
 export function intakePrompt(bundle: IntakeBundle): string {
   const lines = bundle.entries.flatMap((entry, index) => {
