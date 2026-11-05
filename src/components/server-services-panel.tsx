@@ -40,7 +40,7 @@ function issueText(issue: ContainerIssue) {
   }
 }
 
-export function checkText(check: EndpointCheck): { ok: boolean | null; text: string } {
+function checkText(check: EndpointCheck): { ok: boolean | null; text: string } {
   switch (check.kind) {
     case "server-missing":
       return { ok: null, text: t("绑定的主机已不存在") };

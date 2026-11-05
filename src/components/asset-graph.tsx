@@ -43,7 +43,7 @@ import { KIND_LABEL } from "@/lib/status";
 import { t } from "@/lib/i18n";
 import { reduceMotion } from "@/lib/motion";
 import { useSettings } from "@/lib/settings";
-import { openFromEvent } from "./asset-card";
+import { openFromEvent } from "@/lib/open-asset";
 import { StatusBadge } from "./ui/status-badge";
 import { Button } from "./ui/button";
 import { useAppStore } from "@/lib/store";

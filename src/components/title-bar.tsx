@@ -12,7 +12,7 @@ import {
   PanelLeftOpen,
 } from "lucide-react";
 import { WindowControls } from "./window-controls";
-import { NAV } from "./sidebar";
+import { NAV } from "@/lib/navigation";
 import { LogoMark } from "./logo";
 import { desktop } from "@/lib/desktop";
 import { goBack, goForward, useNavHistory } from "@/lib/nav-history";

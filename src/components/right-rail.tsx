@@ -24,7 +24,7 @@ import { tagIndex } from "@/lib/tags";
 import { useAppStore } from "@/lib/store";
 import type { AssetKind, Status, ViewId } from "@/lib/types";
 import { cn, daysUntil } from "@/lib/utils";
-import { t, getLocale } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
 
 const KIND_ICON: Record<AssetKind | "system" | "phone", LucideIcon> = {
   server: ServerIcon,
@@ -60,12 +60,10 @@ interface Alert {
 /**
  * Every attention item across the six collections, worst first.
  *
- * Derived in a memo rather than inside the store selector: the selector runs on
- * every store read, and freshly built objects never compare equal, which turns
- * a `useShallow` selector into a render loop.
+ * Keep derived arrays outside store selectors so new objects cannot trigger
+ * subscription loops. Translate on render so a locale change refreshes details.
  */
-export function useAlerts(): Alert[] {
-  const locale = getLocale();
+function useAlerts(): Alert[] {
   const phoneNumbers = useAppStore((s) => s.phoneNumbers);
   const servers = useAppStore((s) => s.servers);
   const domains = useAppStore((s) => s.domains);
@@ -75,90 +73,88 @@ export function useAlerts(): Alert[] {
   const certs = useAppStore((s) => s.certs);
   const services = useAppStore((s) => s.services);
 
-  return useMemo(() => {
-    const out: Alert[] = [
-      ...phoneNumbers.flatMap((record): Alert[] => {
-        const expiry = phoneExpiry(record.expiresAt);
-        if (expiry.days === null || expiry.days > 30) return [];
-        return [
-          {
-            id: record.id,
-            kind: "phone",
-            status: expiry.days <= 0 ? "offline" : "warning",
-            title: record.label || record.number,
-            detail:
-              expiry.days < 0
-                ? t("号码已过期 {0} 天", -expiry.days)
-                : expiry.days === 0
-                  ? t("号码今天到期")
-                  : t("号码 {0} 天后到期", expiry.days),
-          },
-        ];
-      }),
-      ...servers.filter(serverNeedsAttention).map((x) => ({
+  const out: Alert[] = [
+    ...phoneNumbers.flatMap((record): Alert[] => {
+      const expiry = phoneExpiry(record.expiresAt);
+      if (expiry.days === null || expiry.days > 30) return [];
+      return [
+        {
+          id: record.id,
+          kind: "phone",
+          status: expiry.days <= 0 ? "offline" : "warning",
+          title: record.label || record.number,
+          detail:
+            expiry.days < 0
+              ? t("号码已过期 {0} 天", -expiry.days)
+              : expiry.days === 0
+                ? t("号码今天到期")
+                : t("号码 {0} 天后到期", expiry.days),
+        },
+      ];
+    }),
+    ...servers.filter(serverNeedsAttention).map((x) => ({
+      id: x.id,
+      kind: "server" as const,
+      status: x.status,
+      title: x.name,
+      detail: x.status === "offline" ? t("主机离线") : t("CPU {0}% · 负载偏高", x.cpu),
+    })),
+    ...certs
+      .filter((x) => x.status !== "online")
+      .map((x) => ({
         id: x.id,
-        kind: "server" as const,
+        kind: "cert" as const,
+        status: x.status,
+        title: x.cn,
+        detail: expiryDetail(x.expiresAt),
+      })),
+    ...domains
+      .filter((x) => x.status !== "online")
+      .map((x) => ({
+        id: x.id,
+        kind: "domain" as const,
         status: x.status,
         title: x.name,
-        detail: x.status === "offline" ? t("主机离线") : t("CPU {0}% · 负载偏高", x.cpu),
+        detail: expiryDetail(x.expiresAt),
       })),
-      ...certs
-        .filter((x) => x.status !== "online")
-        .map((x) => ({
-          id: x.id,
-          kind: "cert" as const,
-          status: x.status,
-          title: x.cn,
-          detail: expiryDetail(x.expiresAt),
-        })),
-      ...domains
-        .filter((x) => x.status !== "online")
-        .map((x) => ({
-          id: x.id,
-          kind: "domain" as const,
-          status: x.status,
-          title: x.name,
-          detail: expiryDetail(x.expiresAt),
-        })),
-      ...aiAssets
-        .filter((x) => x.status !== "online")
-        .map((x) => ({
-          id: x.id,
-          kind: "ai" as const,
-          status: x.status,
-          title: x.name,
-          detail: t("本月用量 {0}%", x.usagePct),
-        })),
-      ...mailboxes
-        .filter((x) => x.status !== "online")
-        .map((x) => ({
-          id: x.id,
-          kind: "mail" as const,
-          status: x.status,
-          title: x.address,
-          detail: t("投递异常"),
-        })),
-      ...services
-        .filter((x) => x.status !== "online")
-        .map((x) => ({
-          id: x.id,
-          kind: "service" as const,
-          status: x.status,
-          title: x.name,
-          detail: t("手动记录状态"),
-        })),
-      ...secrets
-        .filter((x) => x.status !== "online")
-        .map((x) => ({
-          id: x.id,
-          kind: "secret" as const,
-          status: x.status,
-          title: x.name,
-          detail: t("建议轮换"),
-        })),
-    ];
-    return out.sort((a, b) => rank(b.status) - rank(a.status));
-  }, [servers, domains, mailboxes, aiAssets, secrets, certs, services, phoneNumbers, locale]);
+    ...aiAssets
+      .filter((x) => x.status !== "online")
+      .map((x) => ({
+        id: x.id,
+        kind: "ai" as const,
+        status: x.status,
+        title: x.name,
+        detail: t("本月用量 {0}%", x.usagePct),
+      })),
+    ...mailboxes
+      .filter((x) => x.status !== "online")
+      .map((x) => ({
+        id: x.id,
+        kind: "mail" as const,
+        status: x.status,
+        title: x.address,
+        detail: t("投递异常"),
+      })),
+    ...services
+      .filter((x) => x.status !== "online")
+      .map((x) => ({
+        id: x.id,
+        kind: "service" as const,
+        status: x.status,
+        title: x.name,
+        detail: t("手动记录状态"),
+      })),
+    ...secrets
+      .filter((x) => x.status !== "online")
+      .map((x) => ({
+        id: x.id,
+        kind: "secret" as const,
+        status: x.status,
+        title: x.name,
+        detail: t("建议轮换"),
+      })),
+  ];
+  return out.sort((a, b) => rank(b.status) - rank(a.status));
 }
 
 function rank(s: Status) {

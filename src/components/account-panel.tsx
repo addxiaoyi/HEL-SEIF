@@ -2,7 +2,7 @@ import { vaultApi } from "@/lib/vault-api";
 import { Copy, ExternalLink, Eye, EyeOff, KeyRound, Lock, UserRound } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { ACCOUNT_COPY, STANDALONE_ACCOUNT_COPY, WEBSITE_ACCOUNT_COPY } from "./account-fields";
+import { ACCOUNT_COPY, STANDALONE_ACCOUNT_COPY, WEBSITE_ACCOUNT_COPY } from "@/lib/account-copy";
 import { Button } from "./ui/button";
 import { TimeAgo } from "./ui/time-ago";
 import { accountId, desktop, type AccountCredential } from "@/lib/desktop";

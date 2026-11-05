@@ -46,11 +46,10 @@ import { PROBEABLE, type ProbeKind } from "@/lib/probes";
 import { useAppStore, type ExpandState } from "@/lib/store";
 import type { AssetKind } from "@/lib/types";
 import { t } from "@/lib/i18n";
-import { desktop } from "@/lib/desktop";
 import { useVault } from "@/lib/vault-state";
 import { deleteEncryptedAccount } from "@/lib/account-delete.mjs";
 import { EditorDialog } from "./ui/editor-dialog";
-import { NAV } from "./sidebar";
+import { NAV } from "@/lib/navigation";
 import { assetEntries } from "@/lib/operations";
 import { toast } from "sonner";
 

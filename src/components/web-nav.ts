@@ -1,6 +1,6 @@
 import { Gauge } from "lucide-react";
 import { isWeb } from "@/lib/web";
-import { NAV, type NavGroup } from "./sidebar";
+import { NAV, type NavGroup } from "@/lib/navigation";
 
 /** 只在自托管网页版出现的页面；桌面版侧栏不变。 */
 export const WEB_NAV: NavGroup["items"] = [{ id: "host", label: "主机监控", icon: Gauge }];

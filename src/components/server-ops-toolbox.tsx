@@ -1,11 +1,6 @@
 import {
   Check,
   Copy,
-  Cpu,
-  Flame,
-  Network,
-  Play,
-  ShieldAlert,
   SquareTerminal,
   Terminal,
   Wrench,

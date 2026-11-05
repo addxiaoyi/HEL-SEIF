@@ -21,7 +21,7 @@ export function HealthGauge({ score, size = 136, className }: HealthGaugeProps) 
   const arcLength = (arcDegree / 360) * circumference;
   const strokeDashoffset = arcLength - (clampedScore / 100) * arcLength;
 
-  const { tone, label, glowColor, strokeColor } = useMemo(() => {
+  const { label, glowColor, strokeColor } = useMemo(() => {
     if (clampedScore >= 85) {
       return {
         tone: "ok",

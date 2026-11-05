@@ -4,7 +4,7 @@ import {
   hasServerObservation,
   isCollectionPaused,
 } from "@/lib/server-observation.mjs";
-import type { MouseEvent } from "react";
+import { openFromEvent } from "@/lib/open-asset";
 import {
   CircleAlert,
   Copy,
@@ -29,29 +29,11 @@ import { useProbeState } from "@/lib/probes";
 import { tagsOf } from "@/lib/tags";
 import { barTone } from "@/lib/status";
 import { useAppStore } from "@/lib/store";
-import type {
-  AiAsset,
-  AssetKind,
-  Certificate,
-  Domain,
-  Mailbox,
-  Secret,
-  Server as ServerT,
-} from "@/lib/types";
+import type { AiAsset, Certificate, Domain, Mailbox, Secret, Server as ServerT } from "@/lib/types";
 import { cn, copyText, daysUntil, formatDate, formatUsd } from "@/lib/utils";
 import { t } from "@/lib/i18n";
 
 import { StatusBadge } from "./ui/status-badge";
-
-export function openFromEvent(e: MouseEvent<HTMLElement>, kind: AssetKind, id: string) {
-  const el = e.currentTarget;
-  const r = el.getBoundingClientRect();
-  useAppStore.getState().setExpanded({
-    kind,
-    id,
-    origin: { x: r.left, y: r.top, w: r.width, h: r.height },
-  });
-}
 
 export function ServerCard({ data, compact = true }: { data: ServerT; compact?: boolean }) {
   const liveCpu = useLive((s) => s.cpu[data.id]);
@@ -195,17 +177,17 @@ export function ServerCard({ data, compact = true }: { data: ServerT; compact?: 
           <div className="flex flex-wrap gap-2">
             <CopyBtn text={`${data.username}@${data.host} -p ${data.port}`} label={t("复制 SSH")} />
             <CopyBtn text={data.host} label={t("复制 IP")} />
-              <button
-                type="button"
-                className="btn btn-sm btn-primary gap-1.5"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  useAppStore.getState().openSsh(data.id);
-                }}
-              >
-                <SquareTerminal className="size-3.5" />
-                {t("玻璃终端")}
-              </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-primary gap-1.5"
+              onClick={(e) => {
+                e.stopPropagation();
+                useAppStore.getState().openSsh(data.id);
+              }}
+            >
+              <SquareTerminal className="size-3.5" />
+              {t("玻璃终端")}
+            </button>
           </div>
         </div>
       )}

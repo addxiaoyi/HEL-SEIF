@@ -29,7 +29,7 @@ import { refKey } from "@/lib/operations";
 import { KIND_LABEL } from "@/lib/status";
 import { t, getLocale, intlLocale } from "@/lib/i18n";
 import { daysUntil, formatDate, formatUsd } from "@/lib/utils";
-import { openFromEvent } from "./asset-card";
+import { openFromEvent } from "@/lib/open-asset";
 import { Button } from "./ui/button";
 import { Select } from "./ui/input";
 import { StatusBadge } from "./ui/status-badge";

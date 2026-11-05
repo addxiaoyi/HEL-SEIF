@@ -26,7 +26,7 @@ import {
 import { matchesTags } from "@/lib/tags";
 import { Button } from "./ui/button";
 import { Field, Input, Select } from "./ui/input";
-import { openFromEvent } from "./asset-card";
+import { openFromEvent } from "@/lib/open-asset";
 import { MailReader } from "./mail-reader";
 import { MailAvatar, MailAppearanceEditor } from "./mail-avatar";
 import { CollectionCard } from "./ui/collection-card";

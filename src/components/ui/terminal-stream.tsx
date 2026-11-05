@@ -1,7 +1,7 @@
 import { hostBridge } from "@/lib/web-bridge";
 import { hasServerObservation } from "@/lib/server-observation.mjs";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Terminal, RefreshCw, CheckCircle2, ShieldAlert, ChevronDown } from "lucide-react";
+import { Terminal, RefreshCw, ChevronDown } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { refreshAll } from "@/lib/probes";
 import { t } from "@/lib/i18n";

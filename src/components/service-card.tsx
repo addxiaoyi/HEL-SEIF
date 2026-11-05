@@ -2,7 +2,7 @@ import { Blocks, ExternalLink, Globe, Mail, Zap } from "lucide-react";
 import type { ServiceAsset } from "@/lib/types";
 import { t } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { openFromEvent } from "./asset-card";
+import { openFromEvent } from "@/lib/open-asset";
 import { CardTag } from "./tag-bar";
 import { StatusBadge } from "./ui/status-badge";
 import { AssetImage } from "./image-picker";

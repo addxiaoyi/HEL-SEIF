@@ -32,10 +32,9 @@ import { matchesTags } from "@/lib/tags";
 import type { Secret } from "@/lib/types";
 import { Button } from "./ui/button";
 import { Field, Input, Select } from "./ui/input";
-import { openFromEvent } from "./asset-card";
+import { openFromEvent } from "@/lib/open-asset";
 import { CollectionCard } from "./ui/collection-card";
 import { BrowserPasswordTransfer } from "./browser-password-transfer";
-import { isDesktop } from "@/lib/desktop";
 import { useVault } from "@/lib/vault-state";
 
 const KIND_LABEL: Record<Secret["kind"], string> = {

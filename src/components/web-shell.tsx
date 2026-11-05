@@ -32,7 +32,7 @@ import { webLogout } from "@/lib/web";
 import { safeImageDataUrl } from "../../electron/services/image-data.mjs";
 import { SHORTCUTS_EVENT } from "./keyboard-shortcuts";
 import { LogoMark } from "./logo";
-import { NAV_GROUPS, type NavGroup } from "./sidebar";
+import { NAV_GROUPS, type NavGroup } from "@/lib/navigation";
 import { WEB_NAV } from "./web-nav";
 import "./web-shell.css";
 

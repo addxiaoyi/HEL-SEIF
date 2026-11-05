@@ -2,33 +2,14 @@ import { CheckCircle2, KeyRound, Loader2, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Field, Input, Select, Textarea } from "./ui/input";
-import { credentialId, type CredentialKind, type SshCredential } from "@/lib/desktop";
+import { credentialId, type CredentialKind } from "@/lib/desktop";
 import { vaultApi } from "@/lib/vault-api";
 import { isWeb } from "@/lib/web";
 import { hostBridge } from "@/lib/web-bridge";
 import { useVault } from "@/lib/vault-state";
 import { t } from "@/lib/i18n";
 
-/** Form keys that belong to the vault, never to the asset record. */
-export const CRED_KEYS = ["_authKind", "_password", "_privateKey", "_passphrase"] as const;
-
-export function credentialFromForm(form: Record<string, string>): SshCredential | null {
-  const kind = (form._authKind as CredentialKind) || "password";
-  if (kind === "agent") return { kind };
-  if (kind === "password") return form._password ? { kind, password: form._password } : null;
-  // A pasted ssh config gives a path rather than the key itself; the main
-  // process reads it at connect time.
-  if (form._privateKeyPath) {
-    return {
-      kind,
-      privateKeyPath: form._privateKeyPath,
-      passphrase: form._passphrase || undefined,
-    };
-  }
-  return form._privateKey
-    ? { kind, privateKey: form._privateKey, passphrase: form._passphrase || undefined }
-    : null;
-}
+import { credentialFromForm } from "@/lib/credential-form";
 
 /**
  * SSH credentials for one host.
