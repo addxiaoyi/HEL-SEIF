@@ -436,8 +436,9 @@ export function injectGrokPwaHead(html, ctx = {}) {
 
   const missing = grokPwaHeadTags(appName)
     .filter(([key]) => {
-      if (key === "manifest") return !next.includes('href="/__grok/manifest.webmanifest"');
-      if (key === "apple-touch-icon") return !next.includes('href="/__grok/icon-180.png"');
+      // 应用可以提供自己的主屏幕身份，平台只补缺失标签，避免两份 manifest 竞争。
+      if (key === "manifest" || key === "apple-touch-icon")
+        return !new RegExp(`<link\\b[^>]*\\brel\\s*=\\s*["']${key}["']`, "i").test(next);
       return !next.includes(`name="${key}"`);
     })
     .map(([, tag]) => tag);

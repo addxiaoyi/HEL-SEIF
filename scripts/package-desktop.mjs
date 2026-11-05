@@ -2,9 +2,11 @@ import { cp, readFile, writeFile, rm, realpath } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildNativeTerminal } from "./build-native-terminal.mjs";
+import { stageSharedRuntime } from "./package-shared.mjs";
 import {
   DESKTOP_RUNTIME_DEPENDENCIES,
   createPackageStage,
+  desktopBuildArguments,
   installPackageDependencies,
   mainProcessPackages,
   packageEnvironment,
@@ -12,6 +14,7 @@ import {
 } from "./package-stage.mjs";
 
 const root = await realpath(resolve(dirname(fileURLToPath(import.meta.url)), ".."));
+const buildArgs = desktopBuildArguments(process.argv.slice(2));
 buildNativeTerminal();
 // 漏装的包只会在安装后的程序启动时报错（1.16.1 的 @noble/hashes），所以打包前先核对。
 const missing = mainProcessPackages(root).filter(
@@ -46,6 +49,8 @@ await cp(join(root, "electron"), join(stage, "electron"), {
   recursive: true,
   filter: (source) => !source.endsWith(".test.mjs"),
 });
+const sharedModules = await stageSharedRuntime(root, stage);
+console.log(`桌面共享模块已编译：${sharedModules.join("、")}`);
 await cp(join(root, "dist-desktop"), join(stage, "dist-desktop"), { recursive: true });
 await writeFile(join(stage, "package.json"), JSON.stringify(appManifest, null, 2));
 // 保留仓库锁定的版本，不在打包时重新解析最新依赖版本。
@@ -58,6 +63,7 @@ const env = packageEnvironment();
 const run = (script, args) => runPackageCommand(stage, script, args, env);
 const config = {
   ...manifest.build,
+  files: [...manifest.build.files, "src/lib/**/*.js"],
   directories: {
     app: stage,
     output: join(root, "release", `v${manifest.version}`),
@@ -91,7 +97,16 @@ const config = {
       : {}),
   },
   forceCodeSigning: process.env.HELSELF_REQUIRE_SIGNING === "1",
-  nsis: { ...manifest.build.nsis, include: resolve(root, manifest.build.nsis.include) },
+  nsis: {
+    ...manifest.build.nsis,
+    include: resolve(root, manifest.build.nsis.include),
+    installerIcon: resolve(root, "build/icon.ico"),
+    uninstallerIcon: resolve(root, "build/icon.ico"),
+    installerHeaderIcon: resolve(root, "build/icon.ico"),
+    installerSidebar: resolve(root, "build/installerSidebar.bmp"),
+    uninstallerSidebar: resolve(root, "build/installerSidebar.bmp"),
+    installerHeader: resolve(root, "build/installerHeader.bmp"),
+  },
   electronDist: join(root, "node_modules", "electron", "dist"),
   electronVersion: JSON.parse(
     await readFile(join(root, "node_modules", "electron", "package.json"), "utf8"),
@@ -112,7 +127,7 @@ try {
     stage,
     "--config",
     configPath,
-    ...process.argv.slice(2),
+    ...buildArgs,
   ]);
 } finally {
   await rm(stage, { recursive: true, force: true });

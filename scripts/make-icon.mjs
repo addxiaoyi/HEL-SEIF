@@ -8,6 +8,52 @@ import { BRAND_MARK, brandSvg } from "../src/lib/brand-mark.mjs";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const C = BRAND_MARK.colors;
+
+async function saveInstallerBitmap(page, width, height, html, filename) {
+  await page.setViewportSize({ width, height });
+  await page.setContent(html);
+  await page.screenshot({ path: join(root, `build/${filename}.png`) });
+  // NSIS 需要无压缩 BMP；从同一页面取像素，避免再引入平台图像工具。
+  const pixels = await page.evaluate(async () => {
+    const svg = document.querySelector("svg");
+    const blob = new Blob([new XMLSerializer().serializeToString(svg)], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+    try {
+      const image = new Image();
+      image.src = url;
+      await image.decode();
+      const canvas = document.createElement("canvas");
+      canvas.width = innerWidth;
+      canvas.height = innerHeight;
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("无法生成安装器图像。");
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      return Array.from(context.getImageData(0, 0, canvas.width, canvas.height).data);
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  });
+  const stride = Math.ceil((width * 3) / 4) * 4;
+  const bitmap = Buffer.alloc(54 + stride * height);
+  bitmap.write("BM");
+  bitmap.writeUInt32LE(bitmap.length, 2);
+  bitmap.writeUInt32LE(54, 10);
+  bitmap.writeUInt32LE(40, 14);
+  bitmap.writeInt32LE(width, 18);
+  bitmap.writeInt32LE(height, 22);
+  bitmap.writeUInt16LE(1, 26);
+  bitmap.writeUInt16LE(24, 28);
+  bitmap.writeUInt32LE(stride * height, 34);
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++) {
+      const source = (y * width + x) * 4;
+      const target = 54 + (height - y - 1) * stride + x * 3;
+      bitmap[target] = pixels[source + 2];
+      bitmap[target + 1] = pixels[source + 1];
+      bitmap[target + 2] = pixels[source];
+    }
+  await writeFile(join(root, `build/${filename}.bmp`), bitmap);
+}
 await mkdir(join(root, "build"), { recursive: true });
 await mkdir(join(root, "public/brand"), { recursive: true });
 const icon = brandSvg();
@@ -39,6 +85,50 @@ try {
     offset += frames[i].length;
   });
   await writeFile(join(root, "build/icon.ico"), Buffer.concat([header, ...frames]));
+  for (const size of [16, 32, 48, 128, 180, 192, 512]) {
+    await page.setViewportSize({ width: size, height: size });
+    await page.screenshot({
+      path: join(root, `public/brand/icon-${size}.png`),
+      omitBackground: true,
+    });
+  }
+  // 主屏幕会按系统形状裁切，底色铺满后不会在圆角外出现白边。
+  await page.addStyleTag({ content: `html,body{background:${C.ink}}` });
+  for (const size of [180, 192, 512]) {
+    await page.setViewportSize({ width: size, height: size });
+    await page.screenshot({ path: join(root, `public/brand/icon-maskable-${size}.png`) });
+  }
+  await writeFile(
+    join(root, "public/manifest.webmanifest"),
+    JSON.stringify(
+      {
+        name: "Helself",
+        short_name: "Helself",
+        id: "/",
+        start_url: "/",
+        scope: "/",
+        display: "standalone",
+        background_color: C.paper,
+        theme_color: C.ink,
+        icons: [192, 512].flatMap((size) => [
+          {
+            src: `/brand/icon-${size}.png`,
+            sizes: `${size}x${size}`,
+            type: "image/png",
+            purpose: "any",
+          },
+          {
+            src: `/brand/icon-maskable-${size}.png`,
+            sizes: `${size}x${size}`,
+            type: "image/png",
+            purpose: "maskable",
+          },
+        ]),
+      },
+      null,
+      2,
+    ) + "\n",
+  );
   // 三处网站图标共用同一个矢量源：应用、产品主页与自托管网页版。
   for (const target of ["public/favicon.svg", "site/favicon.svg", "selfhost/public/favicon.svg"])
     await writeFile(join(root, target), icon + "\n");
@@ -57,6 +147,22 @@ try {
       ".board{height:630px}.hero{padding:52px 72px}.dark{padding:50px 48px}.light{padding:32px 48px}",
   });
   await page.screenshot({ path: join(root, "public/og.jpg"), type: "jpeg", quality: 90 });
+  const sidebar = `<svg xmlns="http://www.w3.org/2000/svg" width="164" height="314" viewBox="0 0 164 314"><rect width="164" height="314" fill="${C.ink}"/><g transform="translate(38 46) scale(1.375)">${icon.replace(/<svg[^>]*>|<\/svg>/g, "")}</g><text x="82" y="176" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="26" font-weight="600" fill="${C.paper}">Helself</text><path d="M58 201h48" stroke="${C.lime}" stroke-width="3"/><text x="82" y="247" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="10" fill="${C.paper}">YOUR PERSONAL</text><text x="82" y="265" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="10" fill="${C.paper}">WORKSPACE</text></svg>`;
+  const installerHeader = `<svg xmlns="http://www.w3.org/2000/svg" width="150" height="57" viewBox="0 0 150 57"><rect width="150" height="57" fill="white"/><g transform="translate(6 8) scale(.64)">${icon.replace(/<svg[^>]*>|<\/svg>/g, "")}</g><text x="57" y="36" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="600" fill="${C.ink}">Helself</text></svg>`;
+  await saveInstallerBitmap(
+    page,
+    164,
+    314,
+    `<style>body{margin:0}</style>${sidebar}`,
+    "installerSidebar",
+  );
+  await saveInstallerBitmap(
+    page,
+    150,
+    57,
+    `<style>body{margin:0}</style>${installerHeader}`,
+    "installerHeader",
+  );
 } finally {
   await browser.close();
 }

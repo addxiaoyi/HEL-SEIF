@@ -64,7 +64,7 @@ try {
   ]);
   await chooseOption(page, page.getByRole("combobox", { name: "授权服务商" }), "xAI / Grok");
   await page.getByRole("button", { name: "网页登录授权" }).scrollIntoViewIfNeeded();
-  await page.screenshot({ path: "screenshots/nanpad-ai-accounts.png" });
+  await page.screenshot({ path: "screenshots/qa-packaged-ai-accounts.png" });
   await chooseOption(page, page.getByRole("combobox", { name: "授权服务商" }), "Google / Gemini");
   assert.equal(
     await page.getByRole("combobox", { name: "授权服务商" }).textContent(),

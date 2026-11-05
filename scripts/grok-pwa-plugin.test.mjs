@@ -406,6 +406,16 @@ test("is idempotent", () => {
   assert.equal(once, twice);
 });
 
+test("keeps custom install icons without duplicating the platform defaults", () => {
+  const html = `<html><head><link rel="manifest" href="/manifest.webmanifest"><link href='/brand/icon-maskable-180.png' rel='apple-touch-icon'></head><body></body></html>`;
+  const out = injectGrokPwaHead(html);
+  assert.equal((out.match(/rel=["']manifest["']/g) ?? []).length, 1);
+  assert.equal((out.match(/rel=["']apple-touch-icon["']/g) ?? []).length, 1);
+  assert.doesNotMatch(out, /__grok\/icon-180/);
+  assert.match(out, /grok-app-builder\/extensions\.js/);
+  assert.equal(injectGrokPwaHead(out), out);
+});
+
 test("uses the app name in the injected title tag", () => {
   const out = injectGrokPwaHead("<html><head></head></html>", { appName: "Wild Race", site: {} });
   assert.match(out, /apple-mobile-web-app-title" content="Wild Race"/);

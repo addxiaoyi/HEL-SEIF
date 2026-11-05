@@ -11,7 +11,7 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: APP_NAME },
-      { name: "theme-color", content: "#0f1419" },
+      { name: "theme-color", content: "#111315" },
       {
         name: "description",
         content: "Helself — 个人数字资产指挥台。服务器、域名、邮箱、AI 订阅、密钥与证书，一屏尽览。",
@@ -20,8 +20,8 @@ export const Route = createRootRoute({
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
       { rel: "stylesheet", href: appCss },
-      { rel: "manifest", href: "/__grok/manifest.webmanifest" },
-      { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/brand/icon-maskable-180.png" },
     ],
   }),
   component: () => (

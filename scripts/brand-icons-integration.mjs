@@ -67,7 +67,10 @@ try {
       `${theme} 主题立柱应跟随主题文字颜色，实际为 ${frame}`,
     );
     colors.push({ theme, fills });
-    await page.screenshot({ path: `screenshots/helself-brand-${theme}.png`, animations: "disabled" });
+    await page.screenshot({
+      path: `screenshots/helself-brand-${theme}.png`,
+      animations: "disabled",
+    });
   }
   assert.equal(process.platform, "win32", "此检查针对 Windows 正式安装包");
   const executable = await instance.evaluate(() => process.execPath);
@@ -111,9 +114,61 @@ try {
     ),
   );
   assert.equal(taskbar.ok, true);
+  const windowIcon = JSON.parse(
+    execFileSync(
+      "pwsh",
+      [
+        "-NoProfile",
+        "-File",
+        resolve("scripts/windows-icon-check.ps1"),
+        "-IconPath",
+        executable,
+        "-WindowHandle",
+        windowIdentity.handle,
+        "-OutputPng",
+        resolve("screenshots/qa-window-icon.png"),
+      ],
+      { encoding: "utf8", windowsHide: true },
+    ),
+  );
+  assert.equal(windowIcon.ok, true);
+  const extraIcons = [];
+  for (const [name, file] of [
+    ["terminal", join(windowIdentity.resources, "native-terminal/Helself.Terminal.exe")],
+    ["shortcut", join(windowIdentity.resources, "helself.ico")],
+    ...(process.argv[3] ? [["installer", resolve(process.argv[3])]] : []),
+    ...(process.argv[4] ? [["online-installer", resolve(process.argv[4])]] : []),
+  ]) {
+    const icon = JSON.parse(
+      execFileSync(
+        "pwsh",
+        [
+          "-NoProfile",
+          "-File",
+          resolve("scripts/windows-icon-check.ps1"),
+          "-IconPath",
+          file,
+          "-OutputPng",
+          resolve(`screenshots/qa-${name}-icon.png`),
+        ],
+        { encoding: "utf8", windowsHide: true },
+      ),
+    );
+    assert.equal(icon.ok, true, `${name} 必须使用 Helself 图标`);
+    extraIcons.push({ name, ...icon });
+  }
   assert.deepEqual(pageErrors, []);
   console.log(
-    JSON.stringify({ ok: true, isolated: true, colors, executableIcon, taskbar, pageErrors }),
+    JSON.stringify({
+      ok: true,
+      isolated: true,
+      colors,
+      executableIcon,
+      windowIcon,
+      extraIcons,
+      taskbar,
+      pageErrors,
+    }),
   );
 } finally {
   await instance?.close();

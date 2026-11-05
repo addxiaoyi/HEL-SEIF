@@ -22,6 +22,9 @@ await cp(join(root, "browser-extension"), out, { recursive: true });
 await cp(join(root, "electron/services/browser-capture.mjs"), join(out, "browser-capture.mjs"));
 await cp(join(root, "build/icon.png"), join(out, "icon.png"));
 await mkdir(join(out, "icons"), { recursive: true });
+for (const size of [16, 32, 48, 128]) {
+  await cp(join(root, `public/brand/icon-${size}.png`), join(out, `icons/app-${size}.png`));
+}
 const icons = {
   "arrow-down-to-line": ArrowDownToLine,
   "arrow-up-right": ArrowUpRight,

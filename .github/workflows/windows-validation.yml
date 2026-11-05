@@ -1,0 +1,38 @@
+name: Windows 安装验收（不发布）
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node node_modules/electron/install.js
+      - run: npx playwright install chromium
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run desktop:dist -- --win --x64 --publish never
+      - run: npm run desktop:online
+      - name: 验证安装、启动、覆盖升级和卸载
+        shell: pwsh
+        run: |
+          $version = (Get-Content -Raw package.json | ConvertFrom-Json).version
+          ./scripts/windows-installation-qa.ps1 -Installer "release/v$version/Helself-$version-setup.exe"
+      - name: 保存本次验收证据
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-validation
+          path: |
+            screenshots/qa-installed-*.png
+            release/v*/Helself-*-setup.exe
+            release/v*/Helself-*-setup.exe.blockmap
+            release/v*/latest.yml
+          retention-days: 7

@@ -27,7 +27,7 @@ export const DESKTOP_RUNTIME_DEPENDENCIES = [
 ];
 
 /** 从主进程入口出发，收集代码里实际引用（静态、动态 import 与 require）的第三方包名。 */
-export function mainProcessPackages(root) {
+function mainProcessGraph(root) {
   const seen = new Set();
   const packages = new Set();
   const visit = (file) => {
@@ -43,7 +43,9 @@ export function mainProcessPackages(root) {
       const spec = match[1] ?? match[2] ?? match[3];
       if (spec.startsWith(".")) {
         const target = resolve(dirname(file), spec);
-        if (existsSync(target) && statSync(target).isFile()) visit(target);
+        if (!existsSync(target) || !statSync(target).isFile())
+          throw new Error(`桌面运行依赖不存在：${target}`);
+        visit(target);
       } else if (!spec.startsWith("node:") && spec !== "electron") {
         packages.add(
           spec.startsWith("@") ? spec.split("/").slice(0, 2).join("/") : spec.split("/")[0],
@@ -53,8 +55,11 @@ export function mainProcessPackages(root) {
   };
   visit(join(root, "electron/main.mjs"));
   visit(join(root, "electron/preload.cjs"));
-  return [...packages].sort();
+  return { files: [...seen], packages: [...packages].sort() };
 }
+
+export const mainProcessPackages = (root) => mainProcessGraph(root).packages;
+export const mainProcessFiles = (root) => mainProcessGraph(root).files;
 
 export async function createPackageStage(parent = tmpdir()) {
   // macOS 的 /var、/tmp 可能指向 /private。npm 和 builder 必须使用同一真实路径。
@@ -67,6 +72,32 @@ export function packageEnvironment(source = process.env) {
     if (/^npm_/i.test(key) || key === "INIT_CWD") delete env[key];
   }
   return env;
+}
+
+export function desktopBuildArguments(args) {
+  const buildArgs = [];
+  const supported = new Set([
+    "--dir",
+    "--win",
+    "--mac",
+    "--linux",
+    "--x64",
+    "--arm64",
+    "--ia32",
+    "--armv7l",
+  ]);
+  for (let index = 0; index < args.length; index++) {
+    const arg = args[index];
+    if (arg === "--publish" || arg === "-p") {
+      if (args[++index] !== "never") throw new Error("本地打包不允许发布，请使用独立发布流程。");
+    } else if (arg.startsWith("--publish=")) {
+      if (arg !== "--publish=never") throw new Error("本地打包不允许发布，请使用独立发布流程。");
+    } else if (supported.has(arg)) {
+      buildArgs.push(arg);
+    } else throw new Error(`不支持的本地打包参数：${arg}`);
+  }
+  // yargs 将重复参数转成数组，['never', 'never'] 不等于发布器检查的 'never'。
+  return [...buildArgs, "--publish", "never"];
 }
 
 export function runPackageCommand(stage, script, args, env = packageEnvironment()) {

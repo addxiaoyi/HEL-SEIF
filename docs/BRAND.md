@@ -133,8 +133,17 @@ node scripts/make-icon.mjs
 | `public/brand/helself-preview.png` | 1200×720 PNG                                | 品牌板，本文顶部预览                        |
 | `public/og.jpg`                    | 1200×630 JPEG（质量 90，约 45 KB）          | 链接分享卡                                  |
 | `site/icon.png`                    | 复制自 `build/icon.png`                     | 产品主页图标                                |
+| `public/brand/icon-*.png`          | 16 / 32 / 48 / 128 / 180 / 192 / 512 PNG | 扩展工具栏、管理页与 PWA 图标 |
+| `public/brand/icon-maskable-*.png` | 180 / 192 / 512 PNG，实色底板 | iOS 主屏幕与 Android 可裁切图标 |
+| `public/manifest.webmanifest`     | Helself 名称、配色与图标清单 | 应用主屏幕身份 |
+| `build/installerSidebar.bmp`      | 164×314，24 位 BMP | 离线安装与卸载向导侧栏 |
+| `build/installerHeader.bmp`       | 150×57，24 位 BMP | 离线安装向导页眉 |
 
 打包时 `build/icon.ico` 会被复制为安装目录下的 `resources/helself.ico`，任务栏与快捷方式统一使用它；升级安装后会刷新已存在的入口并通知资源管理器更新图标。Windows Shell 分组使用 `dev.helself.app`，系统显示名为「Helself」。
+
+安装器、卸载器、在线引导器与原生终端都显式使用同一图标。平台安装教程的资源保留；应用自己的 manifest 和触摸图标优先，注入器只补缺失标签，不额外插入模板应用图标。
+
+`windows-icon-check.ps1` 将 Windows Shell 或实际窗口返回的图像与当前品牌母版比较，并输出差异；不再用旧配色的像素比例判断。验收包含拒绝默认 Electron 图标的反例。
 
 改动流程：先改 `src/lib/brand-mark.mjs`，再运行 `node scripts/make-icon.mjs`，然后检查图标在 16px 与 256px、浅色与深色背景、favicon 三处和分享卡上的实际效果；界面里的透明版会自动跟随新几何，不需要单独改。提交时连同生成物一起提交。
 
