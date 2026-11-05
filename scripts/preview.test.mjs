@@ -1,15 +1,72 @@
 import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
+import { once } from "node:events";
 import { test } from "node:test";
 import {
+  killPid,
   looksLikePreviewProcess,
   parseListenerInodes,
   parsePgid,
   parsePid,
   parsePreviewArgs,
+  parseWindowsListeners,
+  previewCommand,
   previewOwners,
   stopOutcome,
   terminatePids,
 } from "./preview.mjs";
+
+test("preview termination closes a live Node process", { timeout: 15000 }, async (t) => {
+  const child = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], {
+    stdio: "ignore",
+    windowsHide: true,
+  });
+  t.after(() => {
+    if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
+  });
+  await once(child, "spawn");
+  const exited = once(child, "exit");
+  killPid(child.pid, "SIGTERM");
+  await exited;
+  assert.ok(child.exitCode !== null || child.signalCode !== null);
+});
+
+test("Windows preview invokes npm through Node, preserving paths with spaces", () => {
+  assert.deepEqual(
+    previewCommand({
+      platform: "win32",
+      execPath: "C:\\Program Files\\nodejs\\node.exe",
+      npmExecPath: "D:\\工具 路径\\npm-cli.js",
+    }),
+    {
+      command: "C:\\Program Files\\nodejs\\node.exe",
+      args: ["D:\\工具 路径\\npm-cli.js", "run", "preview"],
+    },
+  );
+  assert.deepEqual(
+    previewCommand({ platform: "win32", execPath: "C:\\node\\node.exe", npmExecPath: "" }).args,
+    ["C:\\node\\node_modules\\npm\\bin\\npm-cli.js", "run", "preview"],
+  );
+  assert.deepEqual(previewCommand({ platform: "linux" }), {
+    command: "npm",
+    args: ["run", "preview"],
+  });
+});
+
+test("Windows listener scan matches only the exact QA port and reports unowned sockets", () => {
+  const dump = [
+    "TCP 127.0.0.1:8081 0.0.0.0:0 LISTENING 1234",
+    "TCP [::1]:8081 [::]:0 LISTENING 1234",
+    "TCP 127.0.0.1:18081 0.0.0.0:0 LISTENING 9999",
+    "TCP 127.0.0.1:8081 127.0.0.1:1234 ESTABLISHED 8888",
+    "UDP 127.0.0.1:8081 *:* 7777",
+  ].join("\n");
+  assert.deepEqual(parseWindowsListeners(dump, 8081), { pids: [1234], unattributed: false });
+  assert.deepEqual(parseWindowsListeners("TCP [::]:8081 [::]:0 LISTENING 0", 8081), {
+    pids: [],
+    unattributed: true,
+  });
+});
 
 test("parsePreviewArgs accepts the two actions", () => {
   for (const action of ["stop", "restart"]) {
@@ -198,6 +255,14 @@ test("stopOutcome fails on a listener whose owner cannot be attributed", () => {
   });
   assert.equal(outcome.ok, false);
   assert.match(outcome.error, /port 8081 is held by a process this script cannot see/);
+});
+
+test("stopOutcome reports a failed scan without claiming the port is occupied", () => {
+  const error = "could not inspect port 8081: spawnSync netstat.exe ETIMEDOUT";
+  assert.deepEqual(stopOutcome({ signalled: [], stubborn: [], after: { pids: [], error } }), {
+    ok: false,
+    error,
+  });
 });
 
 function fakeProcesses({ pids, ignoresTerm = [] }) {

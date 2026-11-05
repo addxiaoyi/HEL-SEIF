@@ -150,6 +150,16 @@ export default defineConfig(({ command, isPreview }) => ({
     host: "0.0.0.0",
     port: 8080,
     strictPort: true,
+    // Windows 打包会锁定 DLL；这些产物不参与热更新，监听它们会让预览因 EBUSY 退出。
+    watch: {
+      ignored: [
+        "**/release/**",
+        "**/screenshots/**",
+        "**/.codegraph/**",
+        "**/dist-desktop/**",
+        "**/dist-web/**",
+      ],
+    },
   },
   preview: {
     host: "127.0.0.1",

@@ -18,15 +18,23 @@ public static class TerminalTests {
     [StructLayout(LayoutKind.Sequential)] struct Point { public int X, Y; }
     [DllImport("user32.dll")] static extern IntPtr WindowFromPoint(Point point);
     [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")] static extern IntPtr GetAncestor(IntPtr handle, uint flags);
+    [DllImport("user32.dll")] static extern bool IsChild(IntPtr parent, IntPtr child);
+    [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr handle, out uint processId);
     [DllImport("user32.dll")] static extern void mouse_event(uint flags, uint x, uint y, uint data, UIntPtr extra);
     [DllImport("user32.dll")] static extern void keybd_event(byte key, byte scan, uint flags, UIntPtr extra);
     [DllImport("user32.dll")] static extern bool PrintWindow(IntPtr handle, IntPtr dc, uint flags);
     [STAThread] public static void Main(string[] args) {
         if (args.Length == 2 && args[0] == "--type-native") {
             SetProcessDPIAware(); WindowRect bounds;
-            Check(GetWindowRect(new IntPtr(long.Parse(args[1])), out bounds), "输入目标有效");
+            var target = new IntPtr(long.Parse(args[1]));
+            Check(GetWindowRect(target, out bounds), "输入目标有效");
             SetCursorPos(bounds.Left + 80, bounds.Top + 80);
-            Console.WriteLine("hit=" + WindowFromPoint(new Point { X = bounds.Left + 80, Y = bounds.Top + 80 }) + " target=" + args[1] + " foreground=" + GetForegroundWindow());
+            var hit = WindowFromPoint(new Point { X = bounds.Left + 80, Y = bounds.Top + 80 });
+            uint hitProcess; GetWindowThreadProcessId(hit, out hitProcess);
+            Console.WriteLine("hit=" + hit + " target=" + target + " root=" + GetAncestor(target, 2) + " hitRoot=" + GetAncestor(hit, 2) + " hitProcess=" + hitProcess + " foreground=" + GetForegroundWindow() + " bounds=" + bounds.Left + "," + bounds.Top + "," + bounds.Right + "," + bounds.Bottom);
+            // Never send physical keys to another application when the test window is covered.
+            Check(hit == target || IsChild(target, hit), "输入位置必须命中本次测试的原生控件");
             mouse_event(2, 0, 0, 0, UIntPtr.Zero); mouse_event(4, 0, 0, 0, UIntPtr.Zero);
             System.Threading.Thread.Sleep(200);
             keybd_event(0x58, 0, 0, UIntPtr.Zero); keybd_event(0x58, 0, 2, UIntPtr.Zero);

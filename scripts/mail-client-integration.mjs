@@ -14,6 +14,9 @@ let instance;
 try {
   instance = await electron.launch({ args: [resolve("electron/main.mjs")], env, timeout: 45000 });
   const page = await instance.firstWindow();
+  await instance.evaluate(({ BrowserWindow }) => {
+    BrowserWindow.getAllWindows()[0].webContents.setBackgroundThrottling(false);
+  });
   const pageErrors = [];
   const imageRequests = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
@@ -156,7 +159,7 @@ try {
   assert.equal(await page.locator("[data-mailbox-id]").count(), 4);
   await page.getByRole("button", { name: "返回文件夹", exact: true }).click();
   await page.getByPlaceholder("筛选当前列表", { exact: true }).fill("");
-  await page.screenshot({ path: "screenshots/nanpad-v060-mail-folders.png" });
+  await page.screenshot({ path: "screenshots/qa-mail-folders.png" });
   await page.getByRole("button", { name: "新建文件夹", exact: true }).click();
   const editor = page.getByRole("dialog", { name: "新建文件夹", exact: true });
   await editor.getByRole("textbox", { name: "文件夹名称", exact: true }).fill("项目通知");
@@ -182,7 +185,7 @@ try {
     .click();
   const reader = page.getByRole("dialog", { name: "account0@example.test", exact: true });
   await reader.getByRole("status", { name: "正在读取邮件", exact: true }).waitFor();
-  await page.screenshot({ path: "screenshots/nanpad-v060-mail-loading.png" });
+  await page.screenshot({ path: "screenshots/qa-mail-loading.png" });
   await reader.getByRole("button", { name: "查看邮件 Weekly delivery", exact: true }).click();
   await reader.getByText(/Private weekly delivery body/).waitFor();
   assert.equal(await reader.getByRole("heading", { name: "本周交付进展", exact: true }).count(), 1);
@@ -251,7 +254,7 @@ try {
     .click();
   await reader.getByRole("heading", { name: "九月迭代设计评审", exact: true }).waitFor();
   assert.equal(imageRequests.length, 0);
-  await page.screenshot({ path: "screenshots/nanpad-v060-mail-rich-html.png" });
+  await page.screenshot({ path: "screenshots/qa-mail-rich-html.png" });
   await reader.getByRole("button", { name: "加载本封图片", exact: true }).click();
   await reader
     .getByRole("img", { name: "设计预览", exact: true })
@@ -279,7 +282,7 @@ try {
     (await page.evaluate(() => window.sinan.store.load())).state.mailboxes[0].folderId,
     "personal",
   );
-  await page.screenshot({ path: "screenshots/nanpad-v060-mail-reader.png" });
+  await page.screenshot({ path: "screenshots/qa-mail-reader.png" });
   await reader.getByRole("button", { name: "回复", exact: true }).click();
   assert.equal(
     await reader.getByRole("textbox", { name: "收件人", exact: true }).inputValue(),
@@ -300,18 +303,19 @@ try {
   await page.getByText("邮件已提交给 SMTP 服务器", { exact: true }).waitFor();
   assert.equal(await instance.evaluate(() => globalThis.mailUiTestSent.length), 1);
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.mouse.move(0, 0);
   await page.getByText("邮件已提交给 SMTP 服务器", { exact: true }).waitFor({ state: "hidden" });
-  await page.screenshot({ path: "screenshots/nanpad-v060-mail-reader-mobile.png" });
+  await page.screenshot({ path: "screenshots/qa-mail-reader-mobile.png" });
   await reader.getByRole("button", { name: "写邮件", exact: true }).click();
   const sendBox = await reader.getByRole("button", { name: "发送", exact: true }).boundingBox();
   assert.ok(sendBox && sendBox.y >= 0 && sendBox.y + sendBox.height <= 844);
-  await page.screenshot({ path: "screenshots/nanpad-v060-mail-compose-mobile.png" });
+  await page.screenshot({ path: "screenshots/qa-mail-compose-mobile.png" });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
   await page.evaluate(() => window.sinan.vault.lock());
   await reader.waitFor({ state: "detached" });
   assert.equal(await page.getByText(/Private weekly delivery body/).count(), 0);
   await page.getByRole("button", { name: "返回文件夹", exact: true }).click();
-  await page.screenshot({ path: "screenshots/nanpad-v060-mail-folders-mobile.png" });
+  await page.screenshot({ path: "screenshots/qa-mail-folders-mobile.png" });
   await page.setViewportSize({ width: 1280, height: 960 });
   await page.reload();
   await page.getByRole("button", { name: "邮箱", exact: true }).click();

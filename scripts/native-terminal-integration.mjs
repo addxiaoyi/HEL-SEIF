@@ -163,7 +163,7 @@ try {
   await new Promise((r) => setTimeout(r, 500));
   const inputResult = spawnSync(resolve("release/native-terminal/terminal-tests.exe"),
     ["--type-native", attached.childHandle], { windowsHide: true, encoding: "utf8" });
-  assert.equal(inputResult.status, 0, inputResult.stderr);
+  assert.equal(inputResult.status, 0, `${inputResult.stdout}\n${inputResult.stderr}`);
   for (let i = 0; i < 50 && !typedInput; i++) await new Promise((r) => setTimeout(r, 100));
   assert.ok(typedInput.replace(/[\r\n]/g, "").length > 0, "实际点击原生输出区后，物理键盘文字必须到达 SSH: " + inputResult.stdout);
   assert.equal(

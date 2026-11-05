@@ -123,17 +123,20 @@ try {
   await page.getByRole("button", { name: "添加关联", exact: true }).click();
   await page.getByRole("button", { name: "解除关联", exact: true }).waitFor();
   await page
-    .getByRole("dialog")
-    .getByRole("button", { name: "域名qa.example.test", exact: false })
+    .getByRole("region", { name: "资产详情", exact: true })
+    .getByRole("button", { name: /^域名\s*qa\.example\.test$/ })
     .click();
   await page.getByRole("button", { name: "解除关联", exact: true }).waitFor();
   await page.keyboard.press("Escape");
-  await page.getByRole("dialog").waitFor({ state: "hidden" });
+  await page.getByRole("region", { name: "资产详情", exact: true }).waitFor({ state: "hidden" });
   const calendarPath = join(directory, "reminders.ics");
   await instance.evaluate(({ session }, target) => {
     session.defaultSession.once("will-download", (_event, item) => item.setSavePath(target));
   }, calendarPath);
-  await page.getByRole("button", { name: "导出提醒日历" }).click();
+  await page.keyboard.press("Control+,");
+  const settings = page.getByRole("dialog", { name: "设置", exact: true });
+  await settings.getByRole("button", { name: "数据", exact: true }).click();
+  await settings.getByRole("button", { name: "导出提醒日历", exact: true }).click();
   let exported = false;
   for (let i = 0; i < 100; i++) {
     try {

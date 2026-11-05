@@ -5,13 +5,14 @@
  * `vite preview` is strictPort, so a preview left over from an earlier turn
  * both fails the next start and keeps serving the previous build's output.
  * Every restart therefore kills the current port owner first, whoever started
- * it. Owners come from /proc, so this runs only inside the Linux sandbox.
+ * it. Owners come from /proc on Linux and netstat on Windows.
  *
  *   node scripts/preview.mjs stop|restart
  */
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import {
   existsSync,
+  closeSync,
   mkdirSync,
   openSync,
   readFileSync,
@@ -20,7 +21,7 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, win32 } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const PREVIEW_PORT = 8081;
@@ -32,6 +33,31 @@ const LOG_FILE = join(ROOT, ".grok/preview.log");
 const READY_TIMEOUT_MS = Number(process.env.PREVIEW_READY_TIMEOUT_MS || 60000);
 const GRACE_MS = 3000;
 const POLL_MS = 100;
+const PORT_SCAN_TIMEOUT_MS = 15000;
+
+export function previewCommand({
+  platform = process.platform,
+  execPath = process.execPath,
+  npmExecPath = process.env.npm_execpath,
+} = {}) {
+  if (platform !== "win32") return { command: "npm", args: ["run", "preview"] };
+  const cli =
+    npmExecPath || win32.join(win32.dirname(execPath), "node_modules", "npm", "bin", "npm-cli.js");
+  return { command: execPath, args: [cli, "run", "preview"] };
+}
+
+export function parseWindowsListeners(dump, port) {
+  const pids = new Set();
+  let unattributed = false;
+  for (const line of String(dump ?? "").split(/\r?\n/)) {
+    const [protocol, local, , state, rawPid] = line.trim().split(/\s+/);
+    if (protocol !== "TCP" || state !== "LISTENING" || !local?.endsWith(`:${port}`)) continue;
+    const pid = parsePid(rawPid);
+    if (pid === null) unattributed = true;
+    else pids.add(pid);
+  }
+  return { pids: [...pids], unattributed };
+}
 
 export function parsePreviewArgs(argv) {
   const [action, ...rest] = argv;
@@ -139,6 +165,7 @@ export async function terminatePids(
  * the port is free.
  */
 export function stopOutcome({ signalled, stubborn, after }) {
+  if (after.error) return { ok: false, error: after.error };
   const held = [...new Set([...stubborn, ...after.pids])];
   if (held.length > 0) {
     return { ok: false, error: `port ${PREVIEW_PORT} is still held by pid(s) ${held.join(", ")}` };
@@ -175,11 +202,11 @@ function pgidOf(pid) {
   }
 }
 
-function killPid(pid, signal) {
+export function killPid(pid, signal) {
   // restart() detaches the server into its own process group, so signal the
   // group to reach `vite` under the `npm` wrapper. Only for a leader: `-pid` on
   // a pid that leads no group still reaches any unrelated group numbered pid.
-  if (pgidOf(pid) === pid) {
+  if (process.platform !== "win32" && pgidOf(pid) === pid) {
     try {
       process.kill(-pid, signal);
       return;
@@ -188,13 +215,29 @@ function killPid(pid, signal) {
     }
   }
   try {
+    // Windows can terminate the verified port owner directly; taskkill /T may
+    // stall on process-tree queries even when this process is still responsive.
     process.kill(pid, signal);
-  } catch {
-    // Exited between the liveness check and the signal.
+  } catch (err) {
+    if (err?.code !== "ESRCH") console.error(`[preview] could not stop pid ${pid}: ${err.message}`);
   }
 }
 
 function cmdlineOf(pid) {
+  if (process.platform === "win32") {
+    if (!isAlive(pid)) return "";
+    const command = spawnSync(
+      "powershell.exe",
+      [
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        `(Get-CimInstance Win32_Process -Filter 'ProcessId = ${pid}').CommandLine`,
+      ],
+      { encoding: "utf8", windowsHide: true, timeout: 3000 },
+    );
+    return command.status === 0 ? command.stdout : "";
+  }
   try {
     return readFileSync(`/proc/${pid}/cmdline`, "utf8");
   } catch {
@@ -243,6 +286,21 @@ function pidsForSocketInodes(inodes) {
  * whose owning pid could not be resolved (an fd dir we may not read).
  */
 function portOwners() {
+  if (process.platform === "win32") {
+    const scan = spawnSync("netstat.exe", ["-ano"], {
+      encoding: "utf8",
+      windowsHide: true,
+      timeout: PORT_SCAN_TIMEOUT_MS,
+    });
+    if (scan.error || scan.status !== 0) {
+      return {
+        pids: [],
+        unattributed: true,
+        error: `could not inspect port ${PREVIEW_PORT}: ${scan.error?.message ?? (scan.stderr.trim() || `netstat exited with ${scan.status}`)}`,
+      };
+    }
+    return parseWindowsListeners(scan.stdout, PREVIEW_PORT);
+  }
   const inodes = new Set();
   for (const file of ["/proc/net/tcp", "/proc/net/tcp6"]) {
     let dump;
@@ -259,8 +317,13 @@ function portOwners() {
 }
 
 async function stop(announce = true) {
+  const before = portOwners();
+  if (before.error) {
+    console.error(`[preview] ${before.error}`);
+    return false;
+  }
   const owners = previewOwners({
-    portPids: portOwners().pids,
+    portPids: before.pids,
     pidFilePid: readPidFile(),
     cmdlineOf,
   });
@@ -297,13 +360,16 @@ async function restart() {
 
   mkdirSync(dirname(LOG_FILE), { recursive: true });
   const log = openSync(LOG_FILE, "a");
-  const child = spawn("npm", ["run", "preview"], {
+  const { command, args } = previewCommand();
+  const child = spawn(command, args, {
     cwd: ROOT,
     detached: true,
+    windowsHide: true,
     stdio: ["ignore", log, log],
   });
+  closeSync(log);
   child.unref();
-  writeFileSync(PID_FILE, `${child.pid}\n`);
+  if (child.pid) writeFileSync(PID_FILE, `${child.pid}\n`);
 
   let failure = null;
   child.on("error", (err) => {
@@ -335,8 +401,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     console.error(`[preview] ${args.error}`);
     process.exit(1);
   }
-  if (!existsSync("/proc/self")) {
-    console.error("[preview] no /proc — this script only runs inside the sandbox");
+  if (process.platform !== "win32" && !existsSync("/proc/self")) {
+    console.error("[preview] requires Windows or Linux with /proc");
     process.exit(1);
   }
   process.exitCode = args.action === "stop" ? ((await stop()) ? 0 : 1) : await restart();

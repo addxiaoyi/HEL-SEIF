@@ -12,6 +12,7 @@ const outside = await mkdtemp(join(tmpdir(), "helself-backup-files-"));
 const backupFile = join(outside, "integration.helself-backup");
 const PASSWORD = "integration-backup-2026";
 const DOC_TITLE = "备份回归文档";
+const BACKUP_SIGNATURE = "HELSELFBAK";
 const errors = [];
 
 async function launch(directory) {
@@ -87,7 +88,10 @@ try {
   await settings.getByRole("button", { name: "选择保存位置并备份", exact: true }).click();
   await page.getByText(/已创建加密备份 integration\.helself-backup/).waitFor();
   const bytes = await readFile(backupFile);
-  assert.equal(bytes.subarray(0, 8).toString("ascii"), "HELSELFBAK");
+  assert.equal(
+    bytes.subarray(0, Buffer.byteLength(BACKUP_SIGNATURE)).toString("ascii"),
+    BACKUP_SIGNATURE,
+  );
   for (const plain of [DOC_TITLE, "sk-integration-backup-key", "vault-secret-1"])
     assert.equal(bytes.includes(Buffer.from(plain)), false, plain);
   await page.screenshot({ path: "screenshots/backup-create.png" });

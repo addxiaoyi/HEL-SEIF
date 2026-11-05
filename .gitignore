@@ -45,3 +45,5 @@ release/
 # 自托管网页版
 dist-web/
 helself-data/
+.codegraph/
+/.grok/preview.pid
