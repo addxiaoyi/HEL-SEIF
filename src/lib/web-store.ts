@@ -1,85 +1,120 @@
 import type { StateStorage } from "zustand/middleware";
 import { toast } from "sonner";
 import { webApi, WebConflictError } from "./web";
+import { createWebSaveQueue } from "./web-save-queue";
+import { t } from "./i18n";
 
-/**
- * 网页版的资料存储：整份资料存在服务器上的 assets.json（与桌面版同一文件）。
- *
- * 每次保存带上读到时的版本号；家里和公司同时改时，后保存的一方会收到冲突，
- * 此时以服务器上的最新资料为准重新载入，并提示刚才那次修改需要重做。
- */
 let revision: string | null = null;
-let lastSent: string | null = null;
-let pending: string | null = null;
-let timer: ReturnType<typeof setTimeout> | null = null;
-let writing: Promise<void> | null = null;
 let reload: (() => Promise<void>) | null = null;
+let recovered: string | null | undefined;
+const SAVE_ERROR_ID = "web-store-save";
 
-async function flush() {
-  if (writing || pending === null) return;
-  const value = pending;
-  pending = null;
-  writing = (async () => {
+function showSaveError(error: unknown) {
+  toast.error(t("保存失败：{0}", error instanceof Error ? error.message : String(error)), {
+    id: SAVE_ERROR_ID,
+    duration: Infinity,
+    action: { label: t("重试"), onClick: () => saves.retry() },
+  });
+}
+
+const saves = createWebSaveQueue({
+  async write(value) {
+    const response = await webApi<{ revision: string }>("store", {
+      method: "PUT",
+      body: { revision, data: JSON.parse(value) },
+    });
+    revision = response.revision;
+    toast.dismiss(SAVE_ERROR_ID);
+  },
+  isConflict: (error) => error instanceof WebConflictError,
+  async recover() {
+    // 只读一次最新快照，再交给 rehydrate；读取失败时继续阻止旧快照写回。
+    const response = await webApi<{ revision: string | null; data: unknown }>("store");
+    revision = response.revision;
+    recovered = response.data ? JSON.stringify(response.data) : null;
+    saves.acknowledge(recovered);
     try {
-      const res = await webApi<{ revision: string }>("store", {
-        method: "PUT",
-        body: { revision, data: JSON.parse(value) },
-      });
-      revision = res.revision;
-      lastSent = value;
-    } catch (error) {
-      if (error instanceof WebConflictError) {
-        toast.warning("资料已在另一台设备更新，已载入最新内容；刚才的修改请再做一次");
-        await reload?.();
-      } else toast.error(error instanceof Error ? `保存失败：${error.message}` : "保存失败");
+      await reload?.();
+    } finally {
+      recovered = undefined;
     }
-  })();
-  await writing;
-  writing = null;
-  if (pending !== null) void flush();
+    toast.dismiss(SAVE_ERROR_ID);
+    toast.warning(t("资料已在另一台设备更新，已载入最新内容；刚才的修改请再做一次"));
+  },
+  onError: showSaveError,
+});
+
+export async function flushWebStore(): Promise<boolean> {
+  try {
+    await saves.flush();
+    return true;
+  } catch (error) {
+    showSaveError(error);
+    return false;
+  }
 }
 
 export const webStorage: StateStorage = {
-  getItem: async () => {
-    const res = await webApi<{ revision: string | null; data: unknown }>("store");
-    revision = res.revision;
-    lastSent = res.data ? JSON.stringify(res.data) : null;
-    return lastSent;
+  async getItem() {
+    if (recovered !== undefined) return recovered;
+    if (saves.hasPending() && !saves.isRecovering()) return saves.latest();
+    const response = await webApi<{ revision: string | null; data: unknown }>("store");
+    // 读取期间可能又有编辑，远端快照不能覆盖尚未保存的本机内容。
+    if (saves.hasPending() && !saves.isRecovering()) return saves.latest();
+    revision = response.revision;
+    const value = response.data ? JSON.stringify(response.data) : null;
+    saves.acknowledge(value);
+    return value;
   },
-  setItem: async (_name, value) => {
-    if (value === lastSent) return;
-    pending = value;
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(() => void flush(), 400);
-  },
-  removeItem: async () => {},
+  setItem: (_name, value) => saves.enqueue(value),
+  // 清空资料通过资料管理完成，移除持久化键不能绕过版本校验。
+  removeItem: () => {},
 };
 
-/** 回到这个标签页时检查服务器上是否有别的设备写入的新资料。 */
+/** 回到页面、恢复联网时先保存草稿，再检查其他设备的更新。 */
 export function startWebSync(rehydrate: () => Promise<void>) {
   reload = rehydrate;
+  let checking = false;
   const check = async () => {
-    if (pending !== null || writing || document.visibilityState !== "visible") return;
+    if (checking || document.visibilityState !== "visible") return;
+    if (saves.hasPending()) {
+      saves.retry();
+      return;
+    }
+    checking = true;
     try {
-      const res = await webApi<{ revision: string | null }>("store");
-      if (res.revision !== revision && pending === null && !writing) await rehydrate();
-    } catch {
-      // 网络暂时不通时下次再查。
+      const response = await webApi<{ revision: string | null }>("store");
+      if (response.revision !== revision && !saves.hasPending()) await rehydrate();
+    } catch (error) {
+      console.warn("[web-store] 检查远端资料失败，将在恢复联网后重试", error);
+    } finally {
+      checking = false;
     }
   };
-  const onVisible = () => void check();
-  window.addEventListener("focus", onVisible);
-  document.addEventListener("visibilitychange", onVisible);
-  const interval = setInterval(onVisible, 60_000);
-  // 关闭页面前把还没发出去的修改发掉。
-  const onHide = () => {
-    if (pending !== null) void flush();
+  const onVisible = () => {
+    if (document.visibilityState === "hidden") saves.retry();
+    else void check();
   };
+  const onHide = () => saves.retry();
+  const onBeforeUnload = (event: BeforeUnloadEvent) => {
+    if (!saves.hasPending()) return;
+    saves.retry();
+    event.preventDefault();
+    event.returnValue = "";
+  };
+  window.addEventListener("focus", onVisible);
+  window.addEventListener("online", onVisible);
+  document.addEventListener("visibilitychange", onVisible);
   window.addEventListener("pagehide", onHide);
+  window.addEventListener("beforeunload", onBeforeUnload);
+  const interval = setInterval(onVisible, 60_000);
   return () => {
     window.removeEventListener("focus", onVisible);
+    window.removeEventListener("online", onVisible);
     document.removeEventListener("visibilitychange", onVisible);
     window.removeEventListener("pagehide", onHide);
+    window.removeEventListener("beforeunload", onBeforeUnload);
     clearInterval(interval);
+    if (reload === rehydrate) reload = null;
   };
 }

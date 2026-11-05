@@ -81,6 +81,85 @@ try {
   result.homeSeesCompletion =
     (await a.getByRole("article", { name: "提醒 宽带续费" }).count()) === 0;
 
+  // 保存失败时草稿留在当前页面，恢复联网后写入真实服务器。
+  await a.route("**/api/web/store", (route) =>
+    route.request().method() === "PUT" ? route.abort("failed") : route.continue(),
+  );
+  await a.getByRole("button", { name: "新建提醒" }).click();
+  await a.getByRole("textbox", { name: "提醒什么" }).fill("离线后恢复保存");
+  await a.getByRole("button", { name: "保存", exact: true }).click();
+  await a
+    .locator('[data-sonner-toast][data-type="error"]')
+    .filter({ hasText: "保存失败" })
+    .waitFor();
+  const beforeRetry = await (await a.request.get(`${base}/api/web/store`)).json();
+  assert.ok(
+    !beforeRetry.data.state.reminders.some((reminder) => reminder.title === "离线后恢复保存"),
+  );
+  await a.unroute("**/api/web/store");
+  const retrySaved = a.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/web/store") &&
+      response.request().method() === "PUT" &&
+      response.status() === 200,
+  );
+  await a.evaluate(() => window.dispatchEvent(new Event("online")));
+  await retrySaved;
+  const afterRetry = await (await a.request.get(`${base}/api/web/store`)).json();
+  assert.ok(
+    afterRetry.data.state.reminders.some((reminder) => reminder.title === "离线后恢复保存"),
+  );
+  result.offlineRetrySaved = true;
+
+  // 一次写入等待响应时继续编辑，再让另一台设备先写入，旧队列不能覆盖远端。
+  let releaseWrite;
+  const writeGate = new Promise((resolve) => {
+    releaseWrite = resolve;
+  });
+  let firstWrite;
+  const firstWriteStarted = new Promise((resolve) => {
+    firstWrite = resolve;
+  });
+  let held = false;
+  await a.route("**/api/web/store", async (route) => {
+    if (route.request().method() === "PUT" && !held) {
+      held = true;
+      firstWrite();
+      await writeGate;
+    }
+    await route.continue();
+  });
+  await a.getByRole("button", { name: "新建提醒" }).click();
+  await a.getByRole("textbox", { name: "提醒什么" }).fill("冲突中的第一条");
+  await a.getByRole("button", { name: "保存", exact: true }).click();
+  await firstWriteStarted;
+  await a.getByRole("button", { name: "新建提醒" }).click();
+  await a.getByRole("textbox", { name: "提醒什么" }).fill("冲突中的排队修改");
+  await a.getByRole("button", { name: "保存", exact: true }).click();
+  const remote = await (await b.request.get(`${base}/api/web/store`)).json();
+  remote.data.state.reminders.push({
+    id: "remote-change",
+    title: "另一台设备的资料",
+    note: "",
+    dueAt: "2027-01-01",
+    repeat: "none",
+    leadDays: 7,
+  });
+  const remoteSaved = await b.request.put(`${base}/api/web/store`, {
+    headers: { "x-helself": "1" },
+    data: remote,
+  });
+  assert.equal(remoteSaved.status(), 200);
+  releaseWrite();
+  await a.getByRole("article", { name: "提醒 另一台设备的资料" }).waitFor();
+  const afterConflict = await (await a.request.get(`${base}/api/web/store`)).json();
+  assert.ok(afterConflict.data.state.reminders.some((reminder) => reminder.id === "remote-change"));
+  assert.ok(
+    !afterConflict.data.state.reminders.some((reminder) => reminder.title.startsWith("冲突中的")),
+  );
+  await a.unroute("**/api/web/store");
+  result.conflictPreservesRemote = true;
+
   // 网页版的顶部导航：主机监控能读到服务器状态（非 Linux 时显示原因）
   await b.goto(`${base}/`);
   await b.locator('[data-app-ready="true"]').waitFor();
@@ -137,6 +216,8 @@ assert.equal(result.syncedToOffice, true);
 assert.equal(result.loggedOut, true);
 assert.equal(result.pushSaved, true);
 assert.equal(result.homeSeesCompletion, true);
+assert.equal(result.offlineRetrySaved, true);
+assert.equal(result.conflictPreservesRemote, true);
 assert.equal(result.afterLogoutApi, 401);
 assert.equal(result.sidebarGone, true);
 assert.match(result.hostPage, /CPU|主机监控需要 Linux/);

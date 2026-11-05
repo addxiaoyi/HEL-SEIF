@@ -22,7 +22,10 @@ async function rig(t, options = {}) {
   await new Promise((r) => web.server.listen(0, "127.0.0.1", r));
   const base = `http://127.0.0.1:${web.server.address().port}`;
   t.after(async () => {
-    web.server.close();
+    web.server.closeAllConnections();
+    await new Promise((resolve, reject) =>
+      web.server.close((error) => (error ? reject(error) : resolve())),
+    );
     await rm(root, { recursive: true, force: true });
     await rm(staticDir, { recursive: true, force: true });
   });
@@ -239,7 +242,10 @@ test("备份与恢复：下载的备份能恢复，桌面版备份也能直接�
     body: { password: "backup-pass-123" },
   });
   assert.equal(download.status, 200);
-  assert.match(download.headers.get("content-disposition"), /helself-web-\d{8}-\d{6}\.helself-backup/);
+  assert.match(
+    download.headers.get("content-disposition"),
+    /helself-web-\d{8}-\d{6}\.helself-backup/,
+  );
   assert.ok((await download.arrayBuffer()).byteLength > 100);
 
   // 模拟桌面版：另一个资料目录做出的备份

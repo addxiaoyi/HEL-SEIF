@@ -3152,4 +3152,7 @@ export const EN: Record<string, string> = {
   打开已有资料: "Open saved asset",
   去号码页添加: "Add on the phone page",
   去录入: "Create asset",
+  "资料已在另一台设备更新，已载入最新内容；刚才的修改请再做一次":
+    "Your data changed on another device. The latest version has been loaded; please repeat your last edit.",
+  "保存失败：{0}": "Could not save: {0}",
 };

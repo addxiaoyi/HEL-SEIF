@@ -234,6 +234,7 @@ export async function createWebServer({
   const sessions = new Map(Object.entries((await readJson(files.sessions)) ?? {}));
   const guard = new LoginGuard();
   let securityLog = (await readJson(files.securityLog).catch(() => null)) ?? [];
+  let securityWrites = Promise.resolve();
   // 正在设置的两步验证密钥：确认验证码正确之前只在内存里，不落盘。
   let pendingTotp = null;
   let queue = Promise.resolve();
@@ -297,7 +298,7 @@ export async function createWebServer({
     // 活动时间每 10 分钟更新一次，避免每个请求都写文件。
     if (now - (session.seen ?? 0) > 600_000) {
       session.seen = now;
-      persistSessions().catch(() => {});
+      persistSessions().catch((error) => log.error("session activity persistence", error));
     }
     return { key, ...session };
   }
@@ -329,7 +330,12 @@ export async function createWebServer({
       agent: shortAgent(req.headers["user-agent"]),
       ...extra,
     });
-    writeAtomic(files.securityLog, JSON.stringify(securityLog)).catch(() => {});
+    const snapshot = JSON.stringify(securityLog);
+    // 并发登录按事件顺序落盘，响应前等到完成，避免旧快照晚到覆盖新记录。
+    securityWrites = securityWrites
+      .then(() => writeAtomic(files.securityLog, snapshot))
+      .catch((error) => log.error("security log persistence", error));
+    return securityWrites;
   }
   let lastFailureAlert = 0;
   /** 登录和首次设置共用：先检查限流（不进入昂贵的密码哈希），返回失败时要调用的记账函数。 */
@@ -337,7 +343,7 @@ export async function createWebServer({
     const ip = clientIp(req);
     const gate = guard.check(ip);
     if (gate.blocked) {
-      record("blocked", req, { reason: gate.reason });
+      await record("blocked", req, { reason: gate.reason });
       throw new HttpError(
         429,
         gate.reason === "ip" ? "尝试次数过多，请 15 分钟后再试" : "登录请求过于频繁，请稍后再试",
@@ -524,7 +530,7 @@ export async function createWebServer({
       await rm(files.token, { force: true });
       setupToken = undefined;
       await newSession(res, req, username);
-      record("setup", req);
+      await record("setup", req);
       send(res, 200, { username });
     },
 
@@ -545,7 +551,7 @@ export async function createWebServer({
       const second = await checkSecondFactor(input?.code, passwordOk);
       if (!passwordOk || !second.ok) {
         fail();
-        record("fail", req, { reason: !passwordOk ? "password" : "code" });
+        await record("fail", req, { reason: !passwordOk ? "password" : "code" });
         await new Promise((r) => setTimeout(r, 400));
         throw new HttpError(
           401,
@@ -555,7 +561,7 @@ export async function createWebServer({
       const knownIp = isKnownIp(securityLog, clientIp(req));
       guard.success(clientIp(req));
       await newSession(res, req, account.username);
-      record("login", req, second.recovery ? { recovery: true } : {});
+      await record("login", req, second.recovery ? { recovery: true } : {});
       if (!knownIp)
         void push.notify(
           `你的Helself网页版有一次来自新地址 ${clientIp(req)} 的登录${second.recovery ? "（使用了恢复码）" : ""}。如果不是你，请在「设置 → 个人资料 → 账号安全」里退出所有设备并修改密码。`,
@@ -566,7 +572,7 @@ export async function createWebServer({
     "POST /api/web/logout": async (req, res) => {
       const session = sessionOf(req);
       if (session) {
-        record("logout", req);
+        await record("logout", req);
         sessions.delete(session.key);
         await persistSessions();
         dropStreams();
@@ -608,7 +614,7 @@ export async function createWebServer({
       for (const key of [...sessions.keys()]) if (key !== session.key) sessions.delete(key);
       await persistSessions();
       dropStreams();
-      record("password", req);
+      await record("password", req);
       send(res, 200, { ok: true });
     },
 
@@ -672,7 +678,7 @@ export async function createWebServer({
       };
       pendingTotp = null;
       await writeAtomic(files.account, JSON.stringify(account));
-      record("totp-on", req);
+      await record("totp-on", req);
       send(res, 200, { recovery: codes });
     },
 
@@ -685,7 +691,7 @@ export async function createWebServer({
       const { totp: _removed, ...rest } = account;
       account = rest;
       await writeAtomic(files.account, JSON.stringify(account));
-      record("totp-off", req);
+      await record("totp-off", req);
       send(res, 200, { ok: true });
     },
 
@@ -700,7 +706,7 @@ export async function createWebServer({
       sessions.delete(matches[0]);
       await persistSessions();
       dropStreams();
-      record("revoke", req);
+      await record("revoke", req);
       send(res, 200, { ok: true });
     },
 
@@ -708,7 +714,7 @@ export async function createWebServer({
       for (const key of [...sessions.keys()]) if (key !== session.key) sessions.delete(key);
       await persistSessions();
       dropStreams();
-      record("revoke-others", req);
+      await record("revoke-others", req);
       send(res, 200, { ok: true });
     },
 

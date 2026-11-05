@@ -200,7 +200,9 @@ async function rig(t, options = {}) {
   if (!options.keep)
     t.after(async () => {
       web.server.closeAllConnections();
-      web.server.close();
+      await new Promise((resolve, reject) =>
+        web.server.close((error) => (error ? reject(error) : resolve())),
+      );
       await rm(root, { recursive: true, force: true });
       await rm(staticDir, { recursive: true, force: true });
     });
@@ -366,6 +368,10 @@ test(
     assert.ok(log.filter((entry) => entry.kind === "fail").length >= 8);
     assert.ok(log.some((entry) => entry.kind === "blocked"));
     assert.ok(log.some((entry) => entry.kind === "setup"));
+    const persisted = JSON.parse(
+      await readFile(join(r.root, "server", "security-log.json"), "utf8"),
+    );
+    assert.deepEqual(persisted, log, "返回响应时安全记录已经完整写入磁盘");
     assert.ok(
       log.every((entry) => !JSON.stringify(entry).includes("wrong-password")),
       "记录里没有密码",

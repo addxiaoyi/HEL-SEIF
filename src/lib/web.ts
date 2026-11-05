@@ -25,6 +25,8 @@ export async function webApi<T>(
 }
 
 export async function webLogout() {
+  const { flushWebStore } = await import("./web-store");
+  if (!(await flushWebStore())) return;
   await webApi("logout", { method: "POST", body: {} }).catch(() => {});
   location.assign("/login");
 }
