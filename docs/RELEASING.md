@@ -2,6 +2,14 @@
 
 当前发布目标为 Windows x64 NSIS 安装包。其他平台的打包配置不代表已验证可发布。
 
+本地候选包为 1.17.13，验证范围见 [候选包说明](releases/v1.17.13.md)。`package-desktop.mjs` 强制禁止发布并拒绝其他发布模式，Release 仍由最后独立的 GitHub 上传步骤创建。
+
+## 不发布的 Windows 安装验收
+
+`.github/workflows/windows-validation.yml` 仅支持手动启动，仓库权限为只读，不创建 Release、标签、镜像或网站部署。它在 GitHub 托管的一次性 Windows runner 中构建当前分支，执行 `scripts/windows-installation-qa.ps1`，验证真实安装、启动、同版本覆盖升级、文档和密钥库保留、快捷方式图标、自启偏好与卸载清理，并上传七天有效的验收产物。
+
+本机运行时会拒绝执行完整试装，避免改写维护者的注册表和已安装程序。跨历史版本升级、管理员 UAC、磁盘满与第三方安全软件仍需专用测试环境。本流程准备完成不代表远端运行已经通过。
+
 ## 宣传与下载页同步
 
 [GitHub Pages 下载页](https://addxiaoyi.github.io/HEL-SEIF/)使用 `site/` 下的模板和图片，版本、日期、更新摘要、安装包、插件及校验文件地址由最新已发布的 GitHub 正式版生成，不读取尚未发布的 `package.json` 版本。
