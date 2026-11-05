@@ -4,6 +4,7 @@ import { isWeb } from "@/lib/web";
 import { startWebSync } from "@/lib/web-store";
 import { Bot, FileText, House, Phone, Server } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { Toaster, toast } from "sonner";
 import { CommandPalette } from "./command-palette";
 import { Composer } from "./composer";
@@ -306,12 +307,17 @@ export function AppShell() {
       <KeyboardShortcuts />
       <VaultGate />
       <Onboarding />
-      <Toaster
-        position="bottom-right"
-        toastOptions={{
-          className: "!bg-card !text-ink !shadow-[var(--shadow-float)] !border-0 !rounded-lg",
-        }}
-      />
+      {hydrated &&
+        createPortal(
+          <Toaster
+            position="bottom-right"
+            className="pointer-events-auto"
+            toastOptions={{
+              className: "!bg-card !text-ink !shadow-[var(--shadow-float)] !border-0 !rounded-lg",
+            }}
+          />,
+          document.body,
+        )}
     </>
   );
 

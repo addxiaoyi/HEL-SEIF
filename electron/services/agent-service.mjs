@@ -640,7 +640,9 @@ export class AgentService {
         ...base,
         model: response.model ?? model,
         redacted: redacted?.count ?? 0,
-        bundle: corrections.length ? applyCorrections(bundle, corrections) : bundle,
+        bundle: corrections.length
+          ? applyCorrections(bundle, corrections, this.getSnapshot() ?? {})
+          : bundle,
       };
     } catch (error) {
       return { ...base, error: publicError(error).message };

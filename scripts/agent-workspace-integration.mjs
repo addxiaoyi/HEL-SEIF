@@ -148,6 +148,8 @@ try {
             pageTop: document.documentElement.scrollTop,
             bodyExcess: document.documentElement.scrollHeight - innerHeight,
             formBottom: form.bottom,
+            panelBottom:
+              document.querySelector(".app-panel")?.getBoundingClientRect().bottom ?? innerHeight,
             viewport: innerHeight,
             scrollBottom: scroll.getBoundingClientRect().bottom,
             formTop: form.top,
@@ -160,7 +162,9 @@ try {
         assert.ok(geometry.bodyExcess <= 1);
         assert.ok(Math.abs(geometry.scrollBottom - geometry.formTop) <= 1, "消息与输入区连续衔接");
         assert.ok(
-          Math.abs(geometry.formBottom - (geometry.viewport - (mobile ? 56 : 0))) <= 2,
+          Math.abs(
+            geometry.formBottom - (mobile ? geometry.viewport - 56 : geometry.panelBottom),
+          ) <= 2,
           "输入区固定到底边",
         );
         assert.ok(geometry.overflow <= 1);

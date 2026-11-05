@@ -493,9 +493,10 @@ const has = (known: IntakeField[], name: string) =>
 function missingOf(kind: IntakeAssetKind, known: IntakeField[]): string[] {
   const needed = NEEDED[kind];
   const missing: string[] = [];
-  if (!has(known, "expiresAt") && needed.includes("到期日")) missing.push("到期日");
+  const hasExpiry = has(known, "expiresAt") || (kind === "ai" && has(known, "renewsAt"));
+  if (!hasExpiry && needed.includes("到期日")) missing.push("到期日");
   if (!has(known, "billing") && needed.includes("费用")) missing.push("费用");
-  if (kind === "ai" && !has(known, "billing")) missing.push("月费");
+  if (kind === "ai" && !has(known, "billing") && !has(known, "monthlyUsd")) missing.push("月费");
   if (kind === "domain" && !has(known, "registrar")) missing.push("注册商");
   if (kind === "mail" && !has(known, "address")) missing.push("邮箱地址");
   if (kind === "server" && !has(known, "host")) missing.push("主机地址");
@@ -512,7 +513,9 @@ function inferredOf(
   now: Date,
 ): IntakeField[] {
   const out: IntakeField[] = [];
-  const expires = known.find((item) => item.field === "expiresAt")?.value;
+  const expires =
+    (kind === "ai" ? known.find((item) => item.field === "renewsAt")?.value : undefined) ??
+    known.find((item) => item.field === "expiresAt")?.value;
   if (expires) {
     const days = Math.ceil(
       (new Date(expires + "T00:00:00").getTime() - now.getTime()) / 86_400_000,
@@ -525,7 +528,13 @@ function inferredOf(
       ),
     );
   }
-  const money = readMoney(text);
+  const monthlyUsd =
+    kind === "ai"
+      ? readMoney(known.find((item) => item.field === "monthlyUsd")?.value ?? "")
+      : undefined;
+  const money = monthlyUsd
+    ? { ...monthlyUsd, cycle: "month" }
+    : (readMoney(known.find((item) => item.field === "billing")?.value ?? "") ?? readMoney(text));
   if (money?.cycle === "month")
     out.push(field("yearly", "年支出", moneyText(money.amount * 12, money.currency)));
   if (money?.cycle === "year")
@@ -645,11 +654,11 @@ export function reclassifyEntry(
   const next = readEntry([previous.line], snapshot, now, index, kind);
   const carried = previous.known.filter(
     (item) =>
-      item.source === "model" &&
-      CORRECTABLE[kind].includes(item.field) &&
-      !next.known.some((known) => known.field === item.field),
+      (item.source === "model" || item.source === "manual") &&
+      CORRECTABLE[kind].includes(item.field),
   );
-  const known = [...next.known, ...carried];
+  const carriedNames = new Set(carried.map((item) => item.field));
+  const known = [...next.known.filter((item) => !carriedNames.has(item.field)), ...carried];
   // 保留下来的模型字段也要算进「已知」，缺口与相应的问题跟着重算。
   const missing = missingOf(kind, known);
   const questions = next.questions.filter(
@@ -663,7 +672,16 @@ export function reclassifyEntry(
   );
   const entries = bundle.entries.map((entry, at) =>
     at === index
-      ? { ...next, id: previous.id, ignored: previous.ignored, known, missing, questions }
+      ? {
+          ...next,
+          id: previous.id,
+          ignored: previous.ignored,
+          known,
+          missing,
+          questions,
+          inferred: inferredOf(kind, previous.line, known, now),
+          saved: findSaved(snapshot, kind, identityOf(known)),
+        }
       : entry,
   );
   return summarize(bundle.raw, entries);
@@ -726,7 +744,17 @@ export function editField(
   // 标题通常就取自被改的那个值，改了就跟着走。
   const title = entry.title === current.value ? normalized : entry.title;
   const entries = bundle.entries.map((item, i) =>
-    i === index ? { ...entry, known, missing, questions, title, saved } : item,
+    i === index
+      ? {
+          ...entry,
+          known,
+          missing,
+          questions,
+          title,
+          saved,
+          inferred: inferredOf(entry.kind, entry.line, known, now),
+        }
+      : item,
   );
   return summarize(bundle.raw, entries);
 }
@@ -744,7 +772,11 @@ export function refreshSaved(bundle: IntakeBundle, snapshot: Partial<Snapshot> =
     const saved = findSaved(snapshot, entry.kind, identityOf(entry.known));
     const same =
       saved === entry.saved ||
-      (saved && entry.saved && saved.id === entry.saved.id && saved.kind === entry.saved.kind);
+      (saved &&
+        entry.saved &&
+        saved.id === entry.saved.id &&
+        saved.kind === entry.saved.kind &&
+        saved.name === entry.saved.name);
     if (same) return entry;
     changed = true;
     const questions = entry.questions.filter((question) => !question.startsWith("资料里已经有"));
@@ -855,6 +887,8 @@ function normalizeBillingValue(
 export function applyCorrections(
   bundle: IntakeBundle,
   corrections: IntakeCorrection[],
+  snapshot?: Partial<Snapshot>,
+  now = new Date(),
 ): IntakeBundle {
   const entries = bundle.entries.map((entry) => ({ ...entry }));
   for (const item of corrections) {
@@ -863,18 +897,43 @@ export function applyCorrections(
     const kind = INTAKE_KINDS.includes(item.kind as IntakeAssetKind)
       ? (item.kind as IntakeAssetKind)
       : entry.kind;
-    const known = [...entry.known];
+    const reclassified =
+      kind === entry.kind
+        ? entry
+        : reclassifyEntry(bundle, item.index, kind, snapshot, now).entries[item.index];
+    const known = [...reclassified.known];
     const extra = cleanFields(kind, (item.fields ?? {}) as Record<string, unknown>);
     for (const next of extra) {
       const at = known.findIndex((old) => old.field === next.field);
       if (at >= 0) known[at] = next;
       else known.push(next);
     }
+    const missing = missingOf(kind, known);
+    const saved = snapshot
+      ? findSaved(snapshot, kind, identityOf(known))
+      : kind === entry.kind && identityOf(known) === identityOf(entry.known)
+        ? entry.saved
+        : undefined;
+    const questions = reclassified.questions.filter(
+      (question) =>
+        !question.startsWith("资料里已经有") &&
+        !(question.startsWith("没有到期日") && !missing.includes("到期日")) &&
+        !(
+          question.startsWith("费用没写清楚") &&
+          !missing.includes("费用") &&
+          !missing.includes("月费")
+        ),
+    );
+    if (saved) questions.unshift(`资料里已经有「${saved.name}」，这次是更新它，还是另存一条？`);
     entries[item.index] = {
-      ...entry,
+      ...reclassified,
       kind,
       title: typeof item.title === "string" && item.title.trim() ? item.title.trim() : entry.title,
       known,
+      missing,
+      questions,
+      saved,
+      inferred: inferredOf(kind, entry.line, known, now),
       reason: `${entry.reason}；模型补充`,
     };
   }
@@ -1047,7 +1106,7 @@ export function intakeList(bundle: IntakeBundle): string {
 export function intakePreset(entry: IntakeEntry): Record<string, string> {
   const value = (name: string) =>
     entry.known.find((item) => item.field === name)?.value.trim() ?? "";
-  const money = readMoney(entry.line);
+  const money = readMoney(value("billing")) ?? readMoney(entry.line);
   const preset: Record<string, string> = {};
   if (money) {
     preset.billingAmount = String(money.amount);
@@ -1092,17 +1151,21 @@ export function intakePreset(entry: IntakeEntry): Record<string, string> {
       preset.name = entry.title;
       if (value("provider")) preset.provider = value("provider");
       if (value("plan")) preset.plan = value("plan");
-      if (expiresAt) preset.renewsAt = expiresAt;
+      const renewsAt = value("renewsAt") || expiresAt;
+      if (renewsAt) preset.renewsAt = renewsAt;
       delete preset.billingAmount;
       delete preset.billingCurrency;
       delete preset.billingCycle;
       // AI 表单按美元月费记录；人民币金额不换算，留空让用户自己确认。
+      const monthlyUsd = readMoney(value("monthlyUsd"));
       preset.monthlyUsd =
-        money?.currency === "USD" && money.cycle === "month"
-          ? String(money.amount)
-          : money?.currency === "USD" && money.cycle === "year"
-            ? String(Math.round((money.amount / 12) * 100) / 100)
-            : "";
+        monthlyUsd?.currency === "USD"
+          ? String(monthlyUsd.amount)
+          : money?.currency === "USD" && money.cycle === "month"
+            ? String(money.amount)
+            : money?.currency === "USD" && money.cycle === "year"
+              ? String(Math.round((money.amount / 12) * 100) / 100)
+              : "";
       break;
     }
     case "phone": {

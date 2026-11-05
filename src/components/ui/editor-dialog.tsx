@@ -28,6 +28,11 @@ export function EditorDialog({
         <Dialog.Content
           className="editor-dialog"
           aria-describedby={undefined}
+          onInteractOutside={(event) => {
+            // 通知中的撤销、重试属于当前操作，点击它们不应丢掉正在编辑的窗口。
+            if (event.target instanceof Element && event.target.closest("[data-sonner-toaster]"))
+              event.preventDefault();
+          }}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
             const target = returnFocus.current;

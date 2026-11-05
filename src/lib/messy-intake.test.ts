@@ -23,6 +23,34 @@ import {
   unredactText,
 } from "./messy-intake.ts";
 
+test("模型补齐字段后，缺口、待确认项和费用推算一起更新", () => {
+  const bundle = parseMessyText("ChatGPT Plus 订阅");
+  const next = applyCorrections(bundle, [
+    { index: 0, kind: "ai", fields: { monthlyUsd: 30, renewsAt: "2027-01-01" } },
+  ]);
+  assert.ok(!next.entries[0].missing.includes("月费"));
+  assert.ok(!next.entries[0].missing.includes("到期日"));
+  assert.ok(
+    !next.entries[0].questions.some((question) => /费用没写清楚|没有到期日/.test(question)),
+  );
+  assert.equal(next.entries[0].inferred.find((item) => item.field === "yearly")?.value, "$360");
+});
+
+test("改到期日后推算更新，改类型保留用户已修正的共用字段", () => {
+  const now = new Date("2026-11-04T00:00:00");
+  const bundle = parseMessyText("example.com 到期 2026-11-05", {}, now);
+  const edited = editField(bundle, 0, "expiresAt", "2026-11-14", {}, now)!;
+  assert.equal(
+    edited.entries[0].inferred.find((item) => item.field === "expiresIn")?.value,
+    "10 天",
+  );
+  const changed = reclassifyEntry(edited, 0, "service", {}, now);
+  assert.equal(
+    changed.entries[0].known.find((item) => item.field === "expiresAt")?.value,
+    "2026-11-14",
+  );
+});
+
 const NOW = new Date("2026-03-01T08:00:00Z");
 
 test("日期解析支持常见写法，没有年份的按今年算", () => {

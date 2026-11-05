@@ -22,7 +22,6 @@ import {
   filterEntries,
   findDuplicates,
   intakeList,
-  intakePreset,
   mergeEntries,
   parseMessyText,
   reclassifyEntry,
@@ -32,7 +31,7 @@ import {
   type IntakeEntry,
 } from "@/lib/messy-intake";
 import { useIntakeSession } from "@/lib/intake-session";
-import { parsePaste } from "@/lib/parse-paste";
+import { intakeFormPreset } from "@/lib/intake-preset";
 import { useAppStore } from "@/lib/store";
 import type { AssetKind } from "@/lib/types";
 import { copyText } from "@/lib/utils";
@@ -223,12 +222,10 @@ export function IntakePanel({
       return;
     }
     if (entry.kind === "phone") {
-      state.openPhones({ create: true, draft: intakePreset(entry) });
+      state.openPhones({ create: true, draft: intakeFormPreset(entry) });
       return;
     }
-    // 表单自己的智能粘贴能认出 API Key、SSH 命令等细节，优先用它的结果。
-    const match = parsePaste(entry.line, entry.kind)[0];
-    state.openComposer(entry.kind, null, { ...intakePreset(entry), ...(match?.fields ?? {}) });
+    state.openComposer(entry.kind, null, intakeFormPreset(entry));
   }
 
   return (

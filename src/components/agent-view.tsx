@@ -156,7 +156,10 @@ export function AgentView() {
   useEffect(() => {
     // 只推动消息容器，避免浏览器把整个页面和输入区一起滚走。
     const scroll = messagesRef.current;
-    if (scroll && followBottom.current) scroll.scrollTop = scroll.scrollHeight;
+    if (!scroll) return;
+    // 新对话展示的是操作入口；滚到底部会把粘贴整理和引导挤到工具栏背后。
+    if (messages.length === 0 && !running?.text) scroll.scrollTop = 0;
+    else if (followBottom.current) scroll.scrollTop = scroll.scrollHeight;
   }, [messages.length, activeId, running?.text]);
 
   useEffect(() => {

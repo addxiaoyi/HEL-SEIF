@@ -105,6 +105,13 @@ try {
   const menu = page.getByRole("menu");
   const dialog = page.getByRole("alertdialog");
   const selected = () => page.evaluate(() => window.__documentStore.getState().selected);
+  const expectFocus = async (locator) => {
+    await page.waitForFunction(
+      (element) => document.activeElement === element,
+      await locator.elementHandle(),
+      { timeout: 3000 },
+    );
+  };
   const reader = page.getByRole("region", { name: "文档正文", exact: true });
   // 确认框会隔离背景的可访问性树，这里仍要检查其后的草稿是否被保留。
   const title = page.getByRole("textbox", { name: "文档标题", exact: true, includeHidden: true });
@@ -116,7 +123,7 @@ try {
   await page.screenshot({ path: "release/screenshots/document-actions-desktop.png" });
   await page.keyboard.press("Escape");
   await menu.waitFor({ state: "hidden" });
-  assert.equal(await row("右键目标文档").evaluate((el) => document.activeElement === el), true);
+  await expectFocus(row("右键目标文档"));
   checks.push("右键菜单绑定点击目标且不切换当前文档，Escape 恢复列表焦点");
 
   await row("右键目标文档").press("Shift+F10");
@@ -132,7 +139,7 @@ try {
   await dialog.getByRole("button", { name: "取消", exact: true }).click();
   await dialog.waitFor({ state: "hidden" });
   assert.deepEqual(await page.evaluate(() => window.__removeCalls), []);
-  assert.equal(await row("右键目标文档").evaluate((el) => document.activeElement === el), true);
+  await expectFocus(row("右键目标文档"));
   checks.push("Shift+F10 打开菜单、确认文件名、默认焦点为取消且取消不删除");
 
   await row("右键目标文档").click({ button: "right" });
@@ -271,7 +278,7 @@ try {
   await dialog.waitFor({ state: "hidden" });
   assert.equal(await selected(), null);
   assert.equal(await row("保存失败仍保留的当前草稿").count(), 0);
-  assert.equal(await row("键盘打开文档").evaluate((el) => document.activeElement === el), true);
+  await expectFocus(row("键盘打开文档"));
   assert.deepEqual(await page.evaluate(() => Object.keys(window.__savedDocuments)), [
     "doc-actions-three",
   ]);
