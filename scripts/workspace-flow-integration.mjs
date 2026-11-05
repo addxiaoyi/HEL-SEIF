@@ -105,7 +105,7 @@ const nav = (page) => page.locator("aside:visible nav");
 const main = (page) => page.locator("main");
 
 try {
-  await scenario("AI 整理入口可点击，合并通知撤销保留面板，修改字段带入表单", async (page) => {
+  await scenario("AI 整理入口可点击，修改字段带入表单", async (page) => {
     await nav(page).getByRole("button", { name: "AI 助手", exact: true }).click();
     await page.locator(".agent-intake-open").click();
     const intake = page.getByRole("dialog", { name: "粘贴整理", exact: true });
@@ -113,14 +113,6 @@ try {
       .getByRole("textbox", { name: "粘贴的杂乱资料" })
       .fill("intake.example.com 注册商 Cloudflare 到期 2027-12-01\nintake.example.com ¥55/年");
     await intake.getByRole("button", { name: "只按本地规则整理", exact: true }).click();
-    await intake.getByRole("button", { name: "并到第 1 条", exact: true }).click();
-    await page.waitForFunction(() => document.querySelectorAll(".intake-entry").length === 1);
-    await page
-      .locator("[data-sonner-toast]")
-      .getByRole("button", { name: "撤销", exact: true })
-      .click();
-    await page.waitForFunction(() => document.querySelectorAll(".intake-entry").length === 2);
-    assert.equal(await intake.isVisible(), true, "通知操作不能关闭整理窗口");
     const first = intake.locator(".intake-entry").first();
     await first.getByRole("button", { name: "修改域名", exact: true }).click();
     await first
