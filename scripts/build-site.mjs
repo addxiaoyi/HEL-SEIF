@@ -7,6 +7,8 @@ const repository = "https://github.com/addxiaoyi/HEL-SEIF";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 export function releaseDetails(release) {
+  if (!release || typeof release !== "object" || Array.isArray(release))
+    throw new Error("A published stable release is required");
   const version = /^v(\d+\.\d+\.\d+)$/.exec(release.tag_name ?? "")?.[1];
   const published = new Date(release.published_at);
   if (
@@ -73,6 +75,12 @@ export function releaseDetails(release) {
   };
 }
 
+export function siteDetails(release) {
+  // null 来自成功读取后的空发布列表，接口失败或损坏的发布对象不能伪装成待发布。
+  if (release === null) return { PUBLISHED: false, RELEASE_URL: `${repository}/releases` };
+  return { ...releaseDetails(release), PUBLISHED: true };
+}
+
 export function renderSite(template, values) {
   const escape = (value) =>
     String(value).replace(
@@ -86,7 +94,15 @@ export function renderSite(template, values) {
           "'": "&#39;",
         })[char],
     );
-  return template.replace(/\{\{([A-Z_]+)\}\}/g, (_, key) => {
+  const sections = template.replace(
+    /<!-- IF_(PUBLISHED|UNPUBLISHED) -->([\s\S]*?)<!-- END_IF_\1 -->/g,
+    (_, condition, content) => {
+      if (typeof values.PUBLISHED !== "boolean")
+        throw new Error("Site release state must be explicit");
+      return values.PUBLISHED === (condition === "PUBLISHED") ? content : "";
+    },
+  );
+  return sections.replace(/\{\{([A-Z_]+)\}\}/g, (_, key) => {
     if (!Object.hasOwn(values, key)) throw new Error(`Unknown site template field: ${key}`);
     return escape(values[key]);
   });
@@ -96,7 +112,7 @@ async function buildSite(releaseFile, outputDirectory) {
   if (!releaseFile || !outputDirectory)
     throw new Error("Usage: node scripts/build-site.mjs <release.json> <output-directory>");
   const release = JSON.parse((await readFile(releaseFile, "utf8")).replace(/^\uFEFF/, ""));
-  const details = releaseDetails(release);
+  const details = siteDetails(release);
   const source = join(root, "site");
   const files = [
     "style.css",
@@ -142,8 +158,19 @@ async function buildSite(releaseFile, outputDirectory) {
   await writeFile(join(output, "index.html"), html);
   await writeFile(join(output, "guide.html"), guide);
   await writeFile(join(output, "sync.html"), sync);
-  await writeFile(join(output, "release.json"), `${JSON.stringify(details, null, 2)}\n`);
-  console.log(JSON.stringify({ ok: true, version: details.VERSION, output, assets: files.length }));
+  await writeFile(
+    join(output, "release.json"),
+    `${JSON.stringify(details.PUBLISHED ? details : null, null, 2)}\n`,
+  );
+  console.log(
+    JSON.stringify({
+      ok: true,
+      published: details.PUBLISHED,
+      version: details.VERSION ?? null,
+      output,
+      assets: files.length,
+    }),
+  );
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

@@ -4,7 +4,7 @@ on:
     branches: [main]
     paths: ["site/**", "scripts/build-site*", ".github/workflows/pages.yml"]
   release:
-    types: [published, edited]
+    types: [published, edited, deleted, unpublished]
   # GITHUB_TOKEN 创建的 Release 不会再次触发 release 事件；等待正式版流水线成功。
   workflow_run:
     workflows: ["Windows 正式版"]
@@ -35,11 +35,13 @@ jobs:
           node-version: 22
       - name: 验证发布信息渲染
         run: node --test scripts/build-site.test.mjs
-      - name: 同步最新正式版与下载入口
+      - name: 同步正式版信息与下载入口
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api repos/addxiaoyi/HEL-SEIF/releases/latest > "$RUNNER_TEMP/helself-release.json"
+          gh api repos/addxiaoyi/HEL-SEIF/releases --paginate --slurp > "$RUNNER_TEMP/helself-releases.json"
+          jq 'map(.[]) | map(select(.draft == false and .prerelease == false)) | sort_by(.published_at) | reverse | .[0] // null' \
+            "$RUNNER_TEMP/helself-releases.json" > "$RUNNER_TEMP/helself-release.json"
           node scripts/build-site.mjs "$RUNNER_TEMP/helself-release.json" "$RUNNER_TEMP/helself-site"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

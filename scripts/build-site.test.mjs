@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { releaseDetails, renderSite } from "./build-site.mjs";
+import { execFile } from "node:child_process";
+import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
+import { releaseDetails, renderSite, siteDetails } from "./build-site.mjs";
+
+const runNode = promisify(execFile);
 
 function publishedRelease(version = "1.2.3") {
   const base = `https://github.com/addxiaoyi/HEL-SEIF/releases`;
@@ -24,6 +32,66 @@ function publishedRelease(version = "1.2.3") {
     })),
   };
 }
+
+test("只有明确的 null 使用待发布状态，其他无效发布对象仍然拒绝", () => {
+  assert.deepEqual(siteDetails(null), {
+    PUBLISHED: false,
+    RELEASE_URL: "https://github.com/addxiaoyi/HEL-SEIF/releases",
+  });
+  for (const invalid of [{}, [], undefined, false, "", { draft: false }])
+    assert.throws(() => siteDetails(invalid), /published stable release/i);
+  const release = publishedRelease();
+  assert.deepEqual(siteDetails(release), { ...releaseDetails(release), PUBLISHED: true });
+  release.assets = [];
+  assert.throws(() => siteDetails(release), /asset/i);
+});
+
+test("模板只保留对应的发布状态，不解析发布说明里的条件标记", () => {
+  const template =
+    "<!-- IF_PUBLISHED -->published {{VERSION}}<!-- END_IF_PUBLISHED -->" +
+    "<!-- IF_UNPUBLISHED -->pending<!-- END_IF_UNPUBLISHED -->";
+  assert.equal(renderSite(template, siteDetails(null)), "pending");
+  assert.equal(renderSite(template, siteDetails(publishedRelease())), "published 1.2.3");
+  assert.throws(() => renderSite(template, {}), /release state/i);
+  const release = publishedRelease();
+  release.body = "发布说明 <!-- IF_UNPUBLISHED -->不作为条件执行<!-- END_IF_UNPUBLISHED -->";
+  assert.match(renderSite("{{RELEASE_SUMMARY}}", siteDetails(release)), /&lt;!-- IF_UNPUBLISHED/);
+});
+
+test("CLI 完整构建同时支持待发布与真实正式版，损坏的发布信息不生成站点", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "helself-site-build-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const releaseFile = join(directory, "release.json");
+  const script = fileURLToPath(new URL("./build-site.mjs", import.meta.url));
+  for (const release of [null, publishedRelease("1.17.3")]) {
+    const output = join(directory, release === null ? "pending" : "published");
+    await writeFile(releaseFile, JSON.stringify(release));
+    const { stdout } = await runNode(process.execPath, [script, releaseFile, output]);
+    const verdict = JSON.parse(stdout);
+    assert.equal(verdict.published, release !== null);
+    assert.equal(verdict.version, release === null ? null : "1.17.3");
+    for (const page of ["index.html", "guide.html", "sync.html"]) {
+      const html = await readFile(join(output, page), "utf8");
+      assert.doesNotMatch(html, /\{\{[A-Z_]+\}\}|<!-- (?:END_)?IF_/);
+      assert.match(html, /data-app-ready="true"/);
+      if (release === null) {
+        assert.doesNotMatch(html, /releases\/download\/|Helself-.*?-setup\.exe|<time\b/);
+        if (page !== "sync.html") assert.match(html, /尚无正式版/);
+      } else {
+        assert.doesNotMatch(html, /尚无正式版/);
+        if (page !== "sync.html") assert.match(html, /1\.17\.3/);
+      }
+    }
+    const metadata = JSON.parse(await readFile(join(output, "release.json"), "utf8"));
+    assert.deepEqual(metadata, release === null ? null : siteDetails(release));
+    for (const file of ["style.css", "icon.png", "promo.mp4", "sync.js", "zsp-steps.json"])
+      await access(join(output, file));
+  }
+  const invalidOutput = join(directory, "invalid");
+  await writeFile(releaseFile, "{}");
+  await assert.rejects(runNode(process.execPath, [script, releaseFile, invalidOutput]));
+  await assert.rejects(access(invalidOutput));
+});
 
 test("统一品牌后的下载页支持新安装包名，同时兼容历史附件", () => {
   const release = publishedRelease("1.6.0");
@@ -173,6 +241,7 @@ test("同步协议动画：分镜自洽，动画 SVG 与分镜同步，页面模
   for (const file of ["site/sync.html", "site/index.html", "site/guide.html"]) {
     const html = await readFile(file, "utf8");
     const values = {
+      PUBLISHED: true,
       VERSION: "1.2.3",
       ASSET_REVISION: "abc",
       STEP_COUNT: storyboard.steps.length,

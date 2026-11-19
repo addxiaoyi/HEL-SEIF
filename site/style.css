@@ -581,6 +581,12 @@ details p {
 
 /* ------------------------------------------------------------- 窄屏 */
 @media (max-width: 860px) {
+  .brand span {
+    display: none;
+  }
+  .nav-github {
+    white-space: nowrap;
+  }
   .site-header nav a:not(.nav-github) {
     display: none;
   }

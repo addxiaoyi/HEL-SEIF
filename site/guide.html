@@ -34,7 +34,12 @@
     </header>
 
     <div class="wrap guide-hero">
+      <!-- IF_PUBLISHED -->
       <p class="eyebrow">使用指南 · v{{VERSION}}</p>
+      <!-- END_IF_PUBLISHED -->
+      <!-- IF_UNPUBLISHED -->
+      <p class="eyebrow">使用指南 · 待发布</p>
+      <!-- END_IF_UNPUBLISHED -->
       <h1>从安装到日常，一页讲清楚。</h1>
       <p class="intro">
         跟着顺序读能完整上手；只想解决一个问题，直接搜索关键词，比如「额度」「备份」「便携版」。
@@ -80,6 +85,7 @@
         <section id="install" class="guide-section">
           <h2>下载与安装</h2>
           <p>Helself是 Windows 桌面应用，资料默认保存在本机，无需注册账号。</p>
+          <!-- IF_PUBLISHED -->
           <div class="guide-cards">
             <a class="guide-card" href="{{INSTALLER_URL}}"
               ><strong>安装版（推荐）</strong
@@ -95,6 +101,10 @@
             <li>升级时直接覆盖安装，资产、文档与密钥库都会保留；升级前建议先做一次加密备份（见<a href="#backup">备份</a>）。</li>
             <li>不需要安装 Node.js 或其他运行环境。macOS 目前只提供未签名的测试包，见 <a href="https://github.com/addxiaoyi/HEL-SEIF/blob/main/docs/MAC-BUILD.md">macOS 说明</a>。</li>
           </ol>
+          <!-- END_IF_PUBLISHED -->
+          <!-- IF_UNPUBLISHED -->
+          <p class="guide-tip">尚无正式版，安装包与浏览器插件待发布。请在 <a href="{{RELEASE_URL}}">GitHub Releases</a> 关注后续版本；开发者可先查看 <a href="https://github.com/addxiaoyi/HEL-SEIF">项目源码</a>。下文介绍应用的功能与使用方式。</p>
+          <!-- END_IF_UNPUBLISHED -->
         </section>
 
         <section id="first-run" class="guide-section">
