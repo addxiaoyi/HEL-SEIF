@@ -72,8 +72,7 @@ body {
   background: color-mix(in oklab, var(--lime) 70%, transparent);
   color: #111315;
 }
-img,
-video {
+img {
   display: block;
   max-width: 100%;
   height: auto;
@@ -333,25 +332,6 @@ h2 {
   font-size: clamp(28px, 4vw, 40px);
   line-height: 1.2;
   letter-spacing: -0.02em;
-}
-
-/* ------------------------------------------------------------- 宣传片 */
-.video-section {
-  text-align: center;
-}
-.video-frame {
-  margin: 36px 0 0;
-}
-.video-frame video {
-  width: 100%;
-  border-radius: 20px;
-  background: #000;
-  box-shadow: var(--shadow-float);
-}
-.video-frame figcaption {
-  margin-top: 12px;
-  color: var(--subtle);
-  font-size: 13px;
 }
 
 /* ------------------------------------------------------------- 功能 */

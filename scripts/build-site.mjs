@@ -127,8 +127,6 @@ async function buildSite(releaseFile, outputDirectory) {
     "usage.png",
     "vault.png",
     "onboarding.png",
-    "promo.mp4",
-    "promo-poster.jpg",
     "robots.txt",
     "sitemap.xml",
     "sync.css",

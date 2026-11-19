@@ -16,7 +16,6 @@
 <p align="center">
   <a href="https://addxiaoyi.github.io/HEL-SEIF/">产品主页</a> ·
   <a href="https://github.com/addxiaoyi/HEL-SEIF/releases/latest">下载安装包</a> ·
-  <a href="https://addxiaoyi.github.io/HEL-SEIF/#video">2 分钟宣传片</a> ·
   <a href="docs/USER-GUIDE.md">使用教程</a> ·
   <a href="docs/SECURITY.md">安全与备份</a> ·
   <a href="CHANGELOG.md">更新日志</a>
@@ -115,12 +114,6 @@
 
 具体调整见 [1.13.0 发布说明](docs/releases/v1.13.0.md)。
 
-### 1.12.2
-
-- **全新 2 分钟宣传片**：产品主页的[宣传片](https://addxiaoyi.github.io/HEL-SEIF/#video)重制为代码动画，每一帧都由代码画出，原创配乐 120 BPM 卡点，小蟹带你从资产总览一路看到 AI 助手、加密备份和便携版。本版没有应用功能变化。
-
-具体调整见 [1.12.2 发布说明](docs/releases/v1.12.2.md)。
-
 ### 1.12.1
 
 - **新建资产窗口直达自定义类型**：「新建资产」里新增醒目的「自定义资产」分区，一键新建类型或用已建类型添加资产；`Ctrl K` 也可以搜「自定义」新建类型。
@@ -148,7 +141,7 @@
 - **首页快速开始**：五步清单按已有资料自动打勾，带新用户依次用上续费日历、文档、关联与标签；「近期续费」列出未来 14 天要处理的事项。
 - **常用订阅模板**：ChatGPT、Claude、Cursor、Cloudflare、Vercel、iCloud、Netflix、Spotify 等，一键预填金额、周期与下次续费日，个人订阅也能一起管。
 - **键盘快捷键与命令面板操作**：按 `?` 查看全部快捷键；`Ctrl K` 新增「操作」分组，可直接切换主题、打开订阅模板、续费日历和系统设置。
-- **使用指南与 2 分钟宣传片**：产品主页新增可搜索的[使用指南](https://addxiaoyi.github.io/HEL-SEIF/guide.html)，宣传片按 1.9 新界面重录，完整展示详情页、续费日历、用量与快速上手。
+- **使用指南**：产品主页新增可搜索的[使用指南](https://addxiaoyi.github.io/HEL-SEIF/guide.html)，涵盖安装、首次使用、各功能用法、使用场景与常见问题。
 
 具体调整见 [1.10.0 发布说明](docs/releases/v1.10.0.md)。
 
@@ -173,7 +166,7 @@
 | **快速上手与订阅模板**           | **密钥库**                          |
 | ![订阅模板](site/onboarding.png) | ![密钥库](site/vault.png)           |
 
-界面截图使用独立演示数据，不含私人账号和资产。宣传片见 [产品主页](https://addxiaoyi.github.io/HEL-SEIF/#video)，从安装到每个功能的用法见 [使用指南](https://addxiaoyi.github.io/HEL-SEIF/guide.html)。
+界面截图使用独立演示数据，不含私人账号和资产。从安装到每个功能的用法见 [使用指南](https://addxiaoyi.github.io/HEL-SEIF/guide.html)。
 
 ## 安装与首次使用
 

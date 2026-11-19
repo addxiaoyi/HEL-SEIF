@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { execFile } from "node:child_process";
-import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -74,6 +74,7 @@ test("CLI 完整构建同时支持待发布与真实正式版，损坏的发布�
       const html = await readFile(join(output, page), "utf8");
       assert.doesNotMatch(html, /\{\{[A-Z_]+\}\}|<!-- (?:END_)?IF_/);
       assert.match(html, /data-app-ready="true"/);
+      assert.doesNotMatch(html, /<video\b/i);
       if (release === null) {
         assert.doesNotMatch(html, /releases\/download\/|Helself-.*?-setup\.exe|<time\b/);
         if (page !== "sync.html") assert.match(html, /尚无正式版/);
@@ -84,8 +85,12 @@ test("CLI 完整构建同时支持待发布与真实正式版，损坏的发布�
     }
     const metadata = JSON.parse(await readFile(join(output, "release.json"), "utf8"));
     assert.deepEqual(metadata, release === null ? null : siteDetails(release));
-    for (const file of ["style.css", "icon.png", "promo.mp4", "sync.js", "zsp-steps.json"])
+    for (const file of ["style.css", "icon.png", "sync.js", "zsp-steps.json"])
       await access(join(output, file));
+    assert.equal(
+      (await readdir(output)).some((file) => /\.(?:mp4|webm|mov)$/i.test(file)),
+      false,
+    );
   }
   const invalidOutput = join(directory, "invalid");
   await writeFile(releaseFile, "{}");
