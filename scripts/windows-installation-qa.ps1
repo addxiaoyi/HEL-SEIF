@@ -27,19 +27,34 @@ function Check-Profile([string]$Mode) {
   node (Join-Path $PSScriptRoot 'packaged-profile-integration.mjs') (Join-Path $appPath 'Helself.exe') $profile $Mode
   if ($LASTEXITCODE -ne 0) { throw "安装后资料验证失败：$Mode" }
 }
+function Check-Shortcut([string]$Stage) {
+  if (-not (Test-Path -LiteralPath $shortcut)) { throw '缺少开始菜单快捷方式。' }
+  $shell = New-Object -ComObject WScript.Shell
+  $link = $shell.CreateShortcut($shortcut)
+  $expectedTarget = Join-Path $appPath 'Helself.exe'
+  $expectedIcon = Join-Path $appPath 'resources\helself.ico'
+  [ordered]@{
+    stage = $Stage
+    expectedTarget = $expectedTarget
+    actualTarget = $link.TargetPath
+    expectedIcon = $expectedIcon + ',0'
+    actualIcon = $link.IconLocation
+    iconExists = (Test-Path -LiteralPath $expectedIcon)
+  } | ConvertTo-Json -Compress | Write-Output
+  if ($link.TargetPath -ne $expectedTarget) { throw '快捷方式程序路径不匹配。' }
+  if ($link.IconLocation -ne ($expectedIcon + ',0')) { throw '快捷方式图标路径不匹配。' }
+}
 try {
   Install-Candidate $true
+  Check-Shortcut 'fresh-install'
   $installedVersion = (Get-Item (Join-Path $appPath 'Helself.exe')).VersionInfo.ProductVersion
   if ($installedVersion -notin @($version, "$version.0")) { throw '安装版本不匹配。' }
   Check-Profile 'seed'
   Install-Candidate $false
+  Check-Shortcut 'overlay-upgrade'
   Check-Profile 'verify'
   $startup = Get-ItemPropertyValue 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' 'Helself'
   if ($startup -ne ('"' + (Join-Path $appPath 'Helself.exe') + '"')) { throw '覆盖升级未保留自启偏好。' }
-  if (-not (Test-Path -LiteralPath $shortcut)) { throw '缺少开始菜单快捷方式。' }
-  $shell = New-Object -ComObject WScript.Shell
-  $link = $shell.CreateShortcut($shortcut)
-  if ($link.TargetPath -ne (Join-Path $appPath 'Helself.exe') -or $link.IconLocation -ne ((Join-Path $appPath 'resources\helself.ico') + ',0')) { throw '快捷方式程序或图标不匹配。' }
   foreach ($name in @('Helself.exe','Uninstall Helself.exe')) {
     & (Join-Path $PSScriptRoot 'windows-icon-check.ps1') -IconPath (Join-Path $appPath $name) -OutputPng (Join-Path $root ('screenshots/qa-installed-' + $name + '.png'))
     if ($LASTEXITCODE -ne 0) { throw '安装后图标不匹配。' }
