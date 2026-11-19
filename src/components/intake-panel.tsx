@@ -12,6 +12,7 @@ import {
   RotateCcw,
   Sparkles,
   Trash2,
+  Undo2,
   Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -63,22 +64,26 @@ export function IntakePanel({
     result,
     filterKind,
     onlyProblems,
+    history,
     setText,
     setResult,
     setFilterKind,
     setOnlyProblems,
     updateBundle,
+    undo,
   } = useIntakeSession(
     useShallow((s) => ({
       text: s.text,
       result: s.result,
       filterKind: s.filterKind,
       onlyProblems: s.onlyProblems,
+      history: s.history,
       setText: s.setText,
       setResult: s.setResult,
       setFilterKind: s.setFilterKind,
       setOnlyProblems: s.setOnlyProblems,
       updateBundle: s.updateBundle,
+      undo: s.undo,
     })),
   );
   const [error, setError] = useState("");
@@ -95,8 +100,9 @@ export function IntakePanel({
   );
 
   // 结果留着跨视图复用时，资料库可能已经多了一条：把「去录入」换成「打开已有资料」。
+  // 这是自动跟随，不算用户的一步改动，不记进撤销历史。
   useEffect(() => {
-    updateBundle((bundle) => refreshSaved(bundle, snapshot));
+    updateBundle((bundle) => refreshSaved(bundle, snapshot), false);
   }, [snapshot, updateBundle]);
 
   const kinds = useMemo(() => {
@@ -129,9 +135,25 @@ export function IntakePanel({
     updateBundle((bundle) => setEntryIgnored(bundle, index, ignored));
   }
 
+  function undoLastEdit() {
+    undo();
+  }
+
   /** 把重复的一条并进最早那条：字段取并集，冲突留给用户确认。 */
   function merge(into: number, index: number) {
+    const before = useIntakeSession.getState().lastActionId;
     updateBundle((bundle) => mergeEntries(bundle, into, index, snapshot));
+    const actionId = useIntakeSession.getState().lastActionId;
+    if (actionId === before) return;
+    toast.success(t("已合并到第 {0} 条。", into + 1), {
+      action: {
+        label: t("撤销"),
+        onClick: () => {
+          // 提示可能比下一次修改存活更久，不能误撤销后来的编辑。
+          undo(actionId ?? undefined);
+        },
+      },
+    });
   }
 
   /** 就地改一个字段：日期会规范化，值不合法就保留原样并说明原因。 */
@@ -376,6 +398,10 @@ export function IntakePanel({
             >
               <Copy className="size-4" />
               {t("复制结果")}
+            </Button>
+            <Button size="sm" variant="secondary" disabled={history.length === 0} onClick={undoLastEdit}>
+              <Undo2 className="size-4" />
+              {t("撤销上一步")}
             </Button>
             <Button
               size="sm"

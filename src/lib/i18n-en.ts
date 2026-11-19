@@ -3088,6 +3088,8 @@ export const EN: Record<string, string> = {
   "让 AI 接着处理": "Continue with AI",
   "整理结果已复制。": "Tidy result copied.",
   复制结果: "Copy result",
+  撤销上一步: "Undo last change",
+  "已合并到第 {0} 条。": "Merged into record {0}.",
   清空结果: "Clear result",
   资料里已有: "Already saved",
   含凭据: "Has credentials",
