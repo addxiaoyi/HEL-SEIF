@@ -2,6 +2,7 @@ import { cp, readFile, writeFile, rm, realpath } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildNativeTerminal } from "./build-native-terminal.mjs";
+import { buildWindowsShell } from "./build-windows-shell.mjs";
 import { stageSharedRuntime } from "./package-shared.mjs";
 import {
   DESKTOP_RUNTIME_DEPENDENCIES,
@@ -16,6 +17,11 @@ import {
 const root = await realpath(resolve(dirname(fileURLToPath(import.meta.url)), ".."));
 const buildArgs = desktopBuildArguments(process.argv.slice(2));
 buildNativeTerminal();
+const targets = buildArgs.filter((arg) => ["--win", "--mac", "--linux"].includes(arg));
+const buildsWindows = targets.length ? targets.includes("--win") : process.platform === "win32";
+const windowsShell = buildsWindows ? await buildWindowsShell() : null;
+if (buildsWindows && !windowsShell)
+  throw new Error("Windows packaging requires a Windows shortcut helper build");
 // 漏装的包只会在安装后的程序启动时报错（1.16.1 的 @noble/hashes），所以打包前先核对。
 const missing = mainProcessPackages(root).filter(
   (name) => !DESKTOP_RUNTIME_DEPENDENCIES.includes(name),
@@ -28,7 +34,10 @@ const stage = await createPackageStage();
 const manifest = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
 if (process.env.HELSELF_REQUIRE_SIGNING === "1" && !process.env.HELSELF_SIGN_CERT_SHA1)
   throw new Error("签名为必选，但未配置证书指纹。");
-if (process.env.HELSELF_SIGN_CERT_SHA1 && !/^[a-f0-9]{40}$/i.test(process.env.HELSELF_SIGN_CERT_SHA1))
+if (
+  process.env.HELSELF_SIGN_CERT_SHA1 &&
+  !/^[a-f0-9]{40}$/i.test(process.env.HELSELF_SIGN_CERT_SHA1)
+)
   throw new Error("签名证书指纹格式无效。");
 const lock = JSON.parse(await readFile(join(root, "package-lock.json"), "utf8"));
 // React 界面已经被 Vite 打包，暂存区只安装主进程运行依赖及其传递依赖。
@@ -86,6 +95,18 @@ const config = {
     ),
   win: {
     ...manifest.build.win,
+    ...(windowsShell
+      ? {
+          extraResources: [
+            ...(Array.isArray(manifest.build.win.extraResources)
+              ? manifest.build.win.extraResources
+              : manifest.build.win.extraResources
+                ? [manifest.build.win.extraResources]
+                : []),
+            { from: windowsShell, to: "windows-shell/Helself.WindowsShell.exe" },
+          ],
+        }
+      : {}),
     icon: resolve(root, manifest.build.win.icon),
     ...(process.env.HELSELF_SIGN_CERT_SHA1
       ? {

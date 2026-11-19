@@ -34,19 +34,35 @@
   ${EndIf}
 !macroend
 
+!macro helselfSetShortcutIdentity SHORTCUT
+  Push $R0
+  Push $R1
+  nsExec::ExecToStack '"$INSTDIR\resources\windows-shell\Helself.WindowsShell.exe" --shortcut "${SHORTCUT}" --target "$appExe" --icon "$INSTDIR\resources\helself.ico"'
+  Pop $R0
+  Pop $R1
+  ${If} $R0 != "0"
+    DetailPrint "Helself shortcut identity failed: $R0 $R1"
+    MessageBox MB_OK|MB_ICONSTOP "Helself could not configure its Windows shortcut: $R0 $R1" /SD IDOK
+    SetErrorLevel 1
+    Quit
+  ${EndIf}
+  Pop $R1
+  Pop $R0
+!macroend
+
 !macro customInstall
   !insertmacro helselfApplyStartup "Software\Microsoft\Windows\CurrentVersion\Run"
   !ifndef DO_NOT_CREATE_START_MENU_SHORTCUT
     ${if} ${FileExists} "$newStartMenuLink"
       CreateShortCut "$newStartMenuLink" "$appExe" "" "$INSTDIR\resources\helself.ico" 0 "" "" "${APP_DESCRIPTION}"
-      WinShell::SetLnkAUMI "$newStartMenuLink" "dev.helself.app"
+      !insertmacro helselfSetShortcutIdentity "$newStartMenuLink"
     ${endIf}
   !endif
   !ifndef DO_NOT_CREATE_DESKTOP_SHORTCUT
     ${ifNot} ${isNoDesktopShortcut}
     ${andIf} ${FileExists} "$newDesktopLink"
       CreateShortCut "$newDesktopLink" "$appExe" "" "$INSTDIR\resources\helself.ico" 0 "" "" "${APP_DESCRIPTION}"
-      WinShell::SetLnkAUMI "$newDesktopLink" "dev.helself.app"
+      !insertmacro helselfSetShortcutIdentity "$newDesktopLink"
     ${endIf}
   !endif
   ; 通知资源管理器更新图标，不清空全局缓存，也不重启资源管理器。

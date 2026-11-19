@@ -1,13 +1,19 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, writeFile, rm } from "node:fs/promises";
+import { access, mkdtemp, readFile, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { _electron as electron } from "playwright";
 import { completeOnboarding } from "./onboarding-helper.mjs";
+import { WINDOWS_TOAST_CLSID } from "../electron/services/windows-identity.mjs";
 
 const [executable, directoryArg, mode = "roundtrip"] = process.argv.slice(2);
 assert.ok(executable, "请指定打包程序。");
 assert.ok(["seed", "verify", "roundtrip"].includes(mode), "无效的测试阶段。");
+const splitProfile = process.env.HELSELF_QA_SPLIT_PROFILE === "1";
+if (splitProfile)
+  await access(
+    join(dirname(resolve(executable)), "resources/windows-shell/Helself.WindowsShell.exe"),
+  );
 const directory = directoryArg
   ? resolve(directoryArg)
   : await mkdtemp(join(tmpdir(), "helself-profile-"));
@@ -19,7 +25,7 @@ let instance;
 async function launch() {
   instance = await electron.launch({
     executablePath: resolve(executable),
-    args: [`--user-data-dir=${directory}`],
+    args: splitProfile ? ["--user-data-dir", directory] : [`--user-data-dir=${directory}`],
     env,
     locale: "zh-CN",
     timeout: 45000,
@@ -27,6 +33,21 @@ async function launch() {
   assert.equal(await instance.evaluate(({ app }) => app.getPath("userData")), directory);
   assert.equal(await instance.evaluate(({ app }) => app.isPackaged), true);
   const page = await instance.firstWindow();
+  if (
+    process.platform === "win32" &&
+    process.env.GITHUB_ACTIONS === "true" &&
+    process.env.RUNNER_ENVIRONMENT === "github-hosted"
+  ) {
+    const nativeToast = await instance.evaluate(async ({ app, Notification }) => {
+      const supported = Notification.isSupported();
+      await new Promise((resolve) => setTimeout(resolve, 750));
+      return { supported, toastClsid: app.toastActivatorCLSID };
+    });
+    assert.equal(nativeToast.supported, true, "一次性 Windows runner 应能初始化原生通知");
+    const guid = (value) => value.replace(/[{}]/g, "").toLowerCase();
+    assert.equal(guid(nativeToast.toastClsid), guid(WINDOWS_TOAST_CLSID));
+    console.log(JSON.stringify({ nativeToast }));
+  }
   await instance.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows()[0].webContents.setBackgroundThrottling(false),
   );

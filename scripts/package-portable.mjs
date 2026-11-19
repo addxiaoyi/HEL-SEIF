@@ -27,6 +27,7 @@ const MARKER = `Helself ${version} 便携版
 - 解压到任意可写入的文件夹（例如 D:\\Helself 或 U 盘），双击 Helself.exe 启动。
 - 不要放在 C:\\Program Files 等受保护目录，否则无法保存资料。
 - 资料（资产、文档、密钥库、设置）全部保存在同目录的 data 文件夹。
+- Windows 便携模式不注册系统通知；到期和离线提醒仍可在应用内查看。
 
 更新
 - 便携版不会自动安装更新。在「设置 → 关于Helself」可以检查新版本。

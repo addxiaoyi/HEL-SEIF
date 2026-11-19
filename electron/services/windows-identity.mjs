@@ -1,9 +1,42 @@
 import { mkdir, rename, stat } from "node:fs/promises";
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { join, win32 } from "node:path";
+import { join, resolve, win32 } from "node:path";
+
+export const WINDOWS_TOAST_CLSID = "{3CB4C0F5-23A6-4BB7-8DB7-49E01A98A844}";
 
 export function windowsAppId(packaged) {
   return packaged ? "dev.helself.app" : "dev.helself.app.development";
+}
+
+export function explicitUserDataDirectory(argv = process.argv) {
+  let directory = null;
+  for (let index = 0; index < argv.length; index++) {
+    const arg = argv[index];
+    if (arg !== "--user-data-dir" && !arg.startsWith("--user-data-dir=")) continue;
+    if (directory !== null) throw new Error("--user-data-dir must be supplied only once");
+    const value = arg === "--user-data-dir" ? argv[++index] : arg.slice("--user-data-dir=".length);
+    if (typeof value !== "string" || !value.trim() || value.startsWith("-"))
+      throw new Error("--user-data-dir requires a non-empty directory path, not another switch");
+    directory = resolve(value);
+  }
+  return directory;
+}
+
+export function isIsolatedLaunch({ argv = process.argv, testDataDirectory } = {}) {
+  const explicit = explicitUserDataDirectory(argv);
+  return Boolean(explicit || testDataDirectory);
+}
+
+export function createNativeNotificationSupport(
+  app,
+  notification,
+  { platform = process.platform, portable = false, argv = process.argv, testDataDirectory } = {},
+) {
+  if (platform === "win32") app.setToastActivatorCLSID(WINDOWS_TOAST_CLSID);
+  const isolated = isIsolatedLaunch({ argv, testDataDirectory });
+  // Electron 44's support probe registers a global shortcut, even without showing a toast.
+  const allowed = platform !== "win32" || (app.isPackaged && !portable && !isolated);
+  return () => allowed && notification.isSupported();
 }
 
 /** 程序目录中存在此文件时以便携模式运行，资料保存在同目录的 data 文件夹。 */
@@ -17,9 +50,7 @@ export function portableDataDirectory({
   argv = process.argv,
   exists = existsSync,
 } = {}) {
-  if (!packaged || platform !== "win32") return null;
-  if (argv.some((arg) => arg === "--user-data-dir" || arg.startsWith("--user-data-dir=")))
-    return null;
+  if (isIsolatedLaunch({ argv }) || !packaged || platform !== "win32") return null;
   const root = win32.dirname(execPath);
   return exists(win32.join(root, PORTABLE_MARKER)) ? win32.join(root, "data") : null;
 }
@@ -35,14 +66,16 @@ function assertWritable(directory) {
 /** 显示身份独立于安装与存储身份；改名不能迁移用户资料或 Chromium 会话。 */
 export function initializeAppIdentity(
   app,
-  { testDataDirectory, portableDirectory, platform = process.platform } = {},
+  { testDataDirectory, portableDirectory, platform = process.platform, argv = process.argv } = {},
 ) {
+  // Chromium does not consume the split switch value, so both forms must set paths explicitly.
+  const explicit = explicitUserDataDirectory(argv);
   app.setName("Nanpad");
-  const isolated = !app.isPackaged && testDataDirectory;
-  const portable = !isolated && app.isPackaged && portableDirectory;
+  const isolated = !app.isPackaged && testDataDirectory ? resolve(testDataDirectory) : null;
+  const portable = !isolated && !explicit && app.isPackaged && portableDirectory;
   if (portable) assertWritable(portable);
-  const userData = isolated || portable || app.getPath("userData");
-  const sessionData = isolated || portable || app.getPath("sessionData");
+  const userData = isolated || explicit || portable || app.getPath("userData");
+  const sessionData = isolated || explicit || portable || app.getPath("sessionData");
   for (const directory of new Set([userData, sessionData]))
     mkdirSync(directory, { recursive: true });
   // macOS/Linux 的系统密钥存储依赖原应用名，Windows Shell 改名仅作用于 Windows。

@@ -27,6 +27,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run i18n:check
       - run: npm run terminal:build
+      - run: npm run windows-shell:build
       - run: npm run desktop:dist -- --win --x64 --publish never
       - run: npm run desktop:online
       - name: 验证安装、启动、覆盖升级和卸载

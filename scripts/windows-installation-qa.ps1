@@ -6,6 +6,9 @@ if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hoste
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $setup = (Resolve-Path -LiteralPath $Installer).Path
 $version = (Get-Content -Raw (Join-Path $root 'package.json') | ConvertFrom-Json).version
+$shellIdentityRaw = node --input-type=module -e "import { WINDOWS_TOAST_CLSID, windowsAppId } from './electron/services/windows-identity.mjs'; console.log(JSON.stringify({ appId: windowsAppId(true), toastClsid: WINDOWS_TOAST_CLSID }));"
+if ($LASTEXITCODE -ne 0) { throw '无法读取 Windows 通知身份。' }
+$shellIdentity = $shellIdentityRaw | ConvertFrom-Json
 $installRoot = Join-Path $env:RUNNER_TEMP ('helself-install-' + [guid]::NewGuid().ToString('N'))
 $appPath = Join-Path $installRoot 'Helself'
 $profile = Join-Path $installRoot 'profile'
@@ -24,8 +27,14 @@ function Install-Candidate([bool]$First) {
   if (-not (Test-Path -LiteralPath (Join-Path $appPath 'Helself.exe'))) { throw '程序未写入预期目录。' }
 }
 function Check-Profile([string]$Mode) {
-  node (Join-Path $PSScriptRoot 'packaged-profile-integration.mjs') (Join-Path $appPath 'Helself.exe') $profile $Mode
-  if ($LASTEXITCODE -ne 0) { throw "安装后资料验证失败：$Mode" }
+  $previousStyle = $env:HELSELF_QA_SPLIT_PROFILE
+  try {
+    $env:HELSELF_QA_SPLIT_PROFILE = if ($Mode -eq 'verify') { '1' } else { '0' }
+    node (Join-Path $PSScriptRoot 'packaged-profile-integration.mjs') (Join-Path $appPath 'Helself.exe') $profile $Mode
+    if ($LASTEXITCODE -ne 0) { throw "安装后资料验证失败：$Mode" }
+  } finally {
+    $env:HELSELF_QA_SPLIT_PROFILE = $previousStyle
+  }
 }
 function Check-Shortcut([string]$Stage) {
   if (-not (Test-Path -LiteralPath $shortcut)) { throw '缺少开始菜单快捷方式。' }
@@ -33,6 +42,11 @@ function Check-Shortcut([string]$Stage) {
   $link = $shell.CreateShortcut($shortcut)
   $expectedTarget = Join-Path $appPath 'Helself.exe'
   $expectedIcon = Join-Path $appPath 'resources\helself.ico'
+  $shellHelper = Join-Path $appPath 'resources\windows-shell\Helself.WindowsShell.exe'
+  if (-not (Test-Path -LiteralPath $shellHelper)) { throw '缺少 Windows 快捷方式辅助程序。' }
+  $metadataRaw = & $shellHelper --inspect $shortcut
+  if ($LASTEXITCODE -ne 0) { throw '无法读取快捷方式通知身份。' }
+  $metadata = $metadataRaw | ConvertFrom-Json
   [ordered]@{
     stage = $Stage
     expectedTarget = $expectedTarget
@@ -40,9 +54,17 @@ function Check-Shortcut([string]$Stage) {
     expectedIcon = $expectedIcon + ',0'
     actualIcon = $link.IconLocation
     iconExists = (Test-Path -LiteralPath $expectedIcon)
+    workingDirectory = $metadata.workingDirectory
+    appId = $metadata.appId
+    toastClsid = $metadata.toastClsid
+    toastVariantType = $metadata.toastVariantType
   } | ConvertTo-Json -Compress | Write-Output
   if ($link.TargetPath -ne $expectedTarget) { throw '快捷方式程序路径不匹配。' }
   if ($link.IconLocation -ne ($expectedIcon + ',0')) { throw '快捷方式图标路径不匹配。' }
+  if ($metadata.workingDirectory -ne $appPath) { throw '快捷方式工作目录不匹配。' }
+  if ($metadata.appId -ne $shellIdentity.appId) { throw '快捷方式应用身份不匹配。' }
+  if ($metadata.toastVariantType -ne 72) { throw '快捷方式通知身份不是原生 GUID 类型。' }
+  if ([guid]$metadata.toastClsid -ne [guid]$shellIdentity.toastClsid) { throw '快捷方式通知 CLSID 不匹配。' }
 }
 try {
   Install-Candidate $true

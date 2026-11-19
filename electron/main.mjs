@@ -9,6 +9,8 @@ import {
   initializeAppIdentity,
   migrateLegacyWindowsShortcut,
   portableDataDirectory,
+  createNativeNotificationSupport,
+  isIsolatedLaunch,
 } from "./services/windows-identity.mjs";
 import { ImageBed } from "./services/image-bed.mjs";
 import { Integrations, INTEGRATION_METHODS } from "./services/integrations.mjs";
@@ -96,6 +98,7 @@ import { BackupScheduler } from "./services/backup-schedule.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const normalizeImage = createImageNormalizer(nativeImage);
+const isolatedLaunch = isIsolatedLaunch({ testDataDirectory: process.env.NANPAD_TEST_DATA_DIR });
 
 // 固定旧资料路径后再设置系统显示名，防止任务栏和通知重新生成旧 Nanpad 入口。
 const portableDirectory = portableDataDirectory({ packaged: app.isPackaged });
@@ -117,6 +120,10 @@ try {
   );
   process.exit(1);
 }
+const nativeNotificationSupported = createNativeNotificationSupport(app, Notification, {
+  portable: PORTABLE,
+  testDataDirectory: process.env.NANPAD_TEST_DATA_DIR,
+});
 // 驱动不兼容时可显式启用软件渲染，默认保留硬件加速。
 if (process.env.NANPAD_DISABLE_GPU === "1") app.disableHardwareAcceleration();
 // 原生 HWND 需要参与裁剪；独立 DirectComposition 表面会覆盖子控件。
@@ -268,7 +275,7 @@ function showWindow() {
 }
 
 function notifyAttention() {
-  const wantSystem = preferences.notifications && Notification.isSupported();
+  const wantSystem = preferences.notifications && nativeNotificationSupported();
   const items = tracker.take(
     notificationCandidates(currentSnapshot, Date.now(), { leadDays: preferences.reminderDays }),
   );
@@ -757,10 +764,7 @@ function registerIpc() {
     },
     onChange: () => emit("extension:changed", {}),
     // 测试进程使用随机端口，避免连接用户正在运行的桌面端。
-    ...((!app.isPackaged && process.env.NANPAD_TEST_DATA_DIR) ||
-    process.argv.some((arg) => arg.startsWith("--user-data-dir="))
-      ? { port: 0 }
-      : {}),
+    ...(isolatedLaunch ? { port: 0 } : {}),
   });
   handle("extension:status", () => extensionBridge.status());
   handle("extension:pair", async () => {
@@ -1272,7 +1276,7 @@ function registerIpc() {
   handle("display:set", (value) => displayController.set(value), true);
   handle("preferences:get", () => ({
     ...preferences,
-    notificationSupported: Notification.isSupported(),
+    notificationSupported: nativeNotificationSupported(),
     trayAvailable: Boolean(tray),
   }));
   handle("preferences:set", (patch) => {
@@ -1774,12 +1778,7 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(async () => {
     // 便携版不写注册表，保持“解压即用、删除即走”。
-    if (
-      app.isPackaged &&
-      !PORTABLE &&
-      !process.argv.some((arg) => arg.startsWith("--user-data-dir="))
-    )
-      app.setAsDefaultProtocolClient("nanpad");
+    if (app.isPackaged && !PORTABLE && !isolatedLaunch) app.setAsDefaultProtocolClient("nanpad");
     app.setAppUserModelId(windowsAppId(app.isPackaged));
     // 必须先于读取偏好、资产和创建任何服务：此时没有进程持有资料文件。
     try {
@@ -1788,12 +1787,7 @@ if (!app.requestSingleInstanceLock()) {
       restoreOutcome = { status: "failed", message: String(error?.message ?? error) };
       console.error("backup:restore", error);
     }
-    if (
-      process.platform === "win32" &&
-      !PORTABLE &&
-      !process.env.NANPAD_TEST_DATA_DIR &&
-      !process.argv.some((arg) => arg === "--user-data-dir" || arg.startsWith("--user-data-dir="))
-    ) {
+    if (process.platform === "win32" && !PORTABLE && !isolatedLaunch) {
       try {
         await migrateLegacyWindowsShortcut({
           programsDirectory: join(app.getPath("appData"), "Microsoft/Windows/Start Menu/Programs"),
