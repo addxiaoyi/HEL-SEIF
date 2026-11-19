@@ -127,7 +127,7 @@ contextBridge.exposeInMainWorld("sinan", {
     onChanged: (handler) => on("documents:changed", handler),
     list: () => unwrap(ipcRenderer.invoke("documents:list")),
     get: (id) => unwrap(ipcRenderer.invoke("documents:get", id)),
-    save: (doc) => unwrap(ipcRenderer.invoke("documents:save", doc)),
+    save: (doc, options) => unwrap(ipcRenderer.invoke("documents:save", doc, options)),
     remove: (id) => unwrap(ipcRenderer.invoke("documents:remove", id)),
   },
   capture: {

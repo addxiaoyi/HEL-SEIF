@@ -25,6 +25,9 @@ interface IntakeSessionState {
   historyActionIds: number[];
   /** 最近一次会写入历史的操作编号，供短暂的操作提示做并发保护。 */
   lastActionId: number | null;
+  /** 手动修改会作废请求，避免迟到的模型回答覆盖草稿。 */
+  pendingRun: number | null;
+  runError: string;
   setText: (text: string) => void;
   setResult: (result: IntakeRun | null) => void;
   setFilterKind: (kind: IntakeAssetKind | "all") => void;
@@ -35,9 +38,25 @@ interface IntakeSessionState {
    */
   updateBundle: (update: (bundle: IntakeBundle) => IntakeBundle, record?: boolean) => void;
   undo: (actionId?: number) => void;
+  startRun: () => number | null;
+  finishRun: (id: number, result: IntakeRun) => boolean;
+  endRun: (id: number, error?: string) => boolean;
 }
 
 let nextActionId = 0;
+let nextRunId = 0;
+
+function resultState(result: IntakeRun | null) {
+  return {
+    result,
+    ...(result ? { filterKind: "all" as const, onlyProblems: false } : {}),
+    history: [],
+    historyActionIds: [],
+    lastActionId: null,
+    pendingRun: null,
+    runError: result?.error ?? "",
+  };
+}
 
 /**
  * 粘贴整理的草稿只放内存：原文里可能有密码和私钥，不写进 localStorage 或磁盘。
@@ -45,7 +64,7 @@ let nextActionId = 0;
  * 关掉面板、去录入一条再回来、切到别的视图，粘贴的内容和整理结果都还在；
  * 刷新页面或退出应用才清空。
  */
-export const useIntakeSession = create<IntakeSessionState>()((set) => ({
+export const useIntakeSession = create<IntakeSessionState>()((set, get) => ({
   text: "",
   result: null,
   filterKind: "all",
@@ -53,21 +72,13 @@ export const useIntakeSession = create<IntakeSessionState>()((set) => ({
   history: [],
   historyActionIds: [],
   lastActionId: null,
-  setText: (text) => set({ text }),
+  pendingRun: null,
+  runError: "",
+  setText: (text) =>
+    set((state) => (text === state.text ? state : { text, pendingRun: null, runError: "" })),
   setResult: (result) =>
     // 重新整理时回到全部类型，免得还停在上一次的筛选上看起来像丢了记录。
-    set(
-      result
-        ? {
-            result,
-            filterKind: "all",
-            onlyProblems: false,
-            history: [],
-            historyActionIds: [],
-            lastActionId: null,
-          }
-        : { result, history: [], historyActionIds: [], lastActionId: null },
-    ),
+    set(resultState(result)),
   setFilterKind: (filterKind) => set({ filterKind }),
   setOnlyProblems: (onlyProblems) => set({ onlyProblems }),
   updateBundle: (update, record = true) =>
@@ -84,6 +95,8 @@ export const useIntakeSession = create<IntakeSessionState>()((set) => ({
         history: [...state.history, state.result.bundle].slice(-HISTORY_LIMIT),
         historyActionIds: [...state.historyActionIds, actionId].slice(-HISTORY_LIMIT),
         lastActionId: actionId,
+        pendingRun: null,
+        runError: "",
       };
     }),
   undo: (actionId) =>
@@ -96,6 +109,24 @@ export const useIntakeSession = create<IntakeSessionState>()((set) => ({
         history: state.history.slice(0, -1),
         historyActionIds: state.historyActionIds.slice(0, -1),
         lastActionId: state.historyActionIds.at(-2) ?? null,
+        pendingRun: null,
+        runError: "",
       };
     }),
+  startRun: () => {
+    if (get().pendingRun !== null) return null;
+    const id = ++nextRunId;
+    set({ pendingRun: id, runError: "" });
+    return id;
+  },
+  finishRun: (id, result) => {
+    if (get().pendingRun !== id) return false;
+    set(resultState(result));
+    return true;
+  },
+  endRun: (id, error = "") => {
+    if (get().pendingRun !== id) return false;
+    set({ pendingRun: null, runError: error });
+    return true;
+  },
 }));

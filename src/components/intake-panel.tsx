@@ -58,19 +58,23 @@ export function IntakePanel({
   onClose: () => void;
 }) {
   const api = hostBridge()?.agent;
-  const [busy, setBusy] = useState(false);
   const {
     text,
     result,
     filterKind,
     onlyProblems,
     history,
+    pendingRun,
+    runError,
     setText,
     setResult,
     setFilterKind,
     setOnlyProblems,
     updateBundle,
     undo,
+    startRun,
+    finishRun,
+    endRun,
   } = useIntakeSession(
     useShallow((s) => ({
       text: s.text,
@@ -78,14 +82,20 @@ export function IntakePanel({
       filterKind: s.filterKind,
       onlyProblems: s.onlyProblems,
       history: s.history,
+      pendingRun: s.pendingRun,
+      runError: s.runError,
       setText: s.setText,
       setResult: s.setResult,
       setFilterKind: s.setFilterKind,
       setOnlyProblems: s.setOnlyProblems,
       updateBundle: s.updateBundle,
       undo: s.undo,
+      startRun: s.startRun,
+      finishRun: s.finishRun,
+      endRun: s.endRun,
     })),
   );
+  const busy = pendingRun !== null;
   const [error, setError] = useState("");
   const snapshot = useAppStore(
     useShallow((s) => ({
@@ -193,16 +203,18 @@ export function IntakePanel({
       setError(useModel ? t("粘贴整理需要桌面版或已开启的网页版服务。") : "");
       return;
     }
-    setBusy(true);
+    const requestId = startRun();
+    if (requestId === null) return;
     setError("");
     try {
       const parsed = await api.parseIntake({ text, useModel });
-      setResult(parsed);
-      if (parsed.error) setError(parsed.error);
+      const accepted = finishRun(requestId, {
+        ...parsed,
+        bundle: refreshSaved(parsed.bundle, useAppStore.getState()),
+      });
+      if (accepted && parsed.error) setError(parsed.error);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : String(reason));
-    } finally {
-      setBusy(false);
+      endRun(requestId, reason instanceof Error ? reason.message : String(reason));
     }
   }
 
@@ -301,9 +313,9 @@ export function IntakePanel({
             : t("先整理再决定要不要写入")}
         </span>
       </div>
-      {error && (
+      {(error || runError) && (
         <p role="alert" className="intake-error">
-          {error}
+          {error || runError}
         </p>
       )}
       {result && (
@@ -399,7 +411,12 @@ export function IntakePanel({
               <Copy className="size-4" />
               {t("复制结果")}
             </Button>
-            <Button size="sm" variant="secondary" disabled={history.length === 0} onClick={undoLastEdit}>
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={history.length === 0}
+              onClick={undoLastEdit}
+            >
               <Undo2 className="size-4" />
               {t("撤销上一步")}
             </Button>

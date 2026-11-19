@@ -24,6 +24,63 @@ const doc = () => ({
   },
   bindings: [],
 });
+
+test("文档版本只用于并发检查，不写入正文文件且不改变同步内容", async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), "helself-doc-revision-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const store = new DocumentsStore(dir);
+  const saved = await store.save(doc(), { requireRevision: true });
+  assert.match(saved.revision, /^[a-f0-9]{64}$/);
+  assert.equal(saved.revision, documentRevision(saved));
+  assert.equal((await store.get(saved.id)).revision, saved.revision);
+  const persisted = JSON.parse(await readFile(join(dir, saved.id + ".json"), "utf8"));
+  assert.equal(Object.hasOwn(persisted, "revision"), false);
+  assert.deepEqual(normalizeDocument(saved), normalizeDocument(persisted));
+  assert.equal(documentRevision(persisted), saved.revision);
+  const repeated = await store.save({ ...doc(), createOnly: true }, { requireRevision: true });
+  assert.equal(repeated.revision, saved.revision);
+});
+
+test("两个编辑者持有同一版本时只接受第一个保存，拒绝缺失版本和旧版本", async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), "helself-doc-conflict-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const store = new DocumentsStore(dir);
+  const saved = await store.save(doc());
+  const [first, second] = await Promise.allSettled([
+    store.save({ ...saved, title: "第一位编辑者" }, { expectedRevision: saved.revision }),
+    store.save({ ...saved, title: "第二位编辑者" }, { expectedRevision: saved.revision }),
+  ]);
+  assert.equal(first.status, "fulfilled");
+  assert.equal(second.status, "rejected");
+  assert.equal(second.reason.code, "document-conflict");
+  assert.equal((await store.get(saved.id)).title, "第一位编辑者");
+  await assert.rejects(
+    store.save({ ...saved, title: "没有版本" }, { requireRevision: true }),
+    (error) => error.code === "document-conflict",
+  );
+  assert.throws(() => store.save(saved, { expectedRevision: [saved.revision] }), /版本标识无效/);
+  const controlled = await store.save({ ...saved, title: "内部合并仍可显式保存" });
+  assert.equal(controlled.title, "内部合并仍可显式保存");
+});
+
+test("版本检查识别同一时间戳的外部改写，已删除文档不会被旧草稿重新创建", async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), "helself-doc-revision-external-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const store = new DocumentsStore(dir);
+  const saved = await store.save(doc());
+  await writeFile(join(dir, saved.id + ".json"), JSON.stringify({ ...saved, title: "外部修改" }));
+  await assert.rejects(
+    store.save({ ...saved, title: "旧草稿" }, { expectedRevision: saved.revision }),
+    (error) => error.code === "document-conflict",
+  );
+  assert.equal((await store.get(saved.id)).title, "外部修改");
+  await store.remove(saved.id);
+  await assert.rejects(
+    store.save(saved, { expectedRevision: saved.revision }),
+    (error) => error.code === "document-conflict" && /已.*删除/.test(error.message),
+  );
+  assert.deepEqual(await store.list(), []);
+});
 test("Markdown 原文跨重启和元数据编辑保留，列表不携带正文", async () => {
   const dir = await mkdtemp(join(tmpdir(), "nanpad-docs-markdown-"));
   const markdown =

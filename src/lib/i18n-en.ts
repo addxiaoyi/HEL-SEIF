@@ -15,6 +15,8 @@ import { SECURITY_EN } from "./i18n-security-en.ts";
  * not agree on where a possessive or a count belongs.
  */
 export const EN: Record<string, string> = {
+  另存副本: "Save a copy",
+  "文档副本已保存。": "Document copy saved.",
   ...INTEGRATIONS_EN,
   ...SYNC_EN,
   ...SERVICES_EN,

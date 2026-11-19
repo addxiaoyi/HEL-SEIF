@@ -626,6 +626,18 @@ function DocumentEditor({
       setFinishing(false);
     }
   };
+  async function saveConflictCopy() {
+    if (finishing || uploadingRef.current || status === "saving") return;
+    setFinishing(true);
+    try {
+      await useDocuments.getState().saveCopy(doc.id);
+      toast.success(t("文档副本已保存。"));
+    } catch (cause) {
+      fail(cause);
+    } finally {
+      setFinishing(false);
+    }
+  }
   useEditorState({
     editor,
     selector: ({ editor }) =>
@@ -1076,6 +1088,16 @@ function DocumentEditor({
           <div role="alert" className="m-4 rounded-md border border-crit p-3 text-sm text-crit">
             {t("保存失败，内容仍保留在编辑器中：")}
             {error}
+            <div className="mt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={finishing || uploading || status === "saving"}
+                onClick={saveConflictCopy}
+              >
+                {t(finishing ? "保存中…" : "另存副本")}
+              </Button>
+            </div>
           </div>
         )}
         <article className="document-paper">

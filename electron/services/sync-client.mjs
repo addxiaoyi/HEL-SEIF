@@ -74,6 +74,12 @@ const exactJson = (buffer, what) => {
   }
 };
 
+const documentReadError = (label, cause) =>
+  Object.assign(
+    new SyncError(`本地文档${label}读取失败，本轮文档同步已停止。请检查文件后重试。`, "document-read"),
+    { cause },
+  );
+
 export class SyncClient {
   #dir;
   #file;
@@ -610,16 +616,20 @@ export class SyncClient {
         .filter(([path]) => path.startsWith("documents/"))
         .map(([path, value]) => [path, value]),
     );
-    const localList = await docs.list();
+    let localList;
+    try {
+      localList = await docs.list();
+    } catch (error) {
+      throw documentReadError("列表", error);
+    }
     const local = new Map();
     for (const summaryItem of localList) {
       const hash = await this.#localDocumentHash(summaryItem);
-      if (hash)
-        local.set(`documents/${summaryItem.id}.json`, {
-          id: summaryItem.id,
-          h: hash,
-          updatedAt: summaryItem.updatedAt,
-        });
+      local.set(`documents/${summaryItem.id}.json`, {
+        id: summaryItem.id,
+        h: hash,
+        updatedAt: summaryItem.updatedAt,
+      });
     }
     const base = state.base.documents ?? (state.base.documents = {});
     const paths = new Set([...local.keys(), ...Object.keys(remote), ...Object.keys(base)]);
@@ -695,8 +705,8 @@ export class SyncClient {
       const h = hashDocumentFile(await this.#adapters.documents.get(item.id));
       this.#documentHashes.set(item.id, { updatedAt: item.updatedAt, h });
       return h;
-    } catch {
-      return null; // 无法读取的文档不参与同步，也不会被当作已删除
+    } catch (error) {
+      throw documentReadError(`“${item.id}”`, error);
     }
   }
   async #readRemoteDocument(session, path, expectHash) {

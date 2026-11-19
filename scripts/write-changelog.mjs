@@ -7,49 +7,95 @@
  * after editing a release entry.
  */
 import { readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import ts from "typescript";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const source = readFileSync(join(root, "src/lib/changelog.ts"), "utf8").replace(/\r\n/g, "\n");
 
-// A tiny extractor rather than a TS pipeline: the file is a plain array literal
-// and adding a compiler to a 40-line script would be the expensive option.
-const QUOTED = /"((?:[^"\\]|\\.)*)"/g;
-const body = source.slice(source.indexOf("export const RELEASES"));
-const releases = [];
+export function parseReleases(source) {
+  const file = ts.createSourceFile("changelog.ts", source, ts.ScriptTarget.Latest, true);
+  if (file.parseDiagnostics.length)
+    throw new Error(
+      `Invalid RELEASES source: ${ts.flattenDiagnosticMessageText(file.parseDiagnostics[0].messageText, " ")}`,
+    );
+  const declarations = file.statements
+    .filter(
+      (statement) =>
+        ts.isVariableStatement(statement) &&
+        statement.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword) &&
+        statement.declarationList.flags & ts.NodeFlags.Const,
+    )
+    .flatMap((statement) => [...statement.declarationList.declarations])
+    .filter(
+      (declaration) => ts.isIdentifier(declaration.name) && declaration.name.text === "RELEASES",
+    );
+  const array = declarations[0]?.initializer;
+  if (
+    declarations.length !== 1 ||
+    !array ||
+    !ts.isArrayLiteralExpression(array) ||
+    !array.elements.length
+  )
+    throw new Error("RELEASES must be one exported, non-empty const array literal");
 
-for (const block of body.split(/\n {2}\{\n/).slice(1)) {
-  const field = (name) => {
-    const match = new RegExp(`${name}:\\s*` + QUOTED.source).exec(block);
-    return match ? match[1] : undefined;
-  };
-  const version = field("version");
-  if (!version) continue;
-  const changesRaw = /changes:\s*\[([\s\S]*?)\n {4}\]/.exec(block);
-  const changes = changesRaw
-    ? [...changesRaw[1].matchAll(QUOTED)].map((m) => m[1].replaceAll('\\"', '"'))
-    : [];
-  releases.push({ version, date: field("date"), title: field("title"), changes });
+  // Read literal nodes only: formatting and escaped delimiters must not change the release content.
+  return array.elements.map((entry, index) => {
+    const label = `RELEASES[${index}]`;
+    if (!ts.isObjectLiteralExpression(entry)) throw new Error(`${label} must be an object literal`);
+    const fields = new Map();
+    for (const property of entry.properties) {
+      if (
+        !ts.isPropertyAssignment(property) ||
+        !(ts.isIdentifier(property.name) || ts.isStringLiteral(property.name)) ||
+        fields.has(property.name.text)
+      )
+        throw new Error(`${label} must contain unique literal properties`);
+      fields.set(property.name.text, property.initializer);
+    }
+    const text = (value, name) => {
+      if (!value || !ts.isStringLiteral(value) || !value.text.trim())
+        throw new Error(`${label}.${name} must be a non-empty string literal`);
+      return value.text;
+    };
+    const changes = fields.get("changes");
+    if (!changes || !ts.isArrayLiteralExpression(changes) || !changes.elements.length)
+      throw new Error(`${label}.changes must be a non-empty string array literal`);
+    return {
+      version: text(fields.get("version"), "version"),
+      date: text(fields.get("date"), "date"),
+      title: text(fields.get("title"), "title"),
+      changes: changes.elements.map((change, changeIndex) =>
+        text(change, `changes[${changeIndex}]`),
+      ),
+    };
+  });
 }
 
-if (releases.length === 0) {
-  console.error("no releases parsed from src/lib/changelog.ts");
-  process.exit(1);
+export function renderChangelog(releases) {
+  const lines = [
+    "# 更新日志",
+    "",
+    "> 本文件由 `node scripts/write-changelog.mjs` 从 `src/lib/changelog.ts` 生成，",
+    "> 请改那个文件而不是这里 —— 应用内的「设置 → 更新日志」读的是同一份数据。",
+    "",
+  ];
+  for (const release of releases) {
+    lines.push(`## ${release.version} — ${release.title}`, "", `_${release.date}_`, "");
+    for (const change of release.changes) lines.push(`- ${change}`);
+    lines.push("");
+  }
+  return lines.join("\n");
 }
 
-const lines = [
-  "# 更新日志",
-  "",
-  "> 本文件由 `node scripts/write-changelog.mjs` 从 `src/lib/changelog.ts` 生成，",
-  "> 请改那个文件而不是这里 —— 应用内的「设置 → 更新日志」读的是同一份数据。",
-  "",
-];
-for (const release of releases) {
-  lines.push(`## ${release.version} — ${release.title}`, "", `_${release.date}_`, "");
-  for (const change of release.changes) lines.push(`- ${change}`);
-  lines.push("");
+export function writeChangelog(directory = root) {
+  const source = readFileSync(join(directory, "src/lib/changelog.ts"), "utf8");
+  const releases = parseReleases(source);
+  writeFileSync(join(directory, "CHANGELOG.md"), renderChangelog(releases), "utf8");
+  return releases.length;
 }
 
-writeFileSync(join(root, "CHANGELOG.md"), lines.join("\n"), "utf8");
-console.log(`CHANGELOG.md written (${releases.length} release${releases.length > 1 ? "s" : ""})`);
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  const count = writeChangelog();
+  console.log(`CHANGELOG.md written (${count} release${count > 1 ? "s" : ""})`);
+}

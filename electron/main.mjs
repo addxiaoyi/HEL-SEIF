@@ -582,7 +582,13 @@ function registerIpc() {
   const documents = new DocumentsStore(join(app.getPath("userData"), "documents"));
   for (const method of ["list", "get", "save", "remove"])
     handle("documents:" + method, async (...args) => {
-      const result = await documents[method](...args);
+      const result =
+        method === "save"
+          ? await documents.save(args[0], {
+              expectedRevision: args[1]?.expectedRevision ?? args[0]?.revision ?? null,
+              requireRevision: true,
+            })
+          : await documents[method](...args);
       if (method === "save") emit("documents:changed", { document: result });
       if (method === "remove") emit("documents:changed", { removedId: args[0] });
       if (method === "save" || method === "remove") syncClient?.notifyLocalChange();
@@ -1402,7 +1408,12 @@ function registerIpc() {
           app.getPath("documents"),
           `${say("Helself备份", "helself-backup")}-${backupStamp()}.${BACKUP_EXTENSION}`,
         ),
-        filters: [{ name: say("Helself加密备份", "Helself backup"), extensions: [BACKUP_EXTENSION, LEGACY_BACKUP_EXTENSION] }],
+        filters: [
+          {
+            name: say("Helself加密备份", "Helself backup"),
+            extensions: [BACKUP_EXTENSION, LEGACY_BACKUP_EXTENSION],
+          },
+        ],
       });
       if (selected.canceled || !selected.filePath) return null;
       if (insideUserData(selected.filePath))
@@ -1431,7 +1442,12 @@ function registerIpc() {
     const selected = await dialog.showOpenDialog(win, {
       title: say("选择Helself备份", "Choose a Helself backup"),
       properties: ["openFile"],
-      filters: [{ name: say("Helself加密备份", "Helself backup"), extensions: [BACKUP_EXTENSION, LEGACY_BACKUP_EXTENSION] }],
+      filters: [
+        {
+          name: say("Helself加密备份", "Helself backup"),
+          extensions: [BACKUP_EXTENSION, LEGACY_BACKUP_EXTENSION],
+        },
+      ],
     });
     if (selected.canceled || !selected.filePaths[0]) return null;
     const path = selected.filePaths[0];

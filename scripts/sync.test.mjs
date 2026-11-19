@@ -51,7 +51,7 @@ const markdown = (id, title, text, extra = {}) => ({
 });
 
 /** 起一个真实的网页版服务器（可在同一目录上重启）和一个带内存适配器的桌面客户端。 */
-async function rig(t, { vault = false, syncLimits } = {}) {
+async function rig(t, { vault = false, syncLimits, readDocument } = {}) {
   const root = await mkdtemp(join(tmpdir(), "helself-sync-web-"));
   const desktop = await mkdtemp(join(tmpdir(), "helself-sync-desktop-"));
   const staticDir = await mkdtemp(join(tmpdir(), "helself-sync-static-"));
@@ -113,7 +113,12 @@ async function rig(t, { vault = false, syncLimits } = {}) {
           local.mtimeMs = Date.now();
         },
       },
-      documents,
+      documents: {
+        list: () => documents.list(),
+        get: (id) => (readDocument ? readDocument(documents, id) : documents.get(id)),
+        save: (doc) => documents.save(doc),
+        remove: (id) => documents.remove(id),
+      },
       vault: vaultFile,
     },
   });
@@ -296,10 +301,11 @@ test("文档：单边修改与删除会传播，两边都改时另存冲突副�
 
   // 两边同时改 doc-a。
   await r.documents.save(markdown("doc-a", "文档 A", "桌面版第二次修改"));
-  await r.call("/api/web/documents/doc-a", {
+  const updated = await r.call("/api/web/documents/doc-a", {
     method: "PUT",
-    body: { ...markdown("doc-a", "文档 A", "网页版第二次修改") },
+    body: { ...markdown("doc-a", "文档 A", "网页版第二次修改"), revision: onWeb.revision },
   });
+  assert.equal(updated.status, 200);
   const result = await r.client.syncNow();
   const titles = (await r.documents.list()).map((d) => d.title).sort();
   assert.equal(titles.length, 2, "原文和一份冲突副本");
@@ -312,6 +318,76 @@ test("文档：单边修改与删除会传播，两边都改时另存冲突副�
   const webDocs = await (await r.call("/api/web/documents")).json();
   assert.equal(webDocs.length, 2, "两边的文档一致");
 });
+
+test("文档列表包含损坏文件时明确报错，不将本地列表当作空列表", async (t) => {
+  const r = await rig(t);
+  await r.pair();
+  await r.documents.save(markdown("doc-corrupt", "保留文档", "已同步的内容"));
+  await r.client.syncNow();
+  const remoteFile = join(r.root, "workspace", "documents", "doc-corrupt.json");
+  const remoteBefore = await readFile(remoteFile, "utf8");
+  await writeFile(join(r.desktop, "documents", "doc-corrupt.json"), "{");
+
+  await assert.rejects(r.client.syncNow(), (error) => {
+    assert.equal(error.code, "document-read");
+    assert.match(error.message, /文档列表读取失败/);
+    assert.ok(error.cause instanceof SyntaxError);
+    return true;
+  });
+  assert.equal(await readFile(remoteFile, "utf8"), remoteBefore);
+});
+
+for (const fault of ["EIO", "invalid-json", "ENOENT"]) {
+  test(`文档枚举后读取失败（${fault}）不会删除远端，恢复后仍可同步明确删除`, async (t) => {
+    let failRead = false;
+    let failedReads = 0;
+    const r = await rig(t, {
+      async readDocument(documents, id) {
+        if (failRead) {
+          failedReads += 1;
+          if (fault === "EIO")
+            throw Object.assign(new Error("Synthetic document read failure"), { code: "EIO" });
+          const file = join(r.desktop, "documents", `${id}.json`);
+          if (fault === "invalid-json") await writeFile(file, "{");
+          else await rm(file);
+        }
+        return documents.get(id);
+      },
+    });
+    await r.pair();
+    await r.documents.save(markdown("doc-protected", "保留文档", "已同步的内容"));
+    await r.client.syncNow();
+    const remoteFile = join(r.root, "workspace", "documents", "doc-protected.json");
+    const remoteBefore = await readFile(remoteFile, "utf8");
+    await r.documents.save(markdown("doc-protected", "保留文档", "待同步的新内容"));
+    const localFile = join(r.desktop, "documents", "doc-protected.json");
+    const localBefore = await readFile(localFile, "utf8");
+
+    failRead = true;
+    await assert.rejects(r.client.syncNow(), (error) => {
+      assert.equal(error.code, "document-read");
+      assert.match(error.message, /doc-protected.*文档同步已停止/);
+      if (fault === "invalid-json") assert.ok(error.cause instanceof SyntaxError);
+      else assert.equal(error.cause.code, fault);
+      return true;
+    });
+    assert.equal(failedReads, 1, "真实枚举完成后触发一次文档读取故障");
+    assert.equal(await readFile(remoteFile, "utf8"), remoteBefore, "远端原文保持不变");
+    const failed = await r.client.status();
+    assert.equal(failed.lastResult.ok, false);
+    assert.match(failed.error, /doc-protected/);
+
+    failRead = false;
+    if (fault !== "EIO") await writeFile(localFile, localBefore);
+    const recovered = await r.client.syncNow();
+    assert.equal(recovered.lastResult.ok, true);
+    assert.match(JSON.parse(await readFile(remoteFile, "utf8")).markdown, /待同步的新内容/);
+    await r.documents.remove("doc-protected");
+    const removed = await r.client.syncNow();
+    assert.equal(removed.lastResult.deleted, 1);
+    await assert.rejects(readFile(remoteFile), { code: "ENOENT" });
+  });
+}
 
 test("密钥库同步默认关闭；开启后只同步密文，网页版那边新增的记录可在桌面用同一个主密码读出", async (t) => {
   const r = await rig(t, { vault: true });

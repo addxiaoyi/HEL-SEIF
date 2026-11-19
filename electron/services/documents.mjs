@@ -1,25 +1,14 @@
 import { hostedImageUrl } from "./hosted-image.mjs";
-import { createHash } from "node:crypto";
 import { renameSync } from "node:fs";
 import { mkdir, readFile, readdir, writeFile, rename, unlink, lstat } from "node:fs/promises";
 import { join } from "node:path";
 import { inspectRaster } from "./image-data.mjs";
 import { markdownContent } from "./document-markdown.mjs";
+import { DocumentConflictError, documentRevision } from "./document-revision.mjs";
+
+export { DocumentConflictError, documentRevision } from "./document-revision.mjs";
 
 const KINDS = new Set(["server", "domain", "mail", "ai", "secret", "cert", "service"]);
-export function documentRevision(doc) {
-  return createHash("sha256")
-    .update(
-      JSON.stringify({
-        title: doc.title,
-        content: doc.content,
-        markdown: doc.markdown,
-        bindings: doc.bindings,
-        updatedAt: doc.updatedAt,
-      }),
-    )
-    .digest("hex");
-}
 const TYPES = new Set([
   "doc",
   "paragraph",
@@ -278,9 +267,19 @@ export class DocumentsStore {
   async get(id) {
     await this.#queue;
     const doc = JSON.parse(await readFile(this.#path(id), "utf8"));
-    return { ...normalizeDocument(doc), createdAt: doc.createdAt, updatedAt: doc.updatedAt };
+    return {
+      ...normalizeDocument(doc),
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+      revision: documentRevision(doc),
+    };
   }
-  save(input, { assertCurrent = null, expectedRevision = null } = {}) {
+  save(input, { assertCurrent = null, expectedRevision = null, requireRevision = false } = {}) {
+    if (
+      expectedRevision !== null &&
+      (typeof expectedRevision !== "string" || !/^[a-f0-9]{64}$/.test(expectedRevision))
+    )
+      throw new TypeError("文档版本标识无效");
     const clean = normalizeDocument(input);
     const createOnly = input.createOnly === true;
     const job = this.#queue.then(async () => {
@@ -289,19 +288,23 @@ export class DocumentsStore {
       let createdAt = new Date().toISOString();
       try {
         const existing = JSON.parse(await readFile(path, "utf8"));
+        if (requireRevision && !createOnly && !expectedRevision)
+          throw new DocumentConflictError("文档缺少版本信息，请先另存副本，再重新打开文档。");
         if (expectedRevision && documentRevision(existing) !== expectedRevision)
-          throw new Error("文档已在其他位置修改，请重新生成建议，避免覆盖新内容。");
+          throw new DocumentConflictError();
         // 显式迁移只创建缺失文档，队列内检查避免并发导入覆盖用户后续编辑。
         if (createOnly)
           return {
             ...normalizeDocument(existing),
             createdAt: existing.createdAt,
             updatedAt: existing.updatedAt,
+            revision: documentRevision(existing),
           };
         createdAt = existing.createdAt || createdAt;
       } catch (error) {
         if (error.code !== "ENOENT") throw error;
-        if (expectedRevision) throw new Error("文档已删除，未应用修改建议。");
+        if (expectedRevision)
+          throw new DocumentConflictError("文档已删除，请另存副本保留本地内容。");
       }
       const doc = { ...clean, createdAt, updatedAt: new Date().toISOString() };
       await mkdir(this.#directory, { recursive: true });
@@ -317,7 +320,7 @@ export class DocumentsStore {
         throw error;
       }
       this.#metadata.delete(clean.id);
-      return doc;
+      return { ...doc, revision: documentRevision(doc) };
     });
     this.#queue = job.catch(() => {});
     return job;

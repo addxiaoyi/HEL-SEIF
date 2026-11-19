@@ -19,7 +19,7 @@ import { extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { normalizeSnapshotImages } from "../electron/services/image-data.mjs";
-import { DocumentsStore } from "../electron/services/documents.mjs";
+import { DocumentConflictError, DocumentsStore } from "../electron/services/documents.mjs";
 import { ReminderPushError, WebReminderPush } from "./reminder-push.mjs";
 import { BridgeError, createWebBridge } from "./bridge.mjs";
 import { HostStats } from "./host-stats.mjs";
@@ -898,7 +898,19 @@ export async function createWebServer({
     if (req.method === "PUT") {
       const doc = await json(req);
       if (!doc || doc.id !== id) throw new HttpError(400, "文档标识不一致");
-      return send(res, 200, await documents.save(doc));
+      const revision = doc.expectedRevision ?? doc.revision ?? null;
+      if (revision !== null && (typeof revision !== "string" || !/^[a-f0-9]{64}$/.test(revision)))
+        throw new HttpError(400, "文档版本标识无效");
+      try {
+        return send(
+          res,
+          200,
+          await documents.save(doc, { expectedRevision: revision, requireRevision: true }),
+        );
+      } catch (error) {
+        if (error instanceof DocumentConflictError) throw new HttpError(409, error.message);
+        throw error;
+      }
     }
     if (req.method === "DELETE") {
       await documents.remove(id);

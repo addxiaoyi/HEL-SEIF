@@ -13,11 +13,20 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: 规范 Windows 临时目录
+        shell: pwsh
+        run: |
+          $taskTempPath = node -p "require('node:fs').realpathSync.native(require('node:os').tmpdir())"
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve temporary directory' }
+          "TEMP=$taskTempPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "TMP=$taskTempPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
       - run: npm ci
       - run: node node_modules/electron/install.js
       - run: npx playwright install chromium
       - run: npm run lint
       - run: npm run typecheck
+      - run: npm run i18n:check
+      - run: npm run terminal:build
       - run: npm run desktop:dist -- --win --x64 --publish never
       - run: npm run desktop:online
       - name: 验证安装、启动、覆盖升级和卸载
