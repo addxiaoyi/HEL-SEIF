@@ -7,7 +7,7 @@
 <p align="center">连接文档、账号与数字资产的个人工作空间。<br />主机、域名、证书、邮箱、AI 订阅、号码、密钥和运维文档，彼此相连，有处安放。</p>
 
 <p align="center">
-  <a href="https://github.com/addxiaoyi/HEL-SEIF/releases/latest"><img alt="最新版本" src="https://img.shields.io/github/v/release/addxiaoyi/HEL-SEIF?label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC&color=1d5b4a" /></a>
+  <a href="https://github.com/addxiaoyi/HEL-SEIF/releases"><img alt="版本发布" src="https://img.shields.io/github/v/release/addxiaoyi/HEL-SEIF?label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC&color=1d5b4a" /></a>
   <a href="https://github.com/addxiaoyi/HEL-SEIF/releases"><img alt="下载量" src="https://img.shields.io/github/downloads/addxiaoyi/HEL-SEIF/total?label=%E4%B8%8B%E8%BD%BD&color=7fe0bf" /></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/github/license/addxiaoyi/HEL-SEIF?color=c8f169" /></a>
   <a href="https://github.com/addxiaoyi/HEL-SEIF/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/addxiaoyi/HEL-SEIF?style=social" /></a>
@@ -15,7 +15,7 @@
 
 <p align="center">
   <a href="https://addxiaoyi.github.io/HEL-SEIF/">产品主页</a> ·
-  <a href="https://github.com/addxiaoyi/HEL-SEIF/releases/latest">下载安装包</a> ·
+  <a href="https://github.com/addxiaoyi/HEL-SEIF/releases">版本发布（安装包待发布）</a> ·
   <a href="docs/USER-GUIDE.md">使用教程</a> ·
   <a href="docs/SECURITY.md">安全与备份</a> ·
   <a href="CHANGELOG.md">更新日志</a>
@@ -29,13 +29,17 @@
 
 [社区友链 · LINUX DO](https://linux.do/) · 真诚、友善、团结、专业。
 
-## 本地候选版：1.17.13（未发布）
+## 1.17.13 开发与验收（尚未公开发布）
 
-- 网页保存与跨设备冲突处理、粘贴整理字段传递及弹窗交互修复。
-- PWA、扩展、Windows 程序和安装向导统一品牌图标；清理全部 lint 警告。
-- 修复安装包缺少运行模块导致无法启动的问题，本地打包强制禁止发布。
+2026-11-20：本版开发、打包和 Windows x64 完整安装验收已通过，尚未创建正式 Release；本地产物未签名。
 
-详细范围见 [1.17.13 候选包说明](docs/releases/v1.17.13.md) 和 [验收记录](docs/QA-2026-11-05.md)。正式下载仍以已发布 Release 为准。
+- 同步读取本地资料失败时立即中止，避免把读取错误当成删除同步到其他设备。
+- 普通文档保存增加版本校验；冲突时保留本地草稿，可另存副本，避免覆盖另一端修改。
+- 粘贴整理隔离过期请求，并保留跨面板的进行中状态和错误；撤销与字段修正继续可用。
+- Windows 快捷方式补齐通知激活身份，通知初始化后仍保留正确图标；开发、便携和隔离资料模式不自动注册系统通知。
+- 补全桌面安装包和 Docker 的共享运行模块，统一品牌图标，并保持 lint 零警告。
+
+完整 `npm test` 已通过 1,363 项测试，类型检查、三种前端构建及完整 CI 通过；新安装、首次启动、同版本覆盖、资料保留和卸载已在一次性 Windows 环境验证。详细结果、产物摘要与外部服务验收边界见 [1.17.13 说明](docs/releases/v1.17.13.md) 和 [本轮验收记录](docs/QA-2026-11-19.md)。下载仅以 [GitHub Releases](https://github.com/addxiaoyi/HEL-SEIF/releases) 实际公开的附件为准。
 
 ### 1.17.3
 
@@ -170,13 +174,15 @@
 
 ## 安装与首次使用
 
-1. 在 GitHub Releases 下载当前正式版 `Helself-1.17.1-setup.exe`，适用于 Windows x64；不想安装可下载便携版 `Helself-1.17.1-portable-x64.zip`。
-2. 运行安装程序，选择安装位置。当前安装包未做代码签名，请核对发布者、下载地址和 Release 中的 SHA256 校验文件。
+1.17.13 安装包尚未公开发布。下面是正式附件发布后的使用步骤；当前可在 [版本发布页](https://github.com/addxiaoyi/HEL-SEIF/releases) 查看实际状态，或按下方开发流程运行源码。
+
+1. 发布后，在 GitHub Releases 获取 Windows x64 安装包 `Helself-1.17.13-setup.exe`，或免安装便携版 `Helself-1.17.13-portable-x64.zip`；没有对应附件时不要使用自行拼接的下载地址。
+2. 运行安装程序，选择安装位置。当前构建未做代码签名，下载后应核对仓库、版本及同一 Release 中的 `SHA256SUMS.txt`。
 3. 首次启动可选择「使用 Linux.do 登录」绑定主身份，也可直接使用默认工作区名称。创建 10 至 256 位本地主密码并再次确认，头像可稍后设置；Linux.do 登录不代替主密码，也不能找回主密码。
 4. 已有密钥库的用户确认工作区名称及原主密码即可继续，升级不会自动删除资产或演示记录。
 5. 添加资产，然后在「设置 → 模型与知识库」配置模型或连接 AI 服务账号。
 
-不想安装？Releases 同时提供 Windows 便携版 `Helself-x.y.z-portable-x64.zip`：解压即用，资料保存在程序旁的 `data` 文件夹，详见 [使用教程 · 便携版](docs/USER-GUIDE.md#便携版免安装)。
+便携版发布后可解压使用，资料保存在程序旁的 `data` 文件夹，详见 [使用教程 · 便携版](docs/USER-GUIDE.md#便携版免安装)。
 
 安装软件无需 Node.js。正式安装包面向 Windows x64；macOS 的源码构建与未签名 CI 测试程序见 [macOS 构建说明](docs/MAC-BUILD.md)，不等同于已签名、公证的正式发行版。Linux 有构建配置，发布验证范围以 Release 记录为准。
 
@@ -354,6 +360,7 @@ PLAYWRIGHT_DOWNLOAD_HOST=https://cdn.npmmirror.com/binaries/playwright npx playw
 
 ```bash
 npm ci
+npm --prefix services/identity-login ci --omit=dev --ignore-scripts
 npm run desktop
 ```
 
@@ -364,6 +371,7 @@ npm run typecheck
 npm run lint
 npm run i18n:check
 npm test
+npm --prefix services/identity-login test
 npm run desktop:build
 node scripts/agent-integration.mjs
 node scripts/ai-subscription-integration.mjs
@@ -373,6 +381,7 @@ node scripts/mail-client-integration.mjs
 node scripts/documents-usability-integration.mjs
 node scripts/main-identity-ui-integration.mjs
 npm run build
+npm run web:build
 ```
 
 集成测试使用隔离数据目录和本机协议测试服务，不读取日常账号。发布构建：
@@ -381,7 +390,7 @@ npm run build
 npm run desktop:dist -- --win --x64 --publish never
 ```
 
-安装包输出到 `release/v版本号/`，本地候选包为 `release/v1.17.13/`。`npm run desktop:online` 在离线包完成后生成原生在线安装器，`npm run extension:build` 生成配套浏览器扩展目录。打包排除后端测试文件；日常资产、私钥和登录令牌不属于构建输入。发布流程及验证要求见 [发布说明](docs/RELEASING.md)，候选包变化见 [v1.17.13 说明](docs/releases/v1.17.13.md)。原生终端需单独编译时运行 `npm run terminal:build`。
+本版新安装包的目标输出目录为 `release/v1.17.13/`。`npm run desktop:online` 在离线包完成后生成原生在线安装器，`npm run desktop:portable` 生成便携版，`npm run extension:build` 生成配套浏览器扩展目录。打包排除后端测试文件；日常资产、私钥和登录令牌不属于构建输入。发布流程及验收要求见 [发布说明](docs/RELEASING.md)，本版状态见 [v1.17.13 说明](docs/releases/v1.17.13.md)。Windows 原生终端的编译与测试使用 `npm run terminal:build`；完整安装、覆盖升级和卸载在一次性 Windows runner 验收。
 
 ## 项目结构
 

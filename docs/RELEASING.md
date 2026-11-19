@@ -2,43 +2,70 @@
 
 当前发布目标为 Windows x64 NSIS 安装包。其他平台的打包配置不代表已验证可发布。
 
-本地候选包为 1.17.13，验证范围见 [候选包说明](releases/v1.17.13.md)。`package-desktop.mjs` 强制禁止发布并拒绝其他发布模式，Release 仍由最后独立的 GitHub 上传步骤创建。
+当前发行开发版本为 1.17.13，开发记录日期为 2026-11-19，2026-11-20 完成验收整理；尚未创建本版正式 Release。源码、产物及完整安装验收见 [本版说明](releases/v1.17.13.md) 与 [本轮验收记录](QA-2026-11-19.md)。`package-desktop.mjs` 强制禁止发布并拒绝其他发布模式，正式 Release 只由最后独立的 GitHub 上传步骤创建。
 
 ## 不发布的 Windows 安装验收
 
 `.github/workflows/windows-validation.yml` 仅支持手动启动，仓库权限为只读，不创建 Release、标签、镜像或网站部署。它在 GitHub 托管的一次性 Windows runner 中构建当前分支，执行 `scripts/windows-installation-qa.ps1`，验证真实安装、启动、同版本覆盖升级、文档和密钥库保留、快捷方式图标、自启偏好与卸载清理，并上传七天有效的验收产物。
 
+该工作流包含 Windows 临时路径规范化、国际化检查、原生终端及快捷方式辅助程序测试。它强制触发原生通知初始化，并在安装、首次启动、覆盖和升级后启动四个阶段检查目标、图标、工作目录、AUMID 与 GUID 类型的 Toast 激活身份。最终源码提交推送后，可对发行分支执行：
+
+```bash
+gh workflow run windows-validation.yml --repo addxiaoyi/HEL-SEIF --ref codex/release-v1.17.13-20261119
+```
+
+将工作流实际验证的提交、运行地址、结论和产物清单写入本轮验收记录。工作流成功不创建公开下载地址；源码检查、打包、完整试装及公开发布分别记录。
+
 本机运行时会拒绝执行完整试装，避免改写维护者的注册表和已安装程序。跨历史版本升级、管理员 UAC、磁盘满与第三方安全软件仍需专用测试环境。本流程准备完成不代表远端运行已经通过。
 
-## 宣传与下载页同步
+## 产品主页与下载状态同步
 
 [GitHub Pages 下载页](https://addxiaoyi.github.io/HEL-SEIF/)使用 `site/` 下的模板和图片，版本、日期、更新摘要、安装包、插件及校验文件地址由最新已发布的 GitHub 正式版生成，不读取尚未发布的 `package.json` 版本。
 
-`产品主页` 工作流在页面源码改动、正式 Release 发布或编辑、以及 `Windows 正式版` 流水线成功后自动部署，也支持手动运行。使用 `workflow_run` 接续自动发布，因为 `GITHUB_TOKEN` 创建的 Release 不会触发另一条 `release` 工作流。草稿、预发布、缺失或尚未上传完成的附件会使页面构建失败，现有线上页面保留。
+`产品主页` 工作流在页面源码改动、Release 发布、编辑、删除或撤回，以及 `Windows 正式版` 流水线成功后自动部署，也支持手动运行。使用 `workflow_run` 接续自动发布，因为 `GITHUB_TOKEN` 创建的 Release 不会触发另一条 `release` 工作流。
 
-本地预览先将 `gh api repos/addxiaoyi/HEL-SEIF/releases/latest` 的 JSON 保存到 `release/pages-latest.json`，执行 `node scripts/build-site.mjs release/pages-latest.json release/site`，再使用静态服务器查看 `release/site`。页面为完整静态 HTML，访客无需请求 GitHub API；所有下载入口绑定同一个正式版本，资源使用内容摘要更新缓存。
+构建时分页读取全部 Release，排除草稿和预发布，按 `published_at` 选出最新正式版。查询成功但没有正式版时，明确传入 JSON `null`，页面显示“尚无正式版”，不生成安装包直链。API 失败、JSON 损坏或选中正式版缺少完整附件时仍报错，不能用 `null` 掩盖错误；失败时保留现有线上站点。
+
+使用 Bash、GitHub CLI 和 jq 进行与工作流一致的本地预览：
+
+```bash
+set -euo pipefail
+mkdir -p release
+gh api repos/addxiaoyi/HEL-SEIF/releases --paginate --slurp > release/pages-releases.json
+jq 'map(.[]) | map(select(.draft == false and .prerelease == false)) | sort_by(.published_at) | reverse | .[0] // null' \
+  release/pages-releases.json > release/pages-release.json
+node --test scripts/build-site.test.mjs
+node scripts/build-site.mjs release/pages-release.json release/site
+```
+
+再用静态服务器查看 `release/site`。页面为完整静态 HTML，访客无需请求 GitHub API；正式版存在时，所有下载入口绑定同一版本，资源使用内容摘要更新缓存。发布状态的改变应同时检查首页、使用指南和同步说明页。
 
 界面改动后，在开发预览已启动时运行 `node scripts/capture-site.mjs`，重新生成资产总览、文档阅读、用量图表与浏览器密码迁移四张展示图。只更新迁移界面可使用 `--passwords-only`。脚本只使用独立浏览器上下文和示例资料，不连接真实桌面数据或外部账号。检查图片后随 `site/` 一起提交；截图不会在每次发布时自动重拍。
 
 ## 版本准备
 
-更新 package.json、package-lock.json、browser-extension/manifest.json 与 src/lib/changelog.ts，执行 `node scripts/write-changelog.mjs` 同步 CHANGELOG.md。本版说明保存在 `docs/releases/v1.17.1.md`。README 的安装包名、构建目录及教程应与版本一致；描述实际支持范围，不将本机协议测试写成真实账号登录成功。
+核对 package.json、package-lock.json 根版本、browser-extension/manifest.json 与 src/lib/changelog.ts 的当前版本均为 1.17.13，日期为 2026-11-19。执行 `node scripts/write-changelog.mjs` 同步 CHANGELOG.md；生成器接受单行或多行字符串数组，非法输入会在写入前失败。本版说明保存在 `docs/releases/v1.17.13.md`，证据集中到 `docs/QA-2026-11-19.md`，旧 QA 记录保留其历史范围。README 的当前安装示例、构建目录与教程应一致，历史版本说明不做全局替换。
 
 ## 必须验证
 
 ```bash
 npm ci
+npm --prefix services/identity-login ci --omit=dev --ignore-scripts
 npm run typecheck
 npm run lint
 npm run i18n:check
 npm test
+npm --prefix services/identity-login test
 npm run desktop:build
 node scripts/agent-integration.mjs
 node scripts/ai-subscription-integration.mjs
 node scripts/website-account-integration.mjs
 node scripts/mail-client-integration.mjs
 npm run build
+npm run web:build
 ```
+
+Windows 上另运行 `npm run terminal:build` 和 `npm run windows-shell:build`，编译并执行原生终端及真实临时快捷方式 COM 测试。文档保存需覆盖版本冲突、草稿保留与另存副本；同步需覆盖本地读取失败不传播删除；粘贴整理需覆盖过期请求和跨面板状态。定向测试与真实界面用例分别记录，不重复累加到完整 `npm test` 的总数。
 
 检查桌面首次启动、升级解锁、Markdown 输出、主题化下拉菜单、锁库状态以及未配置网络服务时的错误。AI 订阅需检查快速登录入口、自动及手动回调、重复授权、分类额度，以及刷新失败后仍保留账号和上次结果。本版还需确认等待授权时回调输入直接可见，验证授权与同步额度阶段分别显示，令牌请求的 403 / 429 不被误写成额度查询错误。头像与资产图片需检查上传、更换、移除、保存及重启恢复，并确认超限文件和无效格式被拒绝。
 
@@ -50,11 +77,18 @@ npm run build
 
 ```bash
 npm run desktop:dist -- --win --x64 --publish never
+npm run desktop:portable
+npm run desktop:online
+npm run extension:build
 ```
 
 打包脚本将主进程及编译后的界面放入系统临时目录中的独立暂存区，使用仓库锁文件版本安装 `ssh2`、`electron-updater`、`imapflow`、`openai`、`minisearch`、`nodemailer`、`mailparser`、`html-to-text`、`sanitize-html`、`unified`、`remark-parse`、`remark-gfm`、`js-yaml`、`@noble/hashes` 及其运行依赖（清单在 `scripts/package-stage.mjs`，主进程新引用的第三方包没有加入清单时打包会直接报错），再通过 electron-builder 内置的目录遍历器收集依赖，避免将网页构建工具装进桌面包。暂存区先解析真实路径，npm 子进程只通过工作目录定位项目，避免 macOS 符号链接路径与 `--prefix` 解析不一致。排除可选原生加速模块，SSH 使用库自带的 JavaScript 实现；无需 Visual Studio 编译环境。复用本机已安装的同版本 Electron，输出到 `release/v版本号/`；构建结束清理暂存区。
 
-安装包生成后检查版本和包内容，运行 `node scripts/release-smoke.mjs release/v1.17.1/win-unpacked/Helself.exe` 验证打包程序，计算 SHA256，补齐 Release 说明中的验证记录。该脚本使用独立临时数据目录，不修改日常资料。发布时显式选择源码、文档和必要资源，不提交临时截图、日志、用户数据或运行目录。将发布标签指向已经验证的提交，再上传 `Helself-1.17.1-setup.exe`、便携版 ZIP、浏览器扩展包与 `SHA256SUMS.txt`，以及下文要求的应用内更新附件。
+安装包生成后检查版本和包内容，运行 `node scripts/release-smoke.mjs release/v1.17.13/win-unpacked/Helself.exe` 和 `node scripts/packaged-profile-integration.mjs release/v1.17.13/win-unpacked/Helself.exe` 验证打包程序及资料重启保留。这些脚本使用独立临时数据目录，不修改日常资料；完整试装仍交给一次性 Windows runner。
+
+记录最终源码提交、各命令的实际结果、签名状态及尚未验收的边界。重新计算最终产物摘要，补齐 `release/v1.17.13/BUILD-VERIFICATION.json` 和 `SHA256SUMS.txt`，核对安装器、在线载荷、便携版和更新元数据来自同一批构建。不得沿用 2026-11-05 候选包的大小、摘要或测试数量。
+
+发布时显式选择源码、文档和必要资源，不提交临时截图、日志、用户数据或运行目录。将发布标签指向已经验证的提交，再由正式流程上传 `Helself-1.17.13-setup.exe`、在线引导器、便携版 ZIP、浏览器扩展包、`SHA256SUMS.txt` 及应用内更新附件。创建 Release 后再验证公开下载及 Pages 版本展示；完成开发或本地打包不等于已经公开发布。
 
 1.3.1 的 Windows 正式发布流水线额外运行 `passwords-desktop-integration.mjs` 验证实际打包程序的 CSV、加密库、后台资产同步、锁库与文档保存，并在 `extension:build` 后运行 `browser-companion-integration.mjs` 加载真实扩展，覆盖原生表单整页导航、多账号填写与文档提示。依赖中文界面标签的 Electron 测试必须显式设置 `locale: "zh-CN"`，不能依赖开发机的系统语言。测试只使用独立临时资料和合成账号，不读取真实浏览器密码库；真实浏览器原生 CSV 导入结果与第三方在线文档兼容性应单独记录。
 
@@ -68,7 +102,7 @@ npm run desktop:dist -- --win --x64 --publish never
 
 ## 1.17.2 原生在线安装器
 
-离线包完成并签名后运行 `npm run desktop:online`，编译并测试 WPF 原生引导器。引导器中固定同一版本离线包的官方地址、长度与 SHA256；离线包被重新签名或重新构建时必须重新生成引导器，最后才计算 SHA256SUMS。新增发布附件 `Helself-版本-online-setup.exe`，不要用它替换 `latest.yml` 指向的离线包。
+离线包完成后运行 `npm run desktop:online`，编译并测试 WPF 原生引导器；如启用签名，应先完成离线包签名。引导器中固定同一版本离线包的官方地址、长度与 SHA256；离线包被重新签名或重新构建时必须重新生成引导器，最后才计算 SHA256SUMS。新增发布附件 `Helself-版本-online-setup.exe`，不要用它替换 `latest.yml` 指向的离线包。
 
 运行 `node scripts/installer-startup-integration.mjs`，使用隔离的 HKCU 测试键验证实际 NSIS 宏，不触碰日常自启项。Windows CI 额外设置 `HELSELF_INSTALLER_REAL_TEST=1`，在一次性 runner 上试装与卸载实际包，检查目录、版本、自启项与卸载清理；此开关禁止在日常电脑执行。
 
