@@ -13,7 +13,9 @@ ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1 \
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
 COPY . .
-RUN npm run web:build && npm prune --omit=dev --ignore-scripts
+RUN npm run web:build \
+    && node --input-type=module -e "import { stageSharedRuntime } from './scripts/package-shared.mjs'; await stageSharedRuntime(process.cwd(), process.cwd());" \
+    && npm prune --omit=dev --ignore-scripts
 
 FROM node:22-bookworm-slim
 WORKDIR /app
@@ -26,6 +28,7 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist-web ./dist-web
 COPY --from=build /app/selfhost ./selfhost
 COPY --from=build /app/electron/services ./electron/services
+COPY --from=build /app/src/lib/*.js ./src/lib/
 RUN mkdir -p /data && chown node:node /data && chmod +x selfhost/docker-entrypoint.sh
 VOLUME /data
 EXPOSE 8848
