@@ -50,9 +50,11 @@ try {
   $installedVersion = (Get-Item (Join-Path $appPath 'Helself.exe')).VersionInfo.ProductVersion
   if ($installedVersion -notin @($version, "$version.0")) { throw '安装版本不匹配。' }
   Check-Profile 'seed'
+  Check-Shortcut 'after-first-launch'
   Install-Candidate $false
   Check-Shortcut 'overlay-upgrade'
   Check-Profile 'verify'
+  Check-Shortcut 'after-upgrade-launch'
   $startup = Get-ItemPropertyValue 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' 'Helself'
   if ($startup -ne ('"' + (Join-Path $appPath 'Helself.exe') + '"')) { throw '覆盖升级未保留自启偏好。' }
   foreach ($name in @('Helself.exe','Uninstall Helself.exe')) {
