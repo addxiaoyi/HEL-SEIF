@@ -8,6 +8,9 @@ const releaseWorkflow = yaml.load(workflow);
 const windows = releaseWorkflow.jobs.windows;
 
 test("formal Windows releases default to a signed build and allow explicit unsigned mode", () => {
+  assert.equal(releaseWorkflow.on.push, undefined);
+  assert.equal(releaseWorkflow.on.workflow_dispatch.inputs.signing_mode.default, "signed");
+  assert.deepEqual(releaseWorkflow.on.workflow_dispatch.inputs.signing_mode.options, ["signed", "unsigned"]);
   assert.match(windows.env.HELSELF_SIGNING_MODE, /inputs\.signing_mode/);
   assert.match(windows.env.HELSELF_REQUIRE_SIGNING, /inputs\.signing_mode/);
   assert.match(windows.env.HELSELF_SIGN_CERT_SHA1, /vars\.HELSELF_SIGN_CERT_SHA1/);

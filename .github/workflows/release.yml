@@ -1,7 +1,5 @@
 name: Windows 正式版
 on:
-  push:
-    tags: ["v*"]
   workflow_dispatch:
     inputs:
       tag:
