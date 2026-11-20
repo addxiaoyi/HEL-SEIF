@@ -24,7 +24,7 @@ const app = await electron.launch({
 
 const workspace = "Historical upgrade fixture";
 const master = "fixture-only-master-password";
-const docId = "historical-upgrade-fixture-doc";
+const docId = "doc-historical-upgrade-fixture";
 const docTitle = "Historical upgrade fixture document";
 const docText = "Persisted by the original 1.17.3 release";
 const vaultId = "historical-upgrade-fixture-account";
