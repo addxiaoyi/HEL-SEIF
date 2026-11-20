@@ -15,7 +15,12 @@ const env = Object.fromEntries(
     ([key]) => !["ELECTRON_RUN_AS_NODE", "SINAN_DEV_URL", "NANPAD_TEST_DATA_DIR"].includes(key),
   ),
 );
-const app = await electron.launch({ executablePath: resolve(executable), env, timeout: 45000 });
+const app = await electron.launch({
+  executablePath: resolve(executable),
+  env,
+  locale: "zh-CN",
+  timeout: 45000,
+});
 
 const workspace = "Historical upgrade fixture";
 const master = "fixture-only-master-password";
