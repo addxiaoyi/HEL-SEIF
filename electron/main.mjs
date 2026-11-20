@@ -1415,7 +1415,7 @@ function registerIpc() {
         filters: [
           {
             name: say("Helself加密备份", "Helself backup"),
-            extensions: [BACKUP_EXTENSION, LEGACY_BACKUP_EXTENSION],
+            extensions: [BACKUP_EXTENSION],
           },
         ],
       });

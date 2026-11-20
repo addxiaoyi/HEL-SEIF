@@ -31,7 +31,7 @@ docker run -d --name helself --restart unless-stopped -p 8848:8848 \
 
 升级：`docker compose pull && docker compose up -d`。想从源码构建镜像：克隆仓库后运行 `docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build`。
 
-> 从旧版本升级：旧配置使用 `ZHIYU_*` 环境变量和 `./zhiyu-data` 资料目录。新版本只读取 `HELSELF_*`；请把资料目录重命名为 `helself-data`（或修改 compose 里的挂载行），并把环境变量改成 `HELSELF_*`。容器内挂载点仍是 `/data`，资料文件本身不需要转换。
+> 从旧版本升级：请检查 Compose 的挂载配置，确保原有资料目录仍挂载到容器内的 `/data`，避免启动到空目录。配置项使用 `HELSELF_*` 环境变量，资料文件不需要转换。
 
 浏览器打开 `http://服务器地址:8848`，第一次会进入「创建网页版账号」：填写日志里的**设置口令**、用户名和登录密码（至少 10 位）。设置口令只能用一次，用来防止别人抢先注册你的实例。
 

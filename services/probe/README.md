@@ -9,7 +9,7 @@
 Helself桌面        ── HTTPS JSON API ───────────> 同一服务端端口
 ```
 
-默认 TLS。服务端用 `ProtoMajor == 2`、`Content-Type: application/grpc` 和 `/zhiyu.probe.v1.ProbeService/` 前缀分流。使用 Go 原生 HTTP/2，h2c 支持 gRPC 标准客户端的 prior knowledge 连接，拒绝旧式 HTTP/1 Upgrade；不会在认证前缓存升级请求体。协议在 [proto/probe.proto](proto/probe.proto) 中，只有静态主机信息和双向状态流两个 RPC。每次 RPC 都用独立的 `client-uuid` 与 `client-secret` metadata 认证。注册生成 256 位随机凭据，服务端只存 SHA-256 摘要；删除主机会立即终止其现有状态流，并删除该主机及历史。
+默认 TLS。服务端按 `ProtoMajor == 2`、`Content-Type: application/grpc` 和 [协议定义](proto/probe.proto) 中的服务路径分流。使用 Go 原生 HTTP/2，h2c 支持 gRPC 标准客户端的 prior knowledge 连接，拒绝旧式 HTTP/1 Upgrade；不会在认证前缓存升级请求体。协议只有静态主机信息和双向状态流两个 RPC。每次 RPC 都用独立的 `client-uuid` 与 `client-secret` metadata 认证。注册生成 256 位随机凭据，服务端只存 SHA-256 摘要；删除主机会立即终止其现有状态流，并删除该主机及历史。
 
 管理员 API 使用另一份随机 Bearer Token，不能把它填到 Agent 的 secret。重复认证头、无效凭据、短或明显重复的管理员 Token 会被拒绝。`/healthz` 公开返回 `{ "status": "ok" }`，不暴露主机信息。
 
