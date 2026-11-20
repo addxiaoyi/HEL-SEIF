@@ -19,7 +19,17 @@ $report = (New-Item -ItemType Directory -Path $ReportDirectory -Force).FullName
 function Get-Installations {
   Get-ItemProperty -Path "$uninstallRoot\*" -ErrorAction SilentlyContinue |
     Where-Object { $_.PSObject.Properties['DisplayName'] -and $_.DisplayName -match 'Helself|Zhiyu|Nanpad' } |
-    Select-Object PSChildName, DisplayName, DisplayVersion, InstallLocation, UninstallString
+    ForEach-Object {
+      if ($_.UninstallString -notmatch '^"([^"]+)" /currentuser$') {
+        throw "Unexpected uninstall command for $($_.DisplayName)"
+      }
+      [pscustomobject]@{
+        key = $_.PSChildName
+        displayName = $_.DisplayName
+        displayVersion = $_.DisplayVersion
+        installLocation = Split-Path -Parent $Matches[1]
+      }
+    }
 }
 
 function Get-Startup([string]$Name) {
