@@ -91,9 +91,16 @@ if ($Migration -eq 'reinstall') {
   }
   Install-Package $legacyUninstaller '/S /currentuser'
   $deadline = [DateTime]::UtcNow.AddSeconds(30)
-  while ((Test-Path -LiteralPath $legacyApp) -and [DateTime]::UtcNow -lt $deadline) {
+  while ((Test-Path -LiteralPath $legacyApp) -or (Get-Installations) -or (Get-Startup 'Zhiyu')) {
+    if ([DateTime]::UtcNow -ge $deadline) { break }
     Start-Sleep -Milliseconds 250
   }
+  $postUninstall = [ordered]@{
+    executable = (Test-Path -LiteralPath $legacyApp)
+    installations = @(Get-Installations)
+    startup = Get-Startup 'Zhiyu'
+  }
+  $postUninstall | ConvertTo-Json -Depth 6 | Set-Content -Encoding utf8 (Join-Path $report 'post-uninstall.json')
   if ((Test-Path -LiteralPath $legacyApp) -or (Get-Installations) -or (Get-Startup 'Zhiyu')) {
     throw 'Original uninstall did not retire the original software and startup entry.'
   }
