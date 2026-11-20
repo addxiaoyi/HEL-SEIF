@@ -34,7 +34,7 @@ function Get-Installations {
 
 function Get-Startup([string]$Name) {
   if (Test-Path -LiteralPath $startupPath) {
-    return Get-ItemPropertyValue -Path $startupPath -Name $Name -ErrorAction SilentlyContinue
+    return (Get-Item -LiteralPath $startupPath).GetValue($Name)
   }
 }
 
