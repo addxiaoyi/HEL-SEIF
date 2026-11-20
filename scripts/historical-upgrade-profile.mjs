@@ -55,7 +55,7 @@ try {
     await page.getByRole("button", { name: "进入知屿", exact: true }).click();
   }
   await page.locator('[data-app-ready="true"]').waitFor({ timeout: 45000 });
-  assert.equal(await page.getByRole("dialog", { name: "首次设置" }).count(), 0);
+  await page.getByRole("dialog", { name: "首次设置" }).waitFor({ state: "detached" });
 
   if (phase === "seed") {
     await page.evaluate(
