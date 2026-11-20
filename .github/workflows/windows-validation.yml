@@ -1,6 +1,14 @@
 name: Historical Windows upgrade QA
 on:
   workflow_dispatch:
+    inputs:
+      upgrade:
+        description: Migration path to verify
+        type: choice
+        options:
+          - reinstall
+          - overlay
+        default: reinstall
 permissions:
   contents: read
   actions: read
@@ -24,7 +32,9 @@ jobs:
         run: ./scripts/windows-historical-sources.ps1
       - name: Install, seed and upgrade a synthetic workspace
         shell: pwsh
-        run: ./scripts/windows-historical-upgrade.ps1 -LegacyInstaller $env:HISTORICAL_LEGACY_EXE -CandidateInstaller $env:HISTORICAL_CANDIDATE_EXE -ReportDirectory historical-report
+        env:
+          HISTORICAL_UPGRADE: ${{ inputs.upgrade }}
+        run: ./scripts/windows-historical-upgrade.ps1 -LegacyInstaller $env:HISTORICAL_LEGACY_EXE -CandidateInstaller $env:HISTORICAL_CANDIDATE_EXE -ReportDirectory historical-report -Migration $env:HISTORICAL_UPGRADE
       - name: Save evidence
         if: always()
         uses: actions/upload-artifact@v4

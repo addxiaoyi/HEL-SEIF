@@ -1,7 +1,8 @@
 param(
   [Parameter(Mandatory)][string]$LegacyInstaller,
   [Parameter(Mandatory)][string]$CandidateInstaller,
-  [Parameter(Mandatory)][string]$ReportDirectory
+  [Parameter(Mandatory)][string]$ReportDirectory,
+  [Parameter(Mandatory)][ValidateSet('reinstall', 'overlay')][string]$Migration
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -23,11 +24,13 @@ function Get-Installations {
       if ($_.UninstallString -notmatch '^"([^"]+)" /currentuser$') {
         throw "Unexpected uninstall command for $($_.DisplayName)"
       }
+    $uninstaller = $Matches[1]
       [pscustomobject]@{
         key = $_.PSChildName
         displayName = $_.DisplayName
         displayVersion = $_.DisplayVersion
-        installLocation = Split-Path -Parent $Matches[1]
+      installLocation = Split-Path -Parent $uninstaller
+      uninstaller = $uninstaller
       }
     }
 }
@@ -72,10 +75,38 @@ if (-not (Test-Path -LiteralPath $legacyApp)) { throw 'Original setup did not cr
 if ((Get-Startup 'Zhiyu') -ne $activeStart) { throw 'Original setup did not enable startup.' }
 $before = @(Get-Installations)
 if ($before.Count -ne 1 -or $before[0].InstallLocation -ne $legacyPath) { throw 'Original installation was not registered at its chosen location.' }
-$beforeShortcuts = @(Get-Shortcuts)
 Test-Profile $legacyApp 'seed'
+$beforeShortcuts = @(Get-Shortcuts)
 
-Install-Package $CandidateInstaller '/S /currentuser --no-desktop-shortcut'
+if ($Migration -eq 'reinstall') {
+  $originalGuid = 'fb69fbc9-7441-53dc-a02a-7d6d9419e218'
+  $legacyUninstaller = Join-Path $legacyPath 'Uninstall Zhiyu.exe'
+  if ($before[0].key -ne $originalGuid -or $before[0].uninstaller -ne $legacyUninstaller) {
+    throw 'Unexpected uninstaller for the original fixture.'
+  }
+  $fixtureFiles = @('profile.json', 'vault.enc', 'preferences.json')
+  $profileHashes = @{}
+  foreach ($name in $fixtureFiles) {
+    $profileHashes[$name] = (Get-FileHash -LiteralPath (Join-Path $profilePath $name)).Hash
+  }
+  Install-Package $legacyUninstaller '/S /currentuser'
+  $deadline = [DateTime]::UtcNow.AddSeconds(30)
+  while ((Test-Path -LiteralPath $legacyApp) -and [DateTime]::UtcNow -lt $deadline) {
+    Start-Sleep -Milliseconds 250
+  }
+  if ((Test-Path -LiteralPath $legacyApp) -or (Get-Installations) -or (Get-Startup 'Zhiyu')) {
+    throw 'Original uninstall did not retire the original software and startup entry.'
+  }
+  foreach ($name in $fixtureFiles) {
+    if ((Get-FileHash -LiteralPath (Join-Path $profilePath $name)).Hash -ne $profileHashes[$name]) {
+      throw "Original uninstall changed the fixture file $name"
+    }
+  }
+}
+
+$arguments = '/S /currentuser --no-desktop-shortcut'
+if ($Migration -eq 'reinstall') { $arguments += " /ZH_STARTUP=1 /D=$legacyPath" }
+Install-Package $CandidateInstaller $arguments
 $after = @(Get-Installations)
 $afterShortcuts = @(Get-Shortcuts)
 $current = @($after | Where-Object { $_.DisplayVersion -eq '1.17.13' })
@@ -84,6 +115,7 @@ $newApp = Join-Path $current[0].InstallLocation 'Helself.exe'
 if (-not (Test-Path -LiteralPath $newApp)) { throw 'The registered candidate executable does not exist.' }
 
 $receipt = [ordered]@{
+  migration = $Migration
   before = $before
   after = $after
   beforeShortcuts = $beforeShortcuts
@@ -102,4 +134,4 @@ $receipt | ConvertTo-Json -Depth 6 -Compress | Write-Output
 Test-Profile $newApp 'verify'
 $failed = @('reusedInstallLocation', 'retiredLegacyInstallation', 'startupPreserved', 'shortcutMigrated' | Where-Object { -not $receipt[$_] })
 if ($failed.Count) { throw "Windows upgrade assertions failed: $($failed -join ', ')" }
-Write-Output 'PASS historical upgrade preserves workspace, encrypted vault, settings, install location, startup and shortcut.'
+Write-Output "PASS ${Migration}: workspace, encrypted vault, settings, install location, startup and shortcut."
