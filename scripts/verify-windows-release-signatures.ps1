@@ -1,12 +1,14 @@
 param(
   [Parameter(Mandatory)][ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version,
   [Parameter(Mandatory)][string]$Directory,
-  [Parameter(Mandatory)][string]$Receipt
+  [Parameter(Mandatory)][string]$Receipt,
+  [switch]$AllowUnsigned
 )
 
 $ErrorActionPreference = 'Stop'
+$signingMode = if ($AllowUnsigned) { 'unsigned' } else { 'signed' }
 $thumbprint = $env:HELSELF_SIGN_CERT_SHA1
-if ($thumbprint -notmatch '^[a-fA-F0-9]{40}$') { throw 'Expected release signer thumbprint is missing or invalid' }
+if (!$AllowUnsigned -and $thumbprint -notmatch '^[a-fA-F0-9]{40}$') { throw 'Expected release signer thumbprint is missing or invalid' }
 
 $installer = Join-Path $Directory "Helself-$Version-setup.exe"
 $online = Join-Path $Directory "Helself-$Version-online-setup.exe"
@@ -14,6 +16,17 @@ $app = Join-Path $Directory 'win-unpacked/Helself.exe'
 $installerName = Split-Path -Leaf $installer
 $signatures = foreach ($file in @($installer, $online, $app)) {
   $signature = Get-AuthenticodeSignature -LiteralPath $file
+  if ($AllowUnsigned) {
+    if ($signature.Status -ne 'NotSigned') {
+      throw "Unsigned release check failed for $($file): expected NotSigned, got $($signature.Status)"
+    }
+    [ordered]@{
+      file = Split-Path -Leaf $file
+      status = $signature.Status.ToString()
+      sha256 = (Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash.ToLowerInvariant()
+    }
+    continue
+  }
   if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Thumbprint -ne $thumbprint -or
       !$signature.TimeStamperCertificate) {
     throw "Release signature check failed for $($file): $($signature.Status); expected signer and trusted timestamp required"
@@ -68,6 +81,7 @@ $commit = git rev-parse HEAD
 if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve the release source commit' }
 [ordered]@{
   version = $Version
+  signingMode = $signingMode
   sourceCommit = $commit
   verifiedAt = [DateTimeOffset]::UtcNow.ToString('o')
   signatures = $signatures

@@ -9,6 +9,14 @@ on:
         required: true
         default: "v1.7.1"
         type: string
+      signing_mode:
+        description: Windows 发布模式；unsigned 明确发布未签名安装包
+        required: true
+        default: signed
+        type: choice
+        options:
+          - signed
+          - unsigned
 permissions:
   contents: read
 concurrency:
@@ -22,7 +30,8 @@ jobs:
       contents: write
     env:
       HELSELF_RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
-      HELSELF_REQUIRE_SIGNING: "1"
+      HELSELF_SIGNING_MODE: ${{ inputs.signing_mode || 'signed' }}
+      HELSELF_REQUIRE_SIGNING: ${{ (inputs.signing_mode || 'signed') == 'signed' && '1' || '0' }}
       HELSELF_SIGN_CERT_SHA1: ${{ vars.HELSELF_SIGN_CERT_SHA1 }}
     steps:
       - uses: actions/checkout@v4
@@ -44,6 +53,7 @@ jobs:
           $headCommit = git rev-parse HEAD
           if ($LASTEXITCODE -ne 0 -or $tagCommit -ne $headCommit) { throw 'Release source mismatch' }
       - name: 检查 Windows 签名环境
+        if: env.HELSELF_SIGNING_MODE == 'signed'
         shell: pwsh
         run: |
           $thumbprint = $env:HELSELF_SIGN_CERT_SHA1
@@ -136,7 +146,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: 验证浏览器插件真实交互
         run: node scripts/browser-companion-integration.mjs
-      - name: 验证签名及在线更新载荷
+      - name: 验证签名状态及在线更新载荷
         shell: pwsh
         run: |
           $version = (Get-Content package.json | ConvertFrom-Json).version
@@ -147,7 +157,11 @@ jobs:
           $portable = "$directory/Helself-$version-portable-x64.zip"
           if (!(Test-Path $portable)) { throw 'Portable archive missing' }
           $receipt = "$directory/WINDOWS-SIGNATURES.json"
-          ./scripts/verify-windows-release-signatures.ps1 -Version $version -Directory $directory -Receipt $receipt
+          if ($env:HELSELF_SIGNING_MODE -eq 'unsigned') {
+            ./scripts/verify-windows-release-signatures.ps1 -Version $version -Directory $directory -Receipt $receipt -AllowUnsigned
+          } else {
+            ./scripts/verify-windows-release-signatures.ps1 -Version $version -Directory $directory -Receipt $receipt
+          }
       - name: 校验文件与发布
         shell: pwsh
         env:
