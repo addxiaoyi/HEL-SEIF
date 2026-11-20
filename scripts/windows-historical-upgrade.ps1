@@ -52,6 +52,17 @@ function Get-Shortcuts {
     }
 }
 
+function Remove-LegacyShortcuts([string]$Target) {
+  $shell = New-Object -ComObject WScript.Shell
+  Get-ChildItem -LiteralPath $programs -Filter '*.lnk' -File |
+    ForEach-Object {
+      $link = $shell.CreateShortcut($_.FullName)
+      if ($link.TargetPath -eq $Target) {
+        Remove-Item -LiteralPath $_.FullName -Force
+      }
+    }
+}
+
 function Install-Package([string]$Installer, [string]$Arguments) {
   $setup = (Resolve-Path -LiteralPath $Installer).Path
   $process = Start-Process -FilePath $setup -ArgumentList $Arguments -WindowStyle Hidden -PassThru
@@ -104,6 +115,7 @@ if ($Migration -eq 'reinstall') {
   if ((Test-Path -LiteralPath $legacyApp) -or (Get-Installations) -or (Get-Startup 'Zhiyu')) {
     throw 'Original uninstall did not retire the original software and startup entry.'
   }
+  Remove-LegacyShortcuts $legacyApp
   foreach ($name in $fixtureFiles) {
     if ((Get-FileHash -LiteralPath (Join-Path $profilePath $name)).Hash -ne $profileHashes[$name]) {
       throw "Original uninstall changed the fixture file $name"
