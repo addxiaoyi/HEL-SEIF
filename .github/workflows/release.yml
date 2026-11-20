@@ -22,6 +22,8 @@ jobs:
       contents: write
     env:
       HELSELF_RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+      HELSELF_REQUIRE_SIGNING: "1"
+      HELSELF_SIGN_CERT_SHA1: ${{ vars.HELSELF_SIGN_CERT_SHA1 }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,6 +43,19 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Release tag missing' }
           $headCommit = git rev-parse HEAD
           if ($LASTEXITCODE -ne 0 -or $tagCommit -ne $headCommit) { throw 'Release source mismatch' }
+      - name: 检查 Windows 签名环境
+        shell: pwsh
+        run: |
+          $thumbprint = $env:HELSELF_SIGN_CERT_SHA1
+          if ($thumbprint -notmatch '^[a-fA-F0-9]{40}$') { throw 'A release signing certificate thumbprint must be configured' }
+          $thumbprint = $thumbprint.ToUpperInvariant()
+          $certificate = Get-Item -LiteralPath "Cert:\CurrentUser\My\$thumbprint"
+          $now = Get-Date
+          if (!$certificate.HasPrivateKey -or $now -lt $certificate.NotBefore -or $now -gt $certificate.NotAfter -or
+              '1.3.6.1.5.5.7.3.3' -notin $certificate.EnhancedKeyUsageList.ObjectId.Value) {
+            throw 'The release certificate must be current, have a private key, and allow code signing'
+          }
+          "HELSELF_SIGN_CERT_SHA1=$thumbprint" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
       - name: 规范 Windows 临时目录
         shell: pwsh
         run: |
@@ -121,6 +136,18 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: 验证浏览器插件真实交互
         run: node scripts/browser-companion-integration.mjs
+      - name: 验证签名及在线更新载荷
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          $directory = "release/v$version"
+          $installer = "$directory/Helself-$version-setup.exe"
+          $online = "$directory/Helself-$version-online-setup.exe"
+          if (!(Test-Path $online)) { throw 'Online installer missing' }
+          $portable = "$directory/Helself-$version-portable-x64.zip"
+          if (!(Test-Path $portable)) { throw 'Portable archive missing' }
+          $receipt = "$directory/WINDOWS-SIGNATURES.json"
+          ./scripts/verify-windows-release-signatures.ps1 -Version $version -Directory $directory -Receipt $receipt
       - name: 校验文件与发布
         shell: pwsh
         env:
@@ -130,20 +157,18 @@ jobs:
           $directory = "release/v$version"
           $installer = "$directory/Helself-$version-setup.exe"
           $online = "$directory/Helself-$version-online-setup.exe"
-          if (!(Test-Path $online)) { throw 'Online installer missing' }
-          $extension = "$directory/Helself-$version-browser-extension.zip"
           $portable = "$directory/Helself-$version-portable-x64.zip"
-          if (!(Test-Path $portable)) { throw 'Portable archive missing' }
+          $receipt = "$directory/WINDOWS-SIGNATURES.json"
+          $extension = "$directory/Helself-$version-browser-extension.zip"
           Compress-Archive -Path "$directory/helself-browser-extension/*" -DestinationPath $extension
-          $hash = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLower()
-          $extensionHash = (Get-FileHash $extension -Algorithm SHA256).Hash.ToLower()
-          $portableHash = (Get-FileHash $portable -Algorithm SHA256).Hash.ToLower()
-          $onlineHash = (Get-FileHash $online -Algorithm SHA256).Hash.ToLower()
-          @("$hash  Helself-$version-setup.exe", "$onlineHash  Helself-$version-online-setup.exe", "$portableHash  Helself-$version-portable-x64.zip", "$extensionHash  Helself-$version-browser-extension.zip") | Set-Content "$directory/SHA256SUMS.txt" -Encoding utf8
           $metadata = "$directory/latest.yml"
           $blockmap = "$installer.blockmap"
-          if (!(Test-Path $metadata) -or !(Test-Path $blockmap)) { throw 'Update metadata missing' }
-          gh release create "v$version" $installer $online $portable $extension $metadata $blockmap "$directory/SHA256SUMS.txt" --verify-tag --title "Helself $version" --notes-file "docs/releases/v$version.md"
+          $assets = @($installer, $online, $portable, $extension, $metadata, $blockmap, $receipt)
+          $assets | ForEach-Object {
+            $hash = (Get-FileHash -LiteralPath $_ -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
+            "$hash  $(Split-Path -Leaf $_)"
+          } | Set-Content "$directory/SHA256SUMS.txt" -Encoding utf8
+          gh release create "v$version" @assets "$directory/SHA256SUMS.txt" --verify-tag --title "Helself $version" --notes-file "docs/releases/v$version.md"
 
   # 网页版镜像：Windows 正式版全部检查通过后，推送到 ghcr.io/<owner>/helself-web:<版本> 与 latest。
   web-image:
